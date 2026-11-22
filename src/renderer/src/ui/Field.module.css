@@ -1,0 +1,20 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.label {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+.hint,
+.error {
+  font-size: var(--fs-sm);
+}
+.hint {
+  color: var(--text-3);
+}
+.error {
+  color: var(--bad);
+}

@@ -1,0 +1,61 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": "string"
+    },
+    "skill_updates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "years": {
+            "type": ["number", "null"]
+          },
+          "last_used": {
+            "type": ["string", "null"]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": ["have", "learning", "want"]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["skill", "level", "years", "last_used", "status", "evidence", "reason"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["summary", "skill_updates"],
+  "additionalProperties": false
+}

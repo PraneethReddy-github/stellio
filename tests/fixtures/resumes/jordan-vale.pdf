@@ -1,0 +1,43 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 679 >>
+stream
+BT
+/F1 16 Tf 1 0 0 1 50 780 Tm (Jordan Vale) Tj
+/F1 11 Tf 1 0 0 1 50 756 Tm (Data Engineer - jordan.vale@example.com - Berlin, Germany) Tj
+/F1 11 Tf 1 0 0 1 50 737 Tm () Tj
+/F1 12 Tf 1 0 0 1 50 718 Tm (EXPERIENCE) Tj
+/F1 11 Tf 1 0 0 1 50 698 Tm (Senior Data Engineer, Brightwater Analytics GmbH \(2022 - Present\)) Tj
+/F1 10 Tf 1 0 0 1 50 679 Tm (- Rebuilt the nightly sales ETL in Python and Airflow, cutting runtime from 4 h to 55 min.) Tj
+/F1 10 Tf 1 0 0 1 50 661 Tm (- Designed a PostgreSQL star schema used by 12 analysts.) Tj
+/F1 11 Tf 1 0 0 1 50 643 Tm () Tj
+/F1 12 Tf 1 0 0 1 50 624 Tm (SKILLS) Tj
+/F1 10 Tf 1 0 0 1 50 604 Tm (Python, SQL, dbt, Airflow, PostgreSQL) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000971 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1041
+%%EOF

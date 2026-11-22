@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Product Designer - Praia Studio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      .cookie-banner {
+        position: fixed;
+        bottom: 0;
+      }
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body onload="init()">
+    <div id="cookie" class="cookie-banner" role="dialog">
+      <p>
+        We use cookies to improve your experience, for analytics and for advertising. By clicking "Accept all"
+        you agree to the use of all cookies. <a href="/privacy">Privacy policy</a>
+      </p>
+      <button onclick="acceptAll()">Accept all</button><button onclick="settings()">Cookie settings</button>
+    </div>
+    <header class="site-header">
+      <a class="logo" href="/"
+        ><svg width="24" height="24"><circle cx="12" cy="12" r="10" /></svg> Praia Studio Lda</a
+      >
+      <nav>
+        <ul>
+          <li><a href="/jobs">Jobs</a></li>
+          <li><a href="/teams">Teams</a></li>
+          <li><a href="/life">Life</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a href="/press">Press</a></li>
+          <li><a href="/investors">Investors</a></li>
+          <li><a href="/contact">Contact</a></li>
+          <li><a href="/login">Login</a></li>
+        </ul>
+      </nav>
+      <button class="menu" onclick="toggleMenu()">Menu</button>
+    </header>
+    <div class="breadcrumbs"><a href="/">Home</a> &gt; <a href="/jobs">Jobs</a> &gt; Current opening</div>
+    <main id="content">
+      <article class="job">
+        <div class="hero">
+          <div class="hero-inner">
+            <h1>Product Designer</h1>
+            <div class="chips"><span>Lisbon, Portugal</span><span>On site</span><span>Full-time</span></div>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="col">
+            <h2>The role</h2>
+            <p>
+              Praia Studio designs mobile apps for travel companies. You will lead design on two client
+              products from discovery to hand-off.
+            </p>
+            <h2>You will</h2>
+            <ul>
+              <li>Run user interviews and turn insights into flows</li>
+              <li>Create high-fidelity designs and prototypes in Figma</li>
+              <li>Maintain our design system</li>
+            </ul>
+            <h2>You have</h2>
+            <ul>
+              <li>4+ years in product or UX design with a strong portfolio</li>
+              <li>Fluent English</li>
+              <li>Preferred: motion design skills</li>
+            </ul>
+            <p>Salary EUR 38,000 - 48,000 per year, plus meal allowance and health insurance.</p>
+          </div>
+        </div>
+      </article>
+      <aside class="share">
+        <p>Share this job</p>
+        <a href="https://twitter.example.test/share?u=1" onclick="track('tw')">Twitter</a>
+        <a href="https://linkedin.example.test/share?u=1">LinkedIn</a>
+        <a href="javascript:window.print()">Print</a>
+      </aside>
+      <section class="related">
+        <h2>Similar jobs</h2>
+        <ul>
+          <li><a href="/jobs/1">Other opening 1 - Senior iOS Developer, Lisbon</a></li>
+          <li><a href="/jobs/2">Other opening 2 - Account Manager, Lisbon</a></li>
+          <li><a href="/jobs/3">Other opening 3 - QA Tester, Porto</a></li>
+        </ul>
+      </section>
+      <section class="newsletter">
+        <h3>Get job alerts</h3>
+        <form action="/subscribe" method="post">
+          <input type="email" name="email" placeholder="you@example.com" /><button type="submit">
+            Subscribe
+          </button>
+        </form>
+      </section>
+    </main>
+    <footer>
+      <ul>
+        <li><a href="/imprint">Imprint</a></li>
+        <li><a href="/privacy">Privacy</a></li>
+        <li><a href="/terms">Terms</a></li>
+        <li><a href="/accessibility">Accessibility</a></li>
+      </ul>
+      <p>&copy; 2026 Praia Studio Lda. All rights reserved.</p>
+    </footer>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      function acceptAll() {
+        document.getElementById('cookie').remove();
+      }
+    </script>
+    <script src="https://cdn.example.test/tracker.js" async></script>
+    <noscript><img src="https://px.example.test/p.gif" width="1" height="1" /></noscript>
+    <iframe src="https://ads.example.test/frame" style="display: none"></iframe>
+  </body>
+</html>

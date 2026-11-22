@@ -1,0 +1,42 @@
+Jordan Vale
+Data Engineer
+jordan.vale@example.com | +49 151 0000 0000 | Berlin, Germany
+github.com/jordanvale-example | linkedin.com/in/jordanvale-example
+
+SUMMARY
+Data engineer with five years of experience building batch and streaming pipelines for logistics and retail analytics. Comfortable owning a pipeline from ingestion to dashboards.
+
+EXPERIENCE
+
+Senior Data Engineer, Brightwater Analytics GmbH, Berlin, Germany
+March 2022 - Present
+- Rebuilt the nightly sales ETL in Python and Airflow, cutting runtime from 4 hours to 55 minutes.
+- Designed a PostgreSQL star schema used by 12 analysts for weekly reporting.
+- Introduced dbt tests that caught schema drift before it reached dashboards.
+- Mentored two junior engineers.
+
+Data Analyst, Nimbus Logistics, Hamburg, Germany
+July 2019 - February 2022
+- Wrote SQL reports on delivery delays for regional managers.
+- Automated a weekly Excel report with Python and pandas, saving about 6 hours per week.
+
+PROJECTS
+
+Parcel Tracker (personal project), 2021
+- Small Flask app that polls a public parcel tracking API and sends email alerts.
+- Stack: Python, Flask, SQLite.
+
+EDUCATION
+
+B.Sc. Computer Science, Example University of Applied Sciences, Hamburg, Germany
+October 2015 - June 2019
+- Thesis on time-series anomaly detection in sensor data.
+
+CERTIFICATIONS
+AWS Certified Cloud Practitioner, Amazon Web Services, 2023
+
+SKILLS
+Languages: Python, SQL, Bash
+Data: PostgreSQL, dbt, Airflow, pandas
+Cloud: AWS (S3, Glue basics)
+Languages spoken: English (fluent), German (B2)

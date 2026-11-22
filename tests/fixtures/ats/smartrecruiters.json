@@ -1,0 +1,39 @@
+{
+  "id": "743999912345678",
+  "uuid": "a1b2c3d4-0000-4000-8000-000000000001",
+  "name": "Process Engineer",
+  "refNumber": "PE-2026-7",
+  "company": { "identifier": "TannenWerke", "name": "Tannenwerke GmbH" },
+  "releasedDate": "2026-09-30T12:00:00.000Z",
+  "location": {
+    "city": "Stuttgart",
+    "region": "Baden-Württemberg",
+    "country": "de",
+    "remote": false,
+    "hybrid": true
+  },
+  "typeOfEmployment": { "id": "permanent", "label": "Full-time" },
+  "experienceLevel": { "id": "mid_senior_level", "name": "Mid-Senior Level" },
+  "jobAd": {
+    "sections": {
+      "companyDescription": {
+        "title": "Company Description",
+        "text": "<p>Tannenwerke makes precision parts for machine builders.</p>"
+      },
+      "jobDescription": {
+        "title": "Job Description",
+        "text": "<p>You optimise our CNC production lines and lead continuous-improvement projects.</p>"
+      },
+      "qualifications": {
+        "title": "Qualifications",
+        "text": "<ul><li>Degree in mechanical engineering</li><li>3 years of production experience</li></ul>"
+      },
+      "additionalInformation": {
+        "title": "Additional Information",
+        "text": "<p>Flexible hours and a company canteen.</p>"
+      }
+    }
+  },
+  "postingUrl": "https://jobs.smartrecruiters.com/TannenWerke/743999912345678-process-engineer",
+  "applyUrl": "https://jobs.smartrecruiters.com/TannenWerke/743999912345678-process-engineer?oga=true"
+}

@@ -1,0 +1,276 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {
+      "type": ["string", "null"]
+    },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["text", "source_ids"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["entry_id", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["text", "source_ids"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["entry_id", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["text", "source_ids"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["entry_id", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          }
+        },
+        "required": ["entry_id"],
+        "additionalProperties": false
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category_label": {
+            "type": "string",
+            "enum": [
+              "Languages",
+              "Frameworks",
+              "Libraries",
+              "Databases",
+              "Data",
+              "Analytics",
+              "Machine Learning",
+              "Cloud",
+              "DevOps",
+              "Platforms",
+              "Tools",
+              "Testing",
+              "Practices",
+              "Domain",
+              "Languages & Frameworks",
+              "Languages & Libraries",
+              "Languages & Databases",
+              "Languages & Data",
+              "Languages & Analytics",
+              "Languages & Machine Learning",
+              "Languages & Cloud",
+              "Languages & DevOps",
+              "Languages & Platforms",
+              "Languages & Tools",
+              "Languages & Testing",
+              "Languages & Practices",
+              "Languages & Domain",
+              "Frameworks & Libraries",
+              "Frameworks & Databases",
+              "Frameworks & Data",
+              "Frameworks & Analytics",
+              "Frameworks & Machine Learning",
+              "Frameworks & Cloud",
+              "Frameworks & DevOps",
+              "Frameworks & Platforms",
+              "Frameworks & Tools",
+              "Frameworks & Testing",
+              "Frameworks & Practices",
+              "Frameworks & Domain",
+              "Libraries & Databases",
+              "Libraries & Data",
+              "Libraries & Analytics",
+              "Libraries & Machine Learning",
+              "Libraries & Cloud",
+              "Libraries & DevOps",
+              "Libraries & Platforms",
+              "Libraries & Tools",
+              "Libraries & Testing",
+              "Libraries & Practices",
+              "Libraries & Domain",
+              "Databases & Data",
+              "Databases & Analytics",
+              "Databases & Machine Learning",
+              "Databases & Cloud",
+              "Databases & DevOps",
+              "Databases & Platforms",
+              "Databases & Tools",
+              "Databases & Testing",
+              "Databases & Practices",
+              "Databases & Domain",
+              "Data & Analytics",
+              "Data & Machine Learning",
+              "Data & Cloud",
+              "Data & DevOps",
+              "Data & Platforms",
+              "Data & Tools",
+              "Data & Testing",
+              "Data & Practices",
+              "Data & Domain",
+              "Analytics & Machine Learning",
+              "Analytics & Cloud",
+              "Analytics & DevOps",
+              "Analytics & Platforms",
+              "Analytics & Tools",
+              "Analytics & Testing",
+              "Analytics & Practices",
+              "Analytics & Domain",
+              "Machine Learning & Cloud",
+              "Machine Learning & DevOps",
+              "Machine Learning & Platforms",
+              "Machine Learning & Tools",
+              "Machine Learning & Testing",
+              "Machine Learning & Practices",
+              "Machine Learning & Domain",
+              "Cloud & DevOps",
+              "Cloud & Platforms",
+              "Cloud & Tools",
+              "Cloud & Testing",
+              "Cloud & Practices",
+              "Cloud & Domain",
+              "DevOps & Platforms",
+              "DevOps & Tools",
+              "DevOps & Testing",
+              "DevOps & Practices",
+              "DevOps & Domain",
+              "Platforms & Tools",
+              "Platforms & Testing",
+              "Platforms & Practices",
+              "Platforms & Domain",
+              "Tools & Testing",
+              "Tools & Practices",
+              "Tools & Domain",
+              "Testing & Practices",
+              "Testing & Domain",
+              "Practices & Domain"
+            ]
+          },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["category_label", "skills"],
+        "additionalProperties": false
+      }
+    },
+    "omitted": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": ["id", "reason"],
+        "additionalProperties": false
+      }
+    },
+    "change_log": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "summary",
+    "experience",
+    "projects",
+    "education",
+    "certifications",
+    "skills",
+    "omitted",
+    "change_log"
+  ],
+  "additionalProperties": false
+}

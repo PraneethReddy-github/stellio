@@ -1,0 +1,200 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding-bottom: var(--s-6);
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  max-width: 880px;
+}
+.boundary {
+  color: var(--text-2);
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--s-3);
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.dim {
+  color: var(--text-3);
+}
+.strong {
+  font-weight: 500;
+}
+.link {
+  color: var(--text);
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.count,
+.countInline {
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  color: var(--text-2);
+}
+.countInline {
+  margin-left: auto;
+  align-self: flex-end;
+  min-height: var(--row);
+  display: flex;
+  align-items: center;
+  color: var(--text-3);
+}
+.tableWrap {
+  border: 1px solid var(--line);
+}
+.more {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+/* Screen */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+.filters > div {
+  min-width: 160px;
+}
+.screenTable {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--line);
+}
+.retention {
+  margin-top: var(--s-4);
+  max-width: 640px;
+}
+.inline {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.inline input {
+  width: 120px;
+}
+.openJob {
+  padding: var(--s-3) var(--s-3) 0;
+}
+
+/* Inspector */
+.inspectorBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-3);
+}
+.personName {
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+.dimLine {
+  color: var(--text-2);
+}
+.prose {
+  margin-top: var(--s-2);
+  color: var(--text-2);
+  line-height: 1.45;
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.plain {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.linkRow {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-1) 0;
+  border-bottom: 1px solid var(--line);
+}
+.linkRow > :first-child {
+  flex: none;
+  min-width: 96px;
+}
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.source {
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.contact {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+.draftBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.draftHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.draftHead > .label {
+  margin-right: auto;
+}
+.label {
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.mono[data-over] {
+  color: var(--bad);
+}
+.pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--line-strong, var(--line));
+  background: var(--surface-1);
+}
+.checks {
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--bad);
+  color: var(--text-2);
+}
+.checks ul {
+  margin-top: var(--s-1);
+}

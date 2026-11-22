@@ -1,0 +1,109 @@
+%% Stellio resume template v1 — pdfLaTeX, single file, Overleaf-compatible.
+%% Stellio fills the STELLIO:SLOT markers using only the macros defined below.
+%% Edit layout here; edit content behaviour in rules/resume.md.
+\documentclass[10pt]{article}
+
+\usepackage[a4paper,margin=0.6in,top=0.5in,bottom=0.5in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{tabularx}
+% pdfTeX only (Tectonic/XeTeX has no \pdfgentounicode and emits a Unicode text layer natively)
+\ifdefined\pdfgentounicode\input{glyphtounicode}\pdfgentounicode=1\fi
+
+\definecolor{accent}{HTML}{1F2A37}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\tabcolsep}{0pt}
+\raggedright
+
+% Section headings: small caps, hairline rule
+\titleformat{\section}{\large\scshape\color{accent}}{}{0pt}{}[\vspace{-6pt}\rule{\linewidth}{0.4pt}]
+\titlespacing*{\section}{0pt}{8pt}{5pt}
+
+\setlist[itemize]{leftmargin=1.1em,label=\textbullet,itemsep=1pt,topsep=2pt,parsep=0pt}
+
+% ---- Stellio macros (the AI may use only these) ----
+% \resumeHeader{Name}{Location}{Email}{Phone}{LinkedIn URL}{Other URL}
+\newcommand{\resumeHeader}[6]{%
+  \begin{center}
+    {\LARGE\color{accent}#1}\\[3pt]
+    \small #2 \,|\, \href{mailto:#3}{\detokenize{#3}} \,|\, #4 \,|\, \href{#5}{LinkedIn} \,|\, \href{#6}{\detokenize{#6}}
+  \end{center}\vspace{-4pt}}
+% \resumeSummary{text}
+\newcommand{\resumeSummary}[1]{\section{Summary}\small #1}
+% \resumeEntry{Title}{Dates}{Organisation}{Location}
+\newcommand{\resumeEntry}[4]{%
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{#1} & \small #2\\
+    \textit{\small #3} & \textit{\small #4}
+  \end{tabularx}\vspace{-2pt}}
+% \resumeProject{Name}{Stack}{Dates}
+\newcommand{\resumeProject}[3]{%
+  \begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{#1} \,\textit{\small | #2} & \small #3
+  \end{tabularx}\vspace{-2pt}}
+\newenvironment{resumeItems}{\begin{itemize}\small}{\end{itemize}\vspace{2pt}}
+\newcommand{\resumeItem}[1]{\item #1}
+% \skillLine{Category}{comma-separated skills}
+\newcommand{\skillLine}[2]{\small\textbf{#1:} #2\\}
+
+\begin{document}
+
+
+\resumeHeader{Alex Example}{Berlin, Germany}{alex_example@example.com}{+49 151 0000000}{https://linkedin.com/in/alex_example}{https://github.com/alex_example/my_portfolio?ref=a_b&x=1}
+
+\resumeSummary{Senior backend engineer with 6 years building high-throughput services in C++, C\#, Node.js and Python; focused on latency, reliability and cost on AWS \& Kubernetes. Open-source maintainer and mentor.}
+
+\section{Experience}
+\resumeEntry{Senior Software Engineer}{Jan 2023 -- Present}{Acme Data \& Analytics}{Berlin, Germany}
+\begin{resumeItems}
+  \resumeItem{Reduced p95 API latency by 38\% (from 420 ms to 260 ms) by profiling hot paths in C++ and C\# services and adding a Redis read-through cache for hot keys.}
+  \resumeItem{Migrated 14 legacy cron jobs to an Airflow DAG\_based scheduler on AWS \& Kubernetes, cutting failed nightly runs from 12\% to under 1\% across 3 regions.}
+  \resumeItem{Built a Node.js ingestion service handling 25k events/s with back-pressure; saved \$48k per year in cloud spend by right-sizing instances and spot fleets.}
+\end{resumeItems}
+\resumeEntry{Software Engineer II}{Mar 2021 -- Dec 2022}{Globex Corp}{London, UK}
+\begin{resumeItems}
+  \resumeItem{Reduced p95 API latency by 38\% (from 420 ms to 260 ms) by profiling hot paths in C++ and C\# services and adding a Redis read-through cache for hot keys.}
+  \resumeItem{Migrated 14 legacy cron jobs to an Airflow DAG\_based scheduler on AWS \& Kubernetes, cutting failed nightly runs from 12\% to under 1\% across 3 regions.}
+  \resumeItem{Built a Node.js ingestion service handling 25k events/s with back-pressure; saved \$48k per year in cloud spend by right-sizing instances and spot fleets.}
+\end{resumeItems}
+\resumeEntry{Software Engineer}{Jun 2019 -- Feb 2021}{Initech GmbH}{Munich, Germany}
+\begin{resumeItems}
+  \resumeItem{Reduced p95 API latency by 38\% (from 420 ms to 260 ms) by profiling hot paths in C++ and C\# services and adding a Redis read-through cache for hot keys.}
+  \resumeItem{Migrated 14 legacy cron jobs to an Airflow DAG\_based scheduler on AWS \& Kubernetes, cutting failed nightly runs from 12\% to under 1\% across 3 regions.}
+  \resumeItem{Built a Node.js ingestion service handling 25k events/s with back-pressure; saved \$48k per year in cloud spend by right-sizing instances and spot fleets.}
+\end{resumeItems}
+
+\section{Projects}
+\resumeProject{StreamWatch}{Rust, Python, Kafka}{Mar 2024 -- Jun 2024}
+\begin{resumeItems}
+  \resumeItem{Built a streaming anomaly detector in Rust and Python processing 10k msgs/s with 99.9\% uptime; open-sourced with 1.2k GitHub stars and 40 contributors.}
+  \resumeItem{Wrote CI/CD tooling in Go with Docker and Terraform that cut build times from 18 min to 6 min (67\% faster) for a monorepo of 90+ services.}
+\end{resumeItems}
+\resumeProject{BuildFast}{Go, Docker, Terraform}{Aug 2023 -- Dec 2023}
+\begin{resumeItems}
+  \resumeItem{Wrote CI/CD tooling in Go with Docker and Terraform that cut build times from 18 min to 6 min (67\% faster) for a monorepo of 90+ services.}
+  \resumeItem{Designed a Postgres schema with partitioning and row\_level security for multi-tenant SaaS, supporting 500 tenants and 2 TB of data.}
+\end{resumeItems}
+\resumeProject{TenantDB}{PostgreSQL, SQL, C\#}{Jan 2023 -- Apr 2023}
+\begin{resumeItems}
+  \resumeItem{Designed a Postgres schema with partitioning and row\_level security for multi-tenant SaaS, supporting 500 tenants and 2 TB of data.}
+  \resumeItem{Built a streaming anomaly detector in Rust and Python processing 10k msgs/s with 99.9\% uptime; open-sourced with 1.2k GitHub stars and 40 contributors.}
+\end{resumeItems}
+
+
+\section{Skills}
+\skillLine{Languages}{Python, SQL, C++, C\#, Rust, Go, TypeScript, Java, Bash}
+\skillLine{Backend \& Data}{Node.js, FastAPI, PostgreSQL, Redis, Kafka, Airflow, dbt, Spark, REST \& gRPC}
+\skillLine{Cloud \& DevOps}{AWS, Kubernetes, Docker, Terraform, GitHub Actions, Prometheus, Grafana}
+\skillLine{Practices}{Test\_driven development, CI/CD, system design, code review, mentoring, on-call}
+\section{Education}
+\resumeEntry{M.Sc. Computer Science}{Oct 2016 -- Sep 2018}{Technische Universität München}{Munich, Germany}
+
+\end{document}
+

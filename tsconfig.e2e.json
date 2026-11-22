@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.e2e"
+  },
+  "include": ["tests/e2e/**/*", "tests/fixtures/*.ts", "src/renderer/src/env.d.ts", "src/shared/**/*"]
+}

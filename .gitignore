@@ -1,0 +1,17 @@
+node_modules/
+out/
+dist/
+release/
+coverage/
+test-results/
+playwright-report/
+*.log
+.DS_Store
+spikes/**/bin/
+spikes/**/out/
+spikes/**/node_modules/
+spikes/claude-cli/cwd-empty/
+spikes/claude-cli/out/
+.claude/
+.impeccable/hook.cache.json
+release-e2e/

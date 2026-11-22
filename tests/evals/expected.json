@@ -1,0 +1,199 @@
+{
+  "01-data-engineer-berlin.md": {
+    "title": "data engineer",
+    "company": "Nimbus Analytics",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": "2026-12-31",
+    "verdict": ["apply"]
+  },
+  "02-analytics-engineer-remote-eu.md": {
+    "title": "analytics engineer",
+    "company": "Fjord Labs",
+    "remote": "remote",
+    "language": "en",
+    "salary": true,
+    "deadline": null,
+    "verdict": ["apply", "stretch"]
+  },
+  "03-backend-entwickler-muenchen.md": {
+    "title": "backend",
+    "company": "Bavaria Software",
+    "remote": "hybrid",
+    "language": "de",
+    "salary": true,
+    "deadline": "2027-01-15",
+    "seniority": "senior"
+  },
+  "04-junior-data-analyst-hamburg.md": {
+    "title": "data analyst",
+    "company": "Harbor Retail",
+    "remote": "onsite",
+    "language": "en",
+    "salary": false,
+    "deadline": null,
+    "seniority": "junior"
+  },
+  "05-ml-engineer-london.md": {
+    "title": "machine learning",
+    "company": "Brightside AI",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "06-sre-contractor-remote-usd.md": {
+    "title": "site reliability",
+    "company": "Quokka Systems",
+    "remote": "remote",
+    "language": "en",
+    "salary": true,
+    "deadline": null,
+    "employment_type": "contract"
+  },
+  "07-chef-de-produit-paris.md": {
+    "title": "chef de produit",
+    "company": "Lumière Paiements",
+    "remote": "hybrid",
+    "language": "fr",
+    "salary": true,
+    "deadline": null,
+    "verdict": ["skip"]
+  },
+  "08-frontend-react-amsterdam.md": {
+    "title": "frontend",
+    "company": "Tulip Commerce",
+    "remote": "onsite",
+    "language": "en",
+    "salary": false,
+    "deadline": null
+  },
+  "09-data-scientist-zurich.md": {
+    "title": "data scientist",
+    "company": "Alpenbank",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "10-engineering-manager-us.md": {
+    "title": "engineering manager",
+    "company": "Orchard Health",
+    "remote": "remote",
+    "language": "en",
+    "salary": true,
+    "deadline": null,
+    "seniority": "manager"
+  },
+  "11-cloud-architect-toronto.md": {
+    "title": "cloud architect",
+    "company": "Maple Telecom",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "12-werkstudent-data-leipzig.md": {
+    "title": "werkstudent",
+    "company": "Elbe Logistik",
+    "remote": "unknown",
+    "language": "de",
+    "salary": true,
+    "deadline": null,
+    "employment_type": "part_time"
+  },
+  "13-qa-automation-dublin.md": {
+    "title": "qa automation",
+    "company": "Shamrock Games",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": "2027-01-15"
+  },
+  "14-security-engineer-singapore.md": {
+    "title": "security engineer",
+    "company": "Merlion Pay",
+    "remote": "onsite",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "15-data-engineer-recruiter.md": {
+    "title": "data engineer",
+    "company": null,
+    "remote": "hybrid",
+    "language": "en",
+    "salary": false,
+    "deadline": null
+  },
+  "16-sales-engineer-sydney.md": {
+    "title": "sales engineer",
+    "company": "Southern Cross Machinery",
+    "remote": "onsite",
+    "language": "en",
+    "salary": true,
+    "deadline": null,
+    "verdict": ["skip"]
+  },
+  "17-technical-writer-remote.md": {
+    "title": "technical writer",
+    "company": "Pebble Docs",
+    "remote": "remote",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "18-ios-developer-stockholm.md": {
+    "title": "ios",
+    "company": "Nordlys Apps",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "19-freelance-data-engineer-de.md": {
+    "title": "data engineer",
+    "company": null,
+    "remote": "remote",
+    "language": "de",
+    "salary": true,
+    "deadline": null,
+    "employment_type": "freelance"
+  },
+  "20-senior-data-engineer-remote-us.html": {
+    "title": "senior data engineer",
+    "company": "Tidewater Data",
+    "remote": "remote",
+    "language": "en",
+    "salary": true,
+    "deadline": "2027-01-31",
+    "seniority": "senior"
+  },
+  "21-senior-devops-koeln.html": {
+    "title": "devops",
+    "company": "Rheinwerk Systeme",
+    "remote": "hybrid",
+    "language": "de",
+    "salary": false,
+    "deadline": null,
+    "seniority": "senior"
+  },
+  "22-backend-engineer-go-gdansk.html": {
+    "title": "backend engineer",
+    "company": "Kestrel Robotics",
+    "remote": "hybrid",
+    "language": "en",
+    "salary": true,
+    "deadline": null
+  },
+  "23-product-designer-lisbon.html": {
+    "title": "product designer",
+    "company": "Praia Studio",
+    "remote": "onsite",
+    "language": "en",
+    "salary": true,
+    "deadline": null,
+    "verdict": ["skip"]
+  }
+}

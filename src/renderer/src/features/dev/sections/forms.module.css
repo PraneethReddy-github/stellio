@@ -1,0 +1,22 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-4);
+}
+.row > * {
+  min-width: 200px;
+}
+.wide {
+  width: 100%;
+}

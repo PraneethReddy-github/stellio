@@ -1,0 +1,26 @@
+{
+  "name": "Wavecrest Software",
+  "description": "We make scheduling software.",
+  "jobs": [
+    {
+      "title": "Customer Success Manager",
+      "shortcode": "ABC123DEF4",
+      "code": "CS-1",
+      "employment_type": "Full-time",
+      "telecommuting": true,
+      "department": "Customer Success",
+      "url": "https://apply.workable.com/j/ABC123DEF4",
+      "shortlink": "https://apply.workable.com/j/ABC123DEF4",
+      "application_url": "https://apply.workable.com/j/ABC123DEF4/apply",
+      "published_on": "2026-11-03",
+      "created_at": "2026-11-01",
+      "country": "United Kingdom",
+      "city": "Bristol",
+      "state": "England",
+      "description": "<p>Help our customers succeed with Wavecrest. You will onboard accounts and run quarterly reviews.</p>",
+      "requirements": "<ul><li>2+ years in customer success</li><li>Excellent written English</li></ul>",
+      "benefits": "<ul><li>Remote-first</li><li>25 days of holiday</li></ul>"
+    },
+    { "title": "Other", "shortcode": "ZZZ999", "description": "<p>x</p>" }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "type": "object",
+  "properties": {
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["official_docs", "tutorial", "course", "book", "other"]
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": ["title", "url", "kind", "why"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["resources"],
+  "additionalProperties": false
+}

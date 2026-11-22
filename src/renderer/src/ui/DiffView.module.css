@@ -1,0 +1,56 @@
+.diff {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: var(--surface-1);
+  font: 12px/20px var(--font-mono);
+}
+.numCol {
+  width: 44px;
+}
+.colHead {
+  padding: var(--s-1) var(--s-3);
+  text-align: left;
+  font: 500 var(--fs-micro) / 20px var(--font-sans);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--line);
+}
+.hunk {
+  padding: var(--s-1) var(--s-3);
+  text-align: left;
+  font: 500 var(--fs-micro) / 20px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.no {
+  padding: 0 var(--s-2);
+  text-align: right;
+  vertical-align: top;
+  color: var(--text-3);
+  user-select: none;
+  border-left: 2px solid transparent;
+}
+.text {
+  padding: 0 var(--s-2);
+  vertical-align: top;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.gap {
+  background: var(--surface-2);
+}
+.del {
+  border-left-color: var(--bad);
+}
+.add {
+  border-left-color: var(--ok);
+}
+.none {
+  color: var(--text-2);
+}

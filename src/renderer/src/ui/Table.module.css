@@ -1,0 +1,77 @@
+.scroller {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--surface-1);
+}
+.scroller:focus-visible {
+  outline-offset: -2px;
+}
+.row {
+  display: grid;
+  grid-template-columns: var(--cols);
+  align-items: center;
+  height: var(--row);
+  border-bottom: 1px solid var(--line);
+  min-width: min-content;
+}
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-1);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.body {
+  box-shadow: inset 2px 0 transparent;
+}
+.body:hover {
+  background: var(--surface-2);
+}
+.selected,
+.selected:hover {
+  background: var(--surface-3);
+  box-shadow: inset 2px 0 var(--text-2);
+}
+.cell {
+  min-width: 0;
+  padding: 0 var(--s-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.right {
+  text-align: right;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+}
+button.sortBtn:hover {
+  color: var(--text);
+}
+.sortBtn svg {
+  width: 12px;
+  height: 12px;
+  color: var(--text);
+}
+.emptyRow {
+  padding: var(--s-5) var(--s-3);
+}

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Karriere: Senior DevOps Engineer (m/w/d) - Rheinwerk Systeme</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      .cookie-banner {
+        position: fixed;
+        bottom: 0;
+      }
+      body {
+        font-family: sans-serif;
+      }
+    </style>
+  </head>
+  <body onload="init()">
+    <form method="post" action="/page.aspx" id="aspnetForm">
+      <div id="cookie" class="cookie-banner" role="dialog">
+        <p>
+          We use cookies to improve your experience, for analytics and for advertising. By clicking "Accept
+          all" you agree to the use of all cookies. <a href="/privacy">Privacy policy</a>
+        </p>
+        <button onclick="acceptAll()">Accept all</button><button onclick="settings()">Cookie settings</button>
+      </div>
+      <header class="site-header">
+        <a class="logo" href="/"
+          ><svg width="24" height="24"><circle cx="12" cy="12" r="10" /></svg> Rheinwerk Systeme GmbH</a
+        >
+        <nav>
+          <ul>
+            <li><a href="/jobs">Jobs</a></li>
+            <li><a href="/teams">Teams</a></li>
+            <li><a href="/life">Life</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><a href="/press">Press</a></li>
+            <li><a href="/investors">Investors</a></li>
+            <li><a href="/contact">Contact</a></li>
+            <li><a href="/login">Login</a></li>
+          </ul>
+        </nav>
+        <button class="menu" onclick="toggleMenu()">Menu</button>
+      </header>
+      <div class="breadcrumbs"><a href="/">Home</a> &gt; <a href="/jobs">Jobs</a> &gt; Current opening</div>
+      <main id="content">
+        <article class="job">
+          <h1>Senior DevOps Engineer (m/w/d)</h1>
+          <p>Köln &middot; Vollzeit &middot; Hybrid</p>
+          <h2>Über uns</h2>
+          <p>
+            Die Rheinwerk Systeme GmbH entwickelt Leitstellensoftware für Rettungsdienste. Unsere Plattform
+            muss rund um die Uhr laufen.
+          </p>
+          <h2>Ihre Aufgaben</h2>
+          <ul>
+            <li>Weiterentwicklung unserer Kubernetes-Plattform und der CI/CD-Pipelines (GitLab CI)</li>
+            <li>Infrastruktur als Code mit Terraform und Ansible</li>
+            <li>Monitoring und Alarmierung mit Prometheus und Grafana</li>
+            <li>Unterstützung der Entwicklungsteams bei Betrieb und Releases</li>
+          </ul>
+          <h2>Ihr Profil</h2>
+          <ul>
+            <li>Mindestens 5 Jahre Erfahrung im DevOps- oder SRE-Umfeld</li>
+            <li>Sehr gute Kenntnisse in Linux, Kubernetes und Terraform</li>
+            <li>Verhandlungssichere Deutschkenntnisse</li>
+            <li>Wünschenswert: Erfahrung in regulierten Umgebungen (KRITIS)</li>
+          </ul>
+          <h2>Wir bieten</h2>
+          <p>
+            Ein unbefristeter Vertrag, 30 Tage Urlaub, Weiterbildungsbudget und ein Dienstrad. Ein Gehalt
+            nennen wir im Gespräch.
+          </p>
+        </article>
+        <aside class="share">
+          <p>Share this job</p>
+          <a href="https://twitter.example.test/share?u=1" onclick="track('tw')">Twitter</a>
+          <a href="https://linkedin.example.test/share?u=1">LinkedIn</a>
+          <a href="javascript:window.print()">Print</a>
+        </aside>
+        <section class="related">
+          <h2>Similar jobs</h2>
+          <ul>
+            <li><a href="/jobs/1">Other opening 1 - Vertriebsmitarbeiter, Köln</a></li>
+            <li><a href="/jobs/2">Other opening 2 - Buchhalter, Köln</a></li>
+            <li><a href="/jobs/3">Other opening 3 - Werkstudent Marketing, Köln</a></li>
+            <li><a href="/jobs/4">Other opening 4 - Projektleiter, Düsseldorf</a></li>
+            <li><a href="/jobs/5">Other opening 5 - Kundenservice, Remote</a></li>
+            <li><a href="/jobs/6">Other opening 6 - Praktikum, Köln</a></li>
+          </ul>
+        </section>
+        <section class="newsletter">
+          <h3>Get job alerts</h3>
+          <form action="/subscribe" method="post">
+            <input type="email" name="email" placeholder="you@example.com" /><button type="submit">
+              Subscribe
+            </button>
+          </form>
+        </section>
+      </main>
+      <footer>
+        <ul>
+          <li><a href="/imprint">Imprint</a></li>
+          <li><a href="/privacy">Privacy</a></li>
+          <li><a href="/terms">Terms</a></li>
+          <li><a href="/accessibility">Accessibility</a></li>
+        </ul>
+        <p>&copy; 2026 Rheinwerk Systeme GmbH. All rights reserved.</p>
+      </footer>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        gtag('js', new Date());
+        function acceptAll() {
+          document.getElementById('cookie').remove();
+        }
+      </script>
+      <script src="https://cdn.example.test/tracker.js" async></script>
+      <noscript><img src="https://px.example.test/p.gif" width="1" height="1" /></noscript>
+      <iframe src="https://ads.example.test/frame" style="display: none"></iframe>
+    </form>
+  </body>
+</html>

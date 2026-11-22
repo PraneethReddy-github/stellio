@@ -1,0 +1,38 @@
+.list {
+  display: flex;
+  gap: var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.trigger {
+  position: relative;
+  height: 32px;
+  padding: 0 var(--s-1);
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  transition: color var(--t-fast) var(--ease);
+}
+.trigger:hover:not(:disabled) {
+  color: var(--text);
+}
+.trigger:disabled {
+  opacity: 0.45;
+}
+.trigger[data-state='active'] {
+  color: var(--text);
+}
+.trigger[data-state='active']::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: var(--text);
+}
+.trigger:focus-visible {
+  outline-offset: -2px;
+}
+.content {
+  padding-top: var(--s-4);
+}

@@ -1,0 +1,146 @@
+.today {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding-bottom: var(--s-6);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+.cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-6) var(--s-6);
+}
+.dim {
+  color: var(--text-3);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.link {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  text-underline-offset: 2px;
+}
+.link:hover {
+  color: var(--text);
+}
+.statusLine {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding-top: var(--s-2);
+}
+.now {
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  color: var(--text-3);
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: var(--row);
+  padding: 0 var(--s-1);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  text-decoration: none;
+}
+.row:hover {
+  background: var(--surface-2);
+}
+.rowTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fit {
+  font: var(--fs-base) / 1.2 var(--font-mono);
+  min-width: 3ch;
+  color: var(--text);
+}
+.funnel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 40px 44px;
+  align-items: center;
+  gap: var(--s-3);
+}
+.stepLabel {
+  font: var(--fs-micro) / 1.2 var(--font-mono);
+  color: var(--text-3);
+}
+.track {
+  display: block;
+  height: 16px;
+  background: var(--surface-1);
+}
+.fill {
+  display: block;
+  height: 100%;
+  min-width: 1px;
+  background: var(--text-2);
+}
+.stepCount {
+  font: var(--fs-base) / 1.2 var(--font-mono);
+  text-align: right;
+}
+.stepPct {
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  color: var(--text-3);
+}
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  overflow-x: auto;
+  padding-top: var(--s-1);
+}
+.axis {
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.skill {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-1);
+  border-bottom: 1px solid var(--line);
+}
+.sub {
+  margin-top: var(--s-2);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.scan {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}

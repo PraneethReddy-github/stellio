@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "properties": {
+    "fit_score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["apply", "stretch", "skip"]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "verdict_reason": {
+      "type": "string"
+    },
+    "matched": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "requirement": {
+            "type": "string"
+          },
+          "evidence_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": ["requirement", "evidence_ids", "note"],
+        "additionalProperties": false
+      }
+    },
+    "missing_skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string"
+          },
+          "importance": {
+            "type": "string",
+            "enum": ["required", "preferred"]
+          },
+          "have_adjacent": {
+            "type": "string"
+          }
+        },
+        "required": ["skill", "importance"],
+        "additionalProperties": false
+      }
+    },
+    "missing_experience": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "red_flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "fit_score",
+    "verdict",
+    "summary",
+    "verdict_reason",
+    "matched",
+    "missing_skills",
+    "missing_experience",
+    "red_flags",
+    "strengths"
+  ],
+  "additionalProperties": false
+}

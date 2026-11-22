@@ -1,0 +1,73 @@
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-base);
+}
+.caption {
+  caption-side: top;
+  text-align: left;
+  padding-bottom: var(--s-2);
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.table th,
+.table td {
+  padding: var(--s-1) var(--s-2) var(--s-1) 0;
+  height: var(--row);
+  text-align: left;
+  font-weight: 400;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.table thead th {
+  height: auto;
+  padding-bottom: var(--s-1);
+  font-size: var(--fs-micro);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.table tbody th {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.table .num {
+  width: 3.5rem;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-2);
+}
+.cell {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.track {
+  flex: 1;
+  min-width: 48px;
+  height: 8px;
+  background: var(--line);
+}
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--text-2);
+}
+.value {
+  min-width: 4ch;
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.table .muted th,
+.table .muted td,
+.table .muted .num {
+  color: var(--text-3);
+}

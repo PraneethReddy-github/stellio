@@ -1,0 +1,42 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.block {
+  min-width: 0;
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+}
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-6);
+}
+.meters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 200px));
+  gap: var(--s-5);
+}
+.charts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-7);
+}
+.tableBox {
+  height: 360px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+}
+.tableBox[data-density='compact'] {
+  height: auto;
+  min-height: 120px;
+}
+.editor {
+  max-width: 720px;
+}

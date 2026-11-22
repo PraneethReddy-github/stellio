@@ -1,0 +1,14 @@
+out/
+dist/
+release/
+node_modules/
+spikes/
+seed/
+docs/
+coverage/
+test-results/
+playwright-report/
+package-lock.json
+*.md
+.claude/
+.impeccable/

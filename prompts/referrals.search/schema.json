@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "full_name": { "type": "string" },
+          "title": { "type": "string" },
+          "company": { "type": "string" },
+          "location": { "type": "string" },
+          "profile_urls": { "type": "array", "items": { "type": "string" } },
+          "public_contact": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": { "type": "string", "enum": ["email", "contact_form", "other"] },
+                "value": { "type": "string" },
+                "source_url": { "type": "string" }
+              },
+              "required": ["kind", "value", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": { "type": "string" },
+                "source_url": { "type": "string" }
+              },
+              "required": ["text", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "why": { "type": "string" }
+        },
+        "required": [
+          "full_name",
+          "title",
+          "company",
+          "location",
+          "profile_urls",
+          "public_contact",
+          "facts",
+          "why"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["candidates"],
+  "additionalProperties": false
+}

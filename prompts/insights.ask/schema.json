@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "answer": {
+      "type": "string"
+    },
+    "numbers_used": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "required": ["label", "value"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["answer", "numbers_used"],
+  "additionalProperties": false
+}

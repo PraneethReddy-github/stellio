@@ -1,0 +1,31 @@
+{
+  "id": "5f3e0f6a-1b2c-4d3e-8f90-123456789abc",
+  "text": "Backend Engineer, Payments",
+  "categories": {
+    "commitment": "Full-time",
+    "department": "Engineering",
+    "location": "Amsterdam",
+    "team": "Payments",
+    "allLocations": ["Amsterdam", "Remote - Netherlands"]
+  },
+  "country": "NL",
+  "description": "<div>Marigold Pay builds payment tooling for merchants. You will own services that settle millions of transactions a day.</div>",
+  "descriptionPlain": "Marigold Pay builds payment tooling for merchants. You will own services that settle millions of transactions a day.",
+  "lists": [
+    {
+      "text": "What you will do",
+      "content": "<li>Design and operate Go services</li><li>Improve our PostgreSQL schemas</li>"
+    },
+    {
+      "text": "What you bring",
+      "content": "<li>4+ years of backend experience</li><li>Experience with payment systems is a plus</li>"
+    }
+  ],
+  "additional": "<div>We offer 28 days of vacation and a pension plan.</div>",
+  "additionalPlain": "We offer 28 days of vacation and a pension plan.",
+  "hostedUrl": "https://jobs.lever.co/marigold/5f3e0f6a-1b2c-4d3e-8f90-123456789abc",
+  "applyUrl": "https://jobs.lever.co/marigold/5f3e0f6a-1b2c-4d3e-8f90-123456789abc/apply",
+  "createdAt": 1760000000000,
+  "workplaceType": "hybrid",
+  "salaryRange": { "currency": "EUR", "interval": "per-year-salary", "min": 70000, "max": 90000 }
+}

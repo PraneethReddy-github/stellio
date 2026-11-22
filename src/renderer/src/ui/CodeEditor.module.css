@@ -1,0 +1,10 @@
+.host {
+  min-height: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: var(--surface-1);
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+}

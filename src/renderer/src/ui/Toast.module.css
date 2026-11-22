@@ -1,0 +1,109 @@
+.viewport {
+  position: fixed;
+  z-index: 80;
+  right: var(--s-4);
+  bottom: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  box-shadow: var(--float-shadow);
+  animation: in var(--t-med) var(--ease);
+}
+.toast[data-swipe='move'] {
+  transform: translateX(var(--radix-toast-swipe-move-x));
+}
+.toast[data-swipe='end'] {
+  animation: out var(--t-fast) var(--ease) forwards;
+}
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.ok {
+  background: var(--ok);
+}
+.warn {
+  background: var(--warn);
+}
+.bad {
+  background: var(--bad);
+}
+.neutral {
+  background: var(--text-3);
+}
+.text {
+  flex: 1;
+  min-width: 0;
+}
+.title {
+  font-weight: 500;
+}
+.description {
+  margin-top: 2px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.action,
+.close {
+  flex: none;
+  height: 24px;
+  padding: 0 var(--s-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: transparent;
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition:
+    background var(--t-fast) var(--ease),
+    border-color var(--t-fast) var(--ease);
+}
+.action:hover,
+.close:hover {
+  background: var(--surface-3);
+  border-color: var(--text-3);
+}
+.close {
+  display: inline-flex;
+  align-items: center;
+  width: 24px;
+  padding: 0;
+  justify-content: center;
+  border-color: transparent;
+  color: var(--text-2);
+}
+.close svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.5;
+}
+@keyframes in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+@keyframes out {
+  to {
+    opacity: 0;
+    transform: translateX(var(--radix-toast-swipe-end-x));
+  }
+}

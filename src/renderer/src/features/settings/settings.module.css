@@ -1,0 +1,227 @@
+.layout {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+.index {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+}
+.indexItem {
+  height: var(--row);
+  padding: 0 var(--s-2);
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  text-align: left;
+}
+.indexItem:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-width: 760px;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  scroll-margin-top: var(--s-4);
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+.stack > * {
+  max-width: 100%;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s-3) var(--s-4);
+  align-self: stretch;
+}
+.section > .fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.buttons {
+  display: flex;
+  gap: var(--s-2);
+}
+.quiet {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.error {
+  color: var(--bad);
+  font-size: var(--fs-sm);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text);
+}
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+}
+.statusKey {
+  width: 88px;
+  color: var(--text-2);
+}
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  align-self: stretch;
+  max-width: 360px;
+}
+
+.tasks {
+  align-self: stretch;
+  border-collapse: collapse;
+}
+.tasks th,
+.tasks td {
+  padding: var(--s-1) var(--s-3) var(--s-1) 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+.tasks thead th {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.tasks td {
+  width: 220px;
+  padding-block: var(--s-1);
+}
+.taskName {
+  font: 400 var(--fs-sm) / var(--row) var(--font-mono);
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.custom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-top: var(--s-1);
+}
+
+/* Discovery sections */
+.rows {
+  align-self: stretch;
+  border-collapse: collapse;
+}
+.rows th,
+.rows td {
+  padding: var(--s-1) var(--s-3) var(--s-1) 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+  min-height: var(--row);
+}
+.rows thead th {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.wide {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  color: var(--text-2);
+}
+.end {
+  text-align: right;
+  white-space: nowrap;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.errorText {
+  color: var(--bad);
+}
+.link {
+  color: var(--text);
+  text-underline-offset: 2px;
+}
+.sourceName {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.subTitle {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.addRow {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: start;
+}
+.addRow > button {
+  margin-top: 21px;
+}
+.profileForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3) var(--s-4);
+}
+.profileForm > p,
+.seniority,
+.switches {
+  grid-column: 1 / -1;
+}
+.seniority {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.seniority legend {
+  width: 100%;
+  margin-bottom: var(--s-1);
+  color: var(--text-2);
+}
+.switches {
+  display: flex;
+  gap: var(--s-5);
+}
+.unit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  align-self: stretch;
+}

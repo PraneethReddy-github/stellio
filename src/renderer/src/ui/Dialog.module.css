@@ -1,0 +1,67 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--scrim);
+  animation: fade var(--t-med) var(--ease);
+}
+.panel {
+  position: fixed;
+  z-index: 51;
+  top: 14vh;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  max-height: 76vh;
+  padding: var(--s-4);
+  transform: translateX(-50%);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-2);
+  background: var(--surface-2);
+  box-shadow: var(--float-shadow);
+  animation: rise var(--t-med) var(--ease);
+}
+.sm {
+  width: min(400px, calc(100vw - 32px));
+}
+.md {
+  width: min(560px, calc(100vw - 32px));
+}
+.lg {
+  width: min(800px, calc(100vw - 32px));
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.title {
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+.description {
+  color: var(--text-2);
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+}

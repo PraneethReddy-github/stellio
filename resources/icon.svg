@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Stellio</title>
+  <!-- Graphite tile, one signal-orange body, one orbit hairline. Flat colour only (docs/09 §2). -->
+  <rect width="512" height="512" rx="112" fill="#0B0C0E"/>
+  <ellipse cx="256" cy="256" rx="176" ry="72" transform="rotate(-28 256 256)" fill="none" stroke="#FF5B1F" stroke-width="8"/>
+  <circle cx="256" cy="256" r="66" fill="#FF5B1F"/>
+</svg>

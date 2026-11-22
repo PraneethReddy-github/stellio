@@ -1,0 +1,95 @@
+.apply {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  max-width: 760px;
+  padding-bottom: var(--s-6);
+}
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.item {
+  display: grid;
+  grid-template-columns: 20px 160px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 40px;
+  border-bottom: 1px solid var(--line);
+}
+.mark {
+  display: inline-flex;
+  color: var(--text-3);
+}
+.mark[data-mark='done'] {
+  color: var(--ok);
+}
+.mark svg {
+  width: 16px;
+  height: 16px;
+}
+.itemLabel {
+  color: var(--text-2);
+}
+.itemBody {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.field {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 40px;
+  padding-left: 32px;
+  border-bottom: 1px solid var(--line);
+}
+.fieldLabel {
+  color: var(--text-2);
+}
+.fieldValue {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.dim {
+  color: var(--text-3);
+}
+.strong {
+  font-weight: 500;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.link {
+  color: var(--text);
+  text-underline-offset: 2px;
+}
+.textLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}

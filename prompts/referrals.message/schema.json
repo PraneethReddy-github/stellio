@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "connection_note": { "type": "string" },
+    "subject": { "type": "string" },
+    "body": { "type": "string" },
+    "language": { "type": "string", "enum": ["en", "de"] }
+  },
+  "required": ["connection_note", "subject", "body", "language"],
+  "additionalProperties": false
+}

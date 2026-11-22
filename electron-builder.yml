@@ -1,0 +1,48 @@
+appId: app.stellio.desktop
+productName: Stellio
+directories:
+  output: release
+  buildResources: resources
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+  # Only the linux-x64 better-sqlite3 binary is needed (npmRebuild is off, prebuilds ship in the package).
+  - '!node_modules/better-sqlite3/{deps,src}/**'
+  - '!node_modules/better-sqlite3/prebuilds/{darwin,win32}-*'
+  - '!node_modules/better-sqlite3/prebuilds/linux-arm64.node'
+  - '!node_modules/better-sqlite3/prebuilds/linuxmusl-*'
+  # pdfjs-dist's optional canvas renderer (66 MB): main only extracts text, never renders.
+  - '!node_modules/@napi-rs/**'
+  - '!**/*.d.ts'
+  - '!**/*.md'
+asarUnpack:
+  - '**/*.node'
+# The UI is English only.
+electronLanguages: [en-US]
+linux:
+  target: [AppImage, deb]
+  category: Office
+  maintainer: Stellio
+  synopsis: Local-first career agent
+  icon: resources/icons
+  syncDesktopName: true
+  desktop:
+    entry:
+      Keywords: jobs;resume;cv;career;
+# Hardening for release builds (`npm run dist`). Playwright attaches through the Node inspector, so e2e runs
+# against `npm run dist:e2e`, the same build with those three fuses left on.
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  onlyLoadAppFromAsar: true
+  # Not supported on Linux; the asar is root-owned in the .deb and read-only in the AppImage.
+  enableEmbeddedAsarIntegrityValidation: false
+  grantFileProtocolExtraPrivileges: false
+artifactName: ${productName}-${version}-${arch}.${ext}
+npmRebuild: false
+publish: null
+extraResources:
+  - from: seed
+    to: seed

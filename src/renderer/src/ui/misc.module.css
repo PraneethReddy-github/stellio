@@ -1,0 +1,77 @@
+.kbdGroup {
+  display: inline-flex;
+  gap: 2px;
+}
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: var(--surface-1);
+  color: var(--text-2);
+  font: 500 10px/1 var(--font-mono);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.signal {
+  background: var(--signal);
+}
+.ok {
+  background: var(--ok);
+}
+.warn {
+  background: var(--warn);
+}
+.bad {
+  background: var(--bad);
+}
+.info {
+  background: var(--info);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+.tag_ok {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.tag_warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.tag_bad {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+.tag_signal {
+  border-color: var(--signal);
+  color: var(--signal);
+}
+.tag_info {
+  border-color: var(--info);
+  color: var(--info);
+}

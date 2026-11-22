@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "properties": {
+    "salutation": {
+      "type": ["string", "null"]
+    },
+    "paragraphs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["text", "source_ids"],
+        "additionalProperties": false
+      }
+    },
+    "closing": {
+      "type": ["string", "null"]
+    }
+  },
+  "required": ["salutation", "paragraphs", "closing"],
+  "additionalProperties": false
+}

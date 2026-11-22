@@ -1,0 +1,40 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.title {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.actions {
+  display: flex;
+  gap: var(--s-2);
+  margin-left: auto;
+}
+.kv {
+  display: grid;
+}
+.pair {
+  display: grid;
+  grid-template-columns: minmax(96px, max-content) 1fr;
+  gap: var(--s-4);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.pair dt {
+  color: var(--text-2);
+}
+.pair dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

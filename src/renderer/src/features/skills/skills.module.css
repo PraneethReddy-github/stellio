@@ -1,0 +1,190 @@
+.form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.evidence {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.diff {
+  max-height: 260px;
+  overflow: auto;
+  margin-top: var(--s-2);
+}
+.micro {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.muted {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+}
+.warn {
+  margin-top: var(--s-2);
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--warn);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+/* Skills panel (resume inspector) */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  height: 100%;
+  min-height: 0;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.detail {
+  min-height: 40px;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.tableBox {
+  flex: 1;
+  min-height: 160px;
+  border: 1px solid var(--line);
+}
+.gone {
+  color: var(--text-3);
+}
+
+/* Skills screen */
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-height: 0;
+}
+.screenTable {
+  border: 1px solid var(--line);
+}
+.screenTable > [role='grid'] {
+  height: auto;
+  max-height: clamp(280px, calc(100vh - 300px), 720px);
+}
+.rowActions {
+  display: flex;
+  gap: var(--s-1);
+  justify-content: flex-end;
+}
+.hint {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+
+/* Learning roadmap */
+.whatIf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+.picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.picker legend {
+  width: 100%;
+  margin-bottom: var(--s-1);
+  padding: 0;
+}
+.whatIfLine {
+  font-size: var(--fs-md);
+}
+.moved {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.roadmap {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.roadItem {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.prio {
+  font: 500 var(--fs-lg) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.roadMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+.roadTitle {
+  font-size: var(--fs-md);
+  font-weight: 500;
+}
+.roadSummary {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.roadSide {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-2);
+}
+.resources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  margin-top: var(--s-1);
+}
+.resList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fs-sm);
+}
+.resList a {
+  color: var(--text);
+  text-underline-offset: 2px;
+}
+.resWhy {
+  color: var(--text-2);
+}
+.resActions {
+  display: flex;
+  gap: var(--s-1);
+}

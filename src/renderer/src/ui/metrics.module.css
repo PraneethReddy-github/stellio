@@ -1,0 +1,108 @@
+.meter {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  min-width: 72px;
+}
+.track {
+  flex: 1;
+  height: 2px;
+  background: var(--line-strong);
+}
+.fill {
+  display: block;
+  height: 100%;
+}
+.ok {
+  background: var(--ok);
+}
+.warn {
+  background: var(--warn);
+}
+.bad {
+  background: var(--bad);
+}
+.score {
+  min-width: 3ch;
+  text-align: right;
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.value {
+  font: 500 var(--fs-stat) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.delta {
+  font: var(--fs-sm) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.deltaLabel {
+  font-family: var(--font-sans);
+  color: var(--text-3);
+}
+.d_neutral {
+  color: var(--text-2);
+}
+.d_ok {
+  color: var(--ok);
+}
+.d_warn {
+  color: var(--warn);
+}
+.d_bad {
+  color: var(--bad);
+}
+.d_info {
+  color: var(--info);
+}
+.d_signal {
+  color: var(--signal);
+}
+
+.bars {
+  display: block;
+  max-width: 100%;
+  overflow: visible;
+}
+.baseline {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.b_neutral {
+  fill: var(--text-2);
+}
+.b_signal {
+  fill: var(--signal);
+}
+.b_ok {
+  fill: var(--ok);
+}
+.b_warn {
+  fill: var(--warn);
+}
+.b_bad {
+  fill: var(--bad);
+}
+.b_info {
+  fill: var(--info);
+}
+.barValue,
+.barLabel {
+  font: 11px var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.barValue {
+  fill: var(--text);
+}
+.barLabel {
+  fill: var(--text-3);
+}

@@ -1,0 +1,346 @@
+{
+  "type": "object",
+  "properties": {
+    "front": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "headline": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "links": {
+          "type": "object",
+          "properties": {
+            "linkedin": {
+              "type": "string"
+            },
+            "github": {
+              "type": "string"
+            },
+            "portfolio": {
+              "type": "string"
+            }
+          },
+          "required": ["linkedin", "github", "portfolio"],
+          "additionalProperties": false
+        },
+        "work_authorization": {
+          "type": "string"
+        },
+        "notice_period": {
+          "type": "string"
+        },
+        "languages_spoken": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string"
+              },
+              "level": {
+                "type": "string"
+              }
+            },
+            "required": ["language", "level"],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "name",
+        "headline",
+        "email",
+        "phone",
+        "location",
+        "links",
+        "work_authorization",
+        "notice_period",
+        "languages_spoken"
+      ],
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "string"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "enum": ["language", "framework", "tool", "cloud", "data", "practice", "domain", "soft"]
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "years": {
+            "type": "number",
+            "minimum": 0
+          },
+          "last_used": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["have", "learning", "want"]
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[^,\\s]([^,]*[^,\\s])?$"
+            }
+          }
+        },
+        "required": ["skill", "category", "level", "years", "last_used", "evidence", "status", "aliases"],
+        "additionalProperties": false
+      }
+    },
+    "experience": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "education": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "awards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "publications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meta": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z_]+$"
+            },
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "title", "meta", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "front",
+    "summary",
+    "skills",
+    "experience",
+    "projects",
+    "education",
+    "certifications",
+    "awards",
+    "publications",
+    "notes"
+  ],
+  "additionalProperties": false
+}

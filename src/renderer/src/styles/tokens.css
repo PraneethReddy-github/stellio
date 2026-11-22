@@ -1,0 +1,127 @@
+/*
+ * Design tokens — docs/09-design-system.md §3. Components use these only (no raw colours).
+ * Theme: dark is default; light follows the OS unless the user pins one via [data-theme].
+ */
+:root {
+  --bg: #0b0c0e;
+  --surface-1: #111316;
+  --surface-2: #171a1e;
+  --surface-3: #1d2126;
+  --line: #23272d;
+  --line-strong: #323840;
+  --text: #e7e9ec;
+  --text-2: #9aa1aa;
+  --text-3: #7d858f;
+  --signal: #ff5b1f;
+  --signal-hover: #ff7340;
+  --signal-ink: #0b0c0e;
+  --signal-soft: rgb(255 91 31 / 0.12);
+  --ok: #5bbe8a;
+  --warn: #e0b341;
+  --bad: #e5604f;
+  --info: #7fa7d9;
+  --ok-soft: rgb(91 190 138 / 0.1);
+  --warn-soft: rgb(224 179 65 / 0.1);
+  --bad-soft: rgb(229 96 79 / 0.1);
+  --scrim: rgb(0 0 0 / 0.55);
+  --float-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --fs-micro: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 15px;
+  --fs-lg: 18px;
+  --fs-xl: 24px;
+  --fs-stat: 32px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  --r-1: 2px;
+  --r-2: 4px;
+
+  --row: 32px;
+  --rail: 56px;
+  --rail-open: 200px;
+  --topbar: 40px;
+  --inspector: 360px;
+
+  --t-fast: 120ms;
+  --t-med: 180ms;
+  --t-slow: 240ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-density='compact'] {
+  --row: 26px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --bg: #f3f3f0;
+    --surface-1: #fafaf8;
+    --surface-2: #ffffff;
+    --surface-3: #f0f0ec;
+    --line: #e2e2dc;
+    --line-strong: #cbcbc3;
+    --text: #111214;
+    --text-2: #555a60;
+    --text-3: #656a70;
+    --signal: #e8470b;
+    --signal-hover: #ee5a22;
+    --signal-ink: #111214;
+    --signal-soft: rgb(232 71 11 / 0.08);
+    --ok: #237a4f;
+    --warn: #8a6400;
+    --bad: #b8382a;
+    --info: #2f5f99;
+    --ok-soft: rgb(35 122 79 / 0.08);
+    --warn-soft: rgb(138 100 0 / 0.08);
+    --bad-soft: rgb(184 56 42 / 0.08);
+    --scrim: rgb(17 18 20 / 0.32);
+    --float-shadow: 0 8px 24px rgb(17 18 20 / 0.12);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --bg: #f3f3f0;
+  --surface-1: #fafaf8;
+  --surface-2: #ffffff;
+  --surface-3: #f0f0ec;
+  --line: #e2e2dc;
+  --line-strong: #cbcbc3;
+  --text: #111214;
+  --text-2: #555a60;
+  --text-3: #656a70;
+  --signal: #e8470b;
+  --signal-hover: #ee5a22;
+  --signal-ink: #111214;
+  --signal-soft: rgb(232 71 11 / 0.08);
+  --ok: #237a4f;
+  --warn: #8a6400;
+  --bad: #b8382a;
+  --info: #2f5f99;
+  --ok-soft: rgb(35 122 79 / 0.08);
+  --warn-soft: rgb(138 100 0 / 0.08);
+  --bad-soft: rgb(184 56 42 / 0.08);
+  --scrim: rgb(17 18 20 / 0.32);
+  --float-shadow: 0 8px 24px rgb(17 18 20 / 0.12);
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --t-fast: 0ms;
+    --t-med: 0ms;
+    --t-slow: 0ms;
+  }
+}

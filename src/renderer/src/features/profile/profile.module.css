@@ -1,0 +1,261 @@
+.tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  padding-right: var(--s-4);
+}
+.tabBar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+.tabBar > :first-child {
+  flex: 1;
+  border-bottom: 0;
+}
+.pane {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-top: var(--s-4);
+}
+.editorPane {
+  flex: 1;
+  min-height: 0;
+  padding-top: var(--s-3);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  margin-bottom: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--warn);
+  background: var(--surface-1);
+}
+.banner p {
+  flex: 1;
+}
+.bannerActions {
+  display: flex;
+  gap: var(--s-2);
+}
+.errorBanner {
+  margin-bottom: var(--s-3);
+}
+.errorBanner > div {
+  max-width: none;
+  padding: var(--s-2) 0;
+}
+
+.overview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-width: 880px;
+  padding-bottom: var(--s-6);
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3) var(--s-4);
+}
+.skillsTable {
+  border: 1px solid var(--line);
+}
+.muted {
+  color: var(--text-2);
+}
+.note {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.entriesNote {
+  margin-top: calc(-1 * var(--s-1));
+}
+.entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.entry {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) 96px;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: var(--row);
+  padding: var(--s-1) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+button.entry:hover {
+  background: var(--surface-2);
+}
+.entry > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.right {
+  text-align: right;
+}
+
+.diagSummary {
+  margin-bottom: var(--s-3);
+  font-size: var(--fs-base);
+  color: var(--text-2);
+}
+.diagSummary .mono {
+  font-size: inherit;
+  color: var(--text);
+}
+.diagList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.diagRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  width: 100%;
+  padding: var(--s-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+}
+button.diagRow:hover {
+  background: var(--surface-2);
+}
+.diagDot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 72px;
+  height: 1.45em;
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.diagMsg {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.diagLine {
+  flex: none;
+  font: var(--fs-sm) / 1.45 var(--font-mono);
+  color: var(--text-2);
+}
+
+.history {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: var(--s-4);
+  height: 100%;
+  min-height: 0;
+}
+.historyList {
+  min-height: 0;
+  border: 1px solid var(--line);
+}
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+  min-height: 0;
+}
+.detailHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.detailHead > div {
+  flex: 1;
+  min-width: 0;
+}
+.detailTitle {
+  overflow-wrap: anywhere;
+}
+.detailBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+}
+.dash {
+  color: var(--text-3);
+}
+
+/* The diff is the only scroll region in the review dialog; counts and notes stay put. */
+.reviewBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-height: 0;
+}
+.reviewDiff {
+  flex: 1;
+  min-height: 120px;
+  overflow: auto;
+  border: 1px solid var(--line);
+}
+.dropped {
+  color: var(--bad);
+}
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-3);
+}
+.formGrid .wide {
+  grid-column: 1 / -1;
+}
+.footerSpacer {
+  margin-right: auto;
+}
+.importing {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+}
+
+.suggestList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  font-size: var(--fs-sm);
+}
+.suggestNote {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+
+.suggestList .suggestNote {
+  display: block;
+}

@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "skill": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "learn_estimate_hours": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["skill", "rationale", "learn_estimate_hours"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["rows"],
+  "additionalProperties": false
+}

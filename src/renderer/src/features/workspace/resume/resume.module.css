@@ -1,0 +1,215 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-bottom: var(--s-5);
+}
+.running {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  max-width: 640px;
+}
+.running > :first-child {
+  flex: 1;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.quiet {
+  color: var(--text-3);
+  font-size: var(--fs-sm);
+}
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  padding: var(--s-2) var(--s-3);
+  border-left: 2px solid var(--warn);
+  background: var(--surface-1);
+}
+.banner p {
+  flex: 1;
+}
+
+/* Version header */
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 28px;
+}
+.version {
+  font: 500 var(--fs-md) / 1.2 var(--font-mono);
+}
+.meta {
+  color: var(--text-3);
+  font: var(--fs-sm) / 1.4 var(--font-mono);
+}
+.head > :last-child {
+  margin-left: auto;
+}
+
+/* Editor | preview | inspector */
+.work {
+  height: clamp(420px, calc(100vh - 430px), 880px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  overflow: hidden;
+}
+.work aside {
+  width: 460px;
+}
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.pane + .pane {
+  border-left: 1px solid var(--line);
+}
+.paneHead {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+  min-height: var(--row);
+  padding: 0 var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+.micro {
+  font-size: var(--fs-micro);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.paneHead > :last-child {
+  margin-left: auto;
+}
+.editorBox {
+  flex: 1;
+  min-height: 0;
+}
+.editorBox > div {
+  border: 0;
+  border-radius: 0;
+}
+.previewBox {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--s-3);
+  background: var(--surface-1);
+}
+.note {
+  padding: var(--s-1) var(--s-3);
+  border-bottom: 1px solid var(--line);
+  border-left: 2px solid var(--warn);
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--fs-sm);
+}
+
+/* Bottom bar */
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.revise {
+  flex: 1;
+  min-width: 260px;
+}
+.versionPick {
+  width: 168px;
+}
+.spacer {
+  flex: 1;
+}
+
+/* Inspector */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--line);
+}
+.item p {
+  margin: 0;
+}
+.itemText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.muted {
+  color: var(--text-2);
+  font-size: var(--fs-sm);
+}
+.flag {
+  padding-left: var(--s-3);
+  border-left: 2px solid var(--bad);
+}
+.score {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.score > :last-child {
+  flex: 1;
+}
+.scoreNum {
+  font: 500 var(--fs-xl) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.kw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+.diffBox {
+  overflow-x: auto;
+}
+/* The Skills tab needs room for its table. */
+.workWide aside {
+  width: min(840px, 68%);
+}
