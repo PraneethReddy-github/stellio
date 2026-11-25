@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.4 — 2026-11-25
+
+- Update from inside Stellio: the banner opens a "what is new" window with the changes of every version you missed. Download and install fetches the update, checks its SHA-256 and installs it (a .deb asks for your password, an AppImage is replaced in place); then restart with one click.
+
 ## 1.0.3 — 2026-11-25
 
 - Delete several at once: press Select above the Workspace job list, the Applications table or Referrals, pick rows, then Delete (one confirmation). Checkboxes show only while selecting.

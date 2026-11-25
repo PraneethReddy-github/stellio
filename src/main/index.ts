@@ -5,6 +5,7 @@ import type { IpcEventName, IpcEvents } from '@shared/ipc/contract';
 import { bootstrap, type AppContext } from './bootstrap';
 import { dispatch, UserError } from './ipc/dispatch';
 import { scanCommand } from './services/discovery/systemd';
+import { detectInstall } from './services/updates/install';
 import { createHandlers } from './ipc/handlers';
 import { hardenAllWebContents } from './platform/hardening';
 import { kwalletDisabled, withUserBins } from './platform/desktopEnv';
@@ -142,11 +143,18 @@ const timerCommand = (): string[] =>
   });
 
 /** E2E asks a local stand-in or nobody; dev builds ask only on "Check now". */
-const e2eUpdateUrl = process.env.STELLIO_E2E === '1' ? process.env.STELLIO_UPDATE_URL : undefined;
+const e2e = process.env.STELLIO_E2E === '1';
+const e2eUpdateUrl = e2e ? process.env.STELLIO_UPDATE_URL : undefined;
+const detected = detectInstall(process.env, process.execPath);
 const updates = {
   current: app.getVersion(),
-  autoAllowed: process.env.STELLIO_E2E === '1' ? e2eUpdateUrl !== undefined : app.isPackaged,
-  ...(e2eUpdateUrl ? { apiUrl: e2eUpdateUrl } : {}),
+  autoAllowed: e2e ? e2eUpdateUrl !== undefined : app.isPackaged,
+  // Never the system package manager from a test or a dev build.
+  install:
+    (app.isPackaged && !e2e) || (e2e && detected.kind === 'appimage')
+      ? detected
+      : ({ kind: 'manual' } as const),
+  ...(e2eUpdateUrl ? { apiUrl: `${e2eUpdateUrl}/releases`, downloadsUrl: `${e2eUpdateUrl}/download` } : {}),
 };
 
 /** `stellio --scan`: one scan, a notification, exit code 0 (done, or another scan already running) or 1. */

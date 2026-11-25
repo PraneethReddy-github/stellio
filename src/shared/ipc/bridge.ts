@@ -9,6 +9,7 @@ export const IPC_EVENT_PREFIX = 'stellio:event:';
 export const ipcEventNames: readonly IpcEventName[] = [
   'datafolder:changed',
   'latex:installProgress',
+  'updates:progress',
   'ai:usageLimit',
   'resume:progress',
   'cover:progress',

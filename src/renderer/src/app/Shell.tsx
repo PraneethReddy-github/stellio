@@ -5,6 +5,7 @@ import { CommandPalette, useCommandPalette } from './CommandPalette';
 import { NAV } from './nav';
 import { useGlobalShortcuts } from './shortcuts';
 import { UpdateBanner } from './UpdateBanner';
+import { UpdateDialog } from './UpdateDialog';
 import { UsageLimitBanner } from './UsageLimitBanner';
 import s from './Shell.module.css';
 
@@ -58,6 +59,7 @@ export function Shell(): React.JSX.Element {
         <Outlet />
       </main>
 
+      <UpdateDialog />
       <CommandPalette {...palette} />
       <Toaster />
     </div>

@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { Button, Field, KeyValue, Loading, SectionHeader, Select, Switch, useToast } from '../../ui';
 import { applyDensity, readDensity, useAppInfo, type Density } from '../../lib/settings';
 import { applyTheme, readThemePref, type ThemePref } from '../../lib/theme';
-import { useCheckUpdates, useSetUpdateSettings, useUpdateSettings, useUpdateStatus } from '../../lib/updates';
+import {
+  useCheckUpdates,
+  useSetUpdateSettings,
+  useUpdateDialog,
+  useUpdateSettings,
+  useUpdateStatus,
+} from '../../lib/updates';
 import s from './settings.module.css';
 
 const THEMES = [
@@ -75,6 +81,7 @@ function Updates(): React.JSX.Element {
   const set = useSetUpdateSettings();
   const check = useCheckUpdates();
   const update = useUpdateStatus().data?.available;
+  const setOpen = useUpdateDialog((st) => st.setOpen);
   return (
     <div className={s.stack}>
       {q.isError && <p className={s.error}>Could not read the update setting: {q.error.message}</p>}
@@ -93,8 +100,8 @@ function Updates(): React.JSX.Element {
         }
       />
       <p className={s.quiet}>
-        Asks GitHub for the newest release at start and once a day. Nothing about you is sent, and nothing is
-        downloaded or installed for you.
+        Asks GitHub for the newest release at start and once a day. Nothing about you is sent. Nothing is
+        downloaded until you press Download and install.
       </p>
       <div className={s.statusRow}>
         <Button busy={check.isPending} onClick={() => check.mutate()}>
@@ -106,9 +113,9 @@ function Updates(): React.JSX.Element {
           ) : update ? (
             <>
               Version {update.version} is available.{' '}
-              <a href={update.url} target="_blank" rel="noreferrer noopener" className={s.link}>
-                Open the release page
-              </a>
+              <Button size="sm" onClick={() => setOpen(true)}>
+                See what is new
+              </Button>
             </>
           ) : check.isSuccess ? (
             'You have the newest version.'

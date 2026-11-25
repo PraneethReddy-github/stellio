@@ -98,7 +98,7 @@ So a restore can itself be undone by restoring the `pre-restore` snapshot. Resto
 ## 10. Privacy
 
 - Everything is stored in your data folder and `~/.config/Stellio`. There is no telemetry and no account.
-- Network traffic is limited to: the job sources you enabled, job pages you open or paste, the Claude CLI (which sends the prompt, your profile excerpt and the posting to Anthropic under your own subscription), the Tectonic download and LaTeX package fetches you start, Overleaf when you press Open in Overleaf, and the update check: at start and once a day Stellio asks GitHub for the newest release (nothing about you is sent). Switch it off in Settings, General.
+- Network traffic is limited to: the job sources you enabled, job pages you open or paste, the Claude CLI (which sends the prompt, your profile excerpt and the posting to Anthropic under your own subscription), the Tectonic download and LaTeX package fetches you start, Overleaf when you press Open in Overleaf, and the update check: at start and once a day Stellio asks GitHub for the newest release (nothing about you is sent) and downloads the update from there only when you press Download and install. Switch it off in Settings, General.
 - Stellio never applies for you and never logs in to a job site or social network for you.
 - The Adzuna key is encrypted with your system keyring.
 - LaTeX compiles run in a sandbox with no network and no access to your files.
@@ -107,7 +107,7 @@ So a restore can itself be undone by restoring the `pre-restore` snapshot. Resto
 
 **How do I delete several jobs or people?** Press Select above the list (Workspace, Applications table, Referrals), pick rows, then Delete. Esc leaves the mode. A single job is deleted from its Status menu.
 
-**How do I update?** A banner tells you when a new version is out; Download opens its release page. Install the new .deb over the old one (`sudo apt install ./Stellio-<version>-amd64.deb`) or replace the AppImage. Your data folder is not touched.
+**How do I update?** A banner tells you when a new version is out. See what is new shows the changes; Download and install fetches the file from GitHub, checks its SHA-256 and installs it (a .deb asks for your password through the system prompt, an AppImage is replaced in place). Then press Restart Stellio. Your data folder is not touched. A copy installed any other way gets a link to the release page instead.
 
 **The Claude CLI is not found or not logged in.** Settings, AI shows the state. Install the CLI, run `claude` in a terminal once and log in, then reopen Settings (the check is cached for up to 5 minutes). Stellio runs it from an empty folder with your user settings turned off, so your own hooks and plugins do not affect results.
 

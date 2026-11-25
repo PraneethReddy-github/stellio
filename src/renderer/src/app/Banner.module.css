@@ -11,10 +11,6 @@
 .banner[data-tone='info'] {
   border-left-color: var(--info);
 }
-.link {
-  color: var(--text);
-  text-underline-offset: 2px;
-}
 .banner p {
   flex: 1;
   min-width: 0;

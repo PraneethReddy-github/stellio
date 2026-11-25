@@ -5,7 +5,7 @@ import { AiRunLogSchema, AiRunSchema, RunIdSchema } from '../ai/runs';
 import { AnalysisRecordSchema, JOB_STATES, JobDetailSchema, JobSummarySchema } from '../jobs/schemas';
 import { AiSettingsSchema } from '../settings/ai';
 import { NotificationSettingsSchema } from '../settings/notifications';
-import { UpdateSettingsSchema, UpdateStatusSchema } from '../settings/updates';
+import { UpdateSettingsSchema, UpdateStatusSchema, type UpdateProgress } from '../settings/updates';
 import { BackupEntrySchema } from '../backups';
 import { SetupPatchSchema, SetupStateSchema } from '../setup';
 import {
@@ -235,6 +235,13 @@ export const ipcContract = {
   /** May ask GitHub (at most daily, only when switched on). */
   'updates:status': { input: z.undefined(), output: UpdateStatusSchema },
   'updates:check': { input: z.undefined(), output: UpdateStatusSchema },
+  /** Downloads, verifies and installs `version`; progress arrives as `updates:progress` events. */
+  'updates:install': {
+    input: z.object({ version: z.string().regex(/^\d+\.\d+\.\d+$/) }),
+    output: UpdateStatusSchema,
+  },
+  'updates:cancel': { input: z.undefined(), output: z.object({ cancelled: z.boolean() }) },
+  'updates:restart': { input: z.undefined(), output: z.object({ restarting: z.literal(true) }) },
   /** First-run Setup checklist memory (dismissed, completed, rules reviewed). */
   'setup:get': { input: z.undefined(), output: SetupStateSchema },
   'setup:set': { input: SetupPatchSchema, output: SetupStateSchema },
@@ -751,6 +758,8 @@ export interface IpcEvents {
     received: number;
     total: number | null;
   };
+  /** Progress of `updates:install`. */
+  'updates:progress': UpdateProgress;
   /** A Claude run failed because the subscription's usage limit is reached. `message` is the CLI's text. */
   'ai:usageLimit': { message: string; resetsAt?: string };
   /** Stage of a running `resume:generate` / `resume:revise`; `issues` = blocking issues being fixed. */

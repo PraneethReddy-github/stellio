@@ -9,7 +9,10 @@ import { UserError, type IpcHandlers } from './dispatch';
 /** Relaunches the app (E2E only quits: the test starts it again on the same data folder). */
 function restartApp(): void {
   if (process.env.STELLIO_E2E !== '1') {
-    app.relaunch(process.env.APPIMAGE ? { execPath: process.env.APPIMAGE, args: [] } : undefined);
+    // By path, not the running binary: after an update the file behind it is the new one.
+    app.relaunch(
+      app.isPackaged ? { execPath: process.env.APPIMAGE ?? process.execPath, args: [] } : undefined,
+    );
   }
   app.quit();
 }
@@ -89,6 +92,13 @@ export function createHandlers(
     'updates:set': (v) => ctx.updates.set(v),
     'updates:status': () => ctx.updates.status(),
     'updates:check': () => ctx.updates.checkNow(),
+    'updates:install': ({ version }) => ctx.updates.install(version, (p) => emit('updates:progress', p)),
+    'updates:cancel': () => ({ cancelled: ctx.updates.cancel() }),
+    'updates:restart': () => {
+      if (!ctx.updates.restartAllowed()) throw new UserError('No update is waiting for a restart.');
+      setTimeout(restartApp, 200); // let the answer reach the window first
+      return { restarting: true as const };
+    },
     'setup:get': () => ctx.setup.get(),
     'setup:set': (v) => ctx.setup.set(v),
     'backups:list': () => ctx.backups.list(),
