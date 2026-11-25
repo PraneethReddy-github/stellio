@@ -4,6 +4,7 @@ import { Toaster } from '../ui/Toast';
 import { CommandPalette, useCommandPalette } from './CommandPalette';
 import { NAV } from './nav';
 import { useGlobalShortcuts } from './shortcuts';
+import { UpdateBanner } from './UpdateBanner';
 import { UsageLimitBanner } from './UsageLimitBanner';
 import s from './Shell.module.css';
 
@@ -48,7 +49,10 @@ export function Shell(): React.JSX.Element {
         </button>
       </header>
 
-      <UsageLimitBanner />
+      <div className={s.banners}>
+        <UsageLimitBanner />
+        <UpdateBanner />
+      </div>
 
       <main className={s.main} id="main">
         <Outlet />

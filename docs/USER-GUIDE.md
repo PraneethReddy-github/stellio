@@ -98,12 +98,14 @@ So a restore can itself be undone by restoring the `pre-restore` snapshot. Resto
 ## 10. Privacy
 
 - Everything is stored in your data folder and `~/.config/Stellio`. There is no telemetry and no account.
-- Network traffic is limited to: the job sources you enabled, job pages you open or paste, the Claude CLI (which sends the prompt, your profile excerpt and the posting to Anthropic under your own subscription), the Tectonic download and LaTeX package fetches you start, and Overleaf when you press Open in Overleaf.
+- Network traffic is limited to: the job sources you enabled, job pages you open or paste, the Claude CLI (which sends the prompt, your profile excerpt and the posting to Anthropic under your own subscription), the Tectonic download and LaTeX package fetches you start, Overleaf when you press Open in Overleaf, and the update check: at start and once a day Stellio asks GitHub for the newest release (nothing about you is sent). Switch it off in Settings, General.
 - Stellio never applies for you and never logs in to a job site or social network for you.
 - The Adzuna key is encrypted with your system keyring.
 - LaTeX compiles run in a sandbox with no network and no access to your files.
 
 ## 11. Troubleshooting
+
+**How do I update?** A banner tells you when a new version is out; Download opens its release page. Install the new .deb over the old one (`sudo apt install ./Stellio-<version>-amd64.deb`) or replace the AppImage. Your data folder is not touched.
 
 **The Claude CLI is not found or not logged in.** Settings, AI shows the state. Install the CLI, run `claude` in a terminal once and log in, then reopen Settings (the check is cached for up to 5 minutes). Stellio runs it from an empty folder with your user settings turned off, so your own hooks and plugins do not affect results.
 

@@ -5,6 +5,7 @@ import { AiRunLogSchema, AiRunSchema, RunIdSchema } from '../ai/runs';
 import { AnalysisRecordSchema, JOB_STATES, JobDetailSchema, JobSummarySchema } from '../jobs/schemas';
 import { AiSettingsSchema } from '../settings/ai';
 import { NotificationSettingsSchema } from '../settings/notifications';
+import { UpdateSettingsSchema, UpdateStatusSchema } from '../settings/updates';
 import { BackupEntrySchema } from '../backups';
 import { SetupPatchSchema, SetupStateSchema } from '../setup';
 import {
@@ -229,6 +230,11 @@ export const ipcContract = {
   'settings:setAi': { input: AiSettingsSchema, output: AiSettingsSchema },
   'notifications:get': { input: z.undefined(), output: NotificationSettingsSchema },
   'notifications:set': { input: NotificationSettingsSchema, output: NotificationSettingsSchema },
+  'updates:get': { input: z.undefined(), output: UpdateSettingsSchema },
+  'updates:set': { input: UpdateSettingsSchema, output: UpdateSettingsSchema },
+  /** May ask GitHub (at most daily, only when switched on). */
+  'updates:status': { input: z.undefined(), output: UpdateStatusSchema },
+  'updates:check': { input: z.undefined(), output: UpdateStatusSchema },
   /** First-run Setup checklist memory (dismissed, completed, rules reviewed). */
   'setup:get': { input: z.undefined(), output: SetupStateSchema },
   'setup:set': { input: SetupPatchSchema, output: SetupStateSchema },

@@ -55,7 +55,7 @@ On first start Stellio creates `~/Stellio`, which holds your profile, rules, tem
 
 ## Privacy
 
-- No telemetry, no account, no server. The only network traffic is to the job sources you enable, the job links you paste, Overleaf (only when you click "Open in Overleaf") and your Claude Code CLI.
+- No telemetry, no account, no server. The only network traffic is to the job sources you enable, the job links you paste, Overleaf (only when you click "Open in Overleaf"), a daily check of GitHub for a new release (switch it off in Settings) and your Claude Code CLI.
 - Job pages and web content are treated as untrusted. Fetching is guarded against private-network addresses, and pages never reach the interface as HTML.
 - API keys are encrypted with your system keyring.
 - Referrals use public sources only. Stellio never guesses email addresses, never uses people-search or data-broker sites, and never sends a message for you. You can delete people at any time, and people you never contacted are removed automatically.

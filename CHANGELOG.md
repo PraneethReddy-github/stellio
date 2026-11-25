@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.0.2 — 2026-11-25
+
+- Update check: a banner tells you when a new version is out and links to its download page. It asks GitHub at start and once a day; switch it off in Settings, General, or use Check now there.
+
 ## 1.0.1 — 2026-11-25
 
 - Claude CLI is found when Stellio is started from a desktop menu: the per-user install folders (such as `~/.local/bin`) are now searched too.

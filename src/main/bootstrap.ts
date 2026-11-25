@@ -25,6 +25,7 @@ import {
   createNotificationSettings,
   type NotificationSettingsService,
 } from './services/settings/notifications';
+import { createUpdatesService, type UpdatesService } from './services/updates/service';
 import { createSetupSettings, type SetupSettingsService } from './services/settings/setup';
 import { createBackupsService, type BackupsService } from './services/backups/service';
 import { createLatexService, type LatexService } from './services/latex/service';
@@ -61,6 +62,7 @@ export interface AppContext {
   aiSettings: AiSettingsService;
   notificationSettings: NotificationSettingsService;
   setup: SetupSettingsService;
+  updates: UpdatesService;
   backups: BackupsService;
   jobs: JobsService;
   documents: DocumentsService;
@@ -90,6 +92,8 @@ export interface BootstrapHooks {
   onExternalChange(relPath: string): void;
   /** A Claude run hit the subscription usage limit. */
   onUsageLimit(info: { message: string }): void;
+  /** This version, and whether (and where) to look for a newer one. */
+  updates: { current: string; autoAllowed: boolean; apiUrl?: string };
   // --- T1 tracker
   /** Shows a desktop notification (the daily follow-up digest). */
   notify(notice: Notice): void;
@@ -135,6 +139,7 @@ export async function bootstrap(paths: AppPaths, logger: Logger, hooks: Bootstra
   const aiSettings = createAiSettings(db);
   const notificationSettings = createNotificationSettings(db);
   const setup = createSetupSettings(db);
+  const updates = createUpdatesService({ db, logger, ...hooks.updates });
   const backups = createBackupsService({ db, dbFile: join(stellioDir, 'stellio.db'), backupsDir });
   const runner = createClaudeRunner({
     cwd: paths.aiCwd,
@@ -255,6 +260,7 @@ export async function bootstrap(paths: AppPaths, logger: Logger, hooks: Bootstra
     aiSettings,
     notificationSettings,
     setup,
+    updates,
     backups,
     jobs,
     documents,

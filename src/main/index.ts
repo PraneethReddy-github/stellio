@@ -141,6 +141,14 @@ const timerCommand = (): string[] =>
     appImage: process.env.APPIMAGE,
   });
 
+/** E2E asks a local stand-in or nobody; dev builds ask only on "Check now". */
+const e2eUpdateUrl = process.env.STELLIO_E2E === '1' ? process.env.STELLIO_UPDATE_URL : undefined;
+const updates = {
+  current: app.getVersion(),
+  autoAllowed: process.env.STELLIO_E2E === '1' ? e2eUpdateUrl !== undefined : app.isPackaged,
+  ...(e2eUpdateUrl ? { apiUrl: e2eUpdateUrl } : {}),
+};
+
 /** `stellio --scan`: one scan, a notification, exit code 0 (done, or another scan already running) or 1. */
 async function runHeadlessScan(): Promise<void> {
   let code = 0;
@@ -150,6 +158,7 @@ async function runHeadlessScan(): Promise<void> {
       onExternalChange: () => undefined,
       onUsageLimit: () => undefined,
       notify,
+      updates,
       secretCrypto,
     });
     const out = await ctx.discovery.runScan({ trigger: 'schedule' });
@@ -187,6 +196,7 @@ async function start(): Promise<void> {
   ctx = await bootstrap(paths, logger, {
     onExternalChange: (relPath) => broadcast('datafolder:changed', { relPath }),
     onUsageLimit: (info) => broadcast('ai:usageLimit', info),
+    updates,
     // --- T1 tracker
     notify,
     // --- end T1

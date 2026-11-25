@@ -1,6 +1,4 @@
 .banner {
-  grid-column: 2;
-  grid-row: 2;
   display: flex;
   align-items: center;
   gap: var(--s-3);
@@ -9,6 +7,13 @@
   border-left: 2px solid var(--warn);
   background: var(--surface-1);
   color: var(--text-2);
+}
+.banner[data-tone='info'] {
+  border-left-color: var(--info);
+}
+.link {
+  color: var(--text);
+  text-underline-offset: 2px;
 }
 .banner p {
   flex: 1;

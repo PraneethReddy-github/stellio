@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { IconButton } from '../ui/Button';
-import s from './UsageLimitBanner.module.css';
+import s from './Banner.module.css';
 
 /** Quiet top banner shown after Claude reports the subscription's usage limit. */
 export function UsageLimitBanner(): React.JSX.Element | null {

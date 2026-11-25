@@ -1,10 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { sampleJd } from '../fixtures/jobs';
 import { invoke, launchApp, type Launched } from './helpers';
+
+const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };
 
 // A fresh user: empty HOME and XDG folders, no STELLIO_* path overrides, so the app picks the same default
 // locations a real first run would. Run against the packaged app with STELLIO_E2E_EXECUTABLE (docs/PROGRESS.md).
@@ -40,7 +42,7 @@ test('first run: the shell opens on an empty Today and the data folder is seeded
   await expect(page.getByRole('heading', { name: 'Today', level: 2 })).toBeVisible();
   await expect(page.getByText('Nothing tracked yet')).toBeVisible();
   const info = (await invoke(page, 'app:getInfo')) as Res<{ dataDir: string; version: string }>;
-  expect(info).toMatchObject({ ok: true, data: { dataDir: join(home, 'Stellio'), version: '1.0.0' } });
+  expect(info).toMatchObject({ ok: true, data: { dataDir: join(home, 'Stellio'), version: pkg.version } });
   const data = join(home, 'Stellio');
   for (const f of [
     'profile/praneethreddy.md',

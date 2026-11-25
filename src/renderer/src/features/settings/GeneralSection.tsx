@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Field, KeyValue, Loading, SectionHeader, Select } from '../../ui';
+import { Button, Field, KeyValue, Loading, SectionHeader, Select, Switch, useToast } from '../../ui';
 import { applyDensity, readDensity, useAppInfo, type Density } from '../../lib/settings';
 import { applyTheme, readThemePref, type ThemePref } from '../../lib/theme';
+import { useCheckUpdates, useSetUpdateSettings, useUpdateSettings, useUpdateStatus } from '../../lib/updates';
 import s from './settings.module.css';
 
 const THEMES = [
@@ -63,6 +64,57 @@ export function GeneralSection(): React.JSX.Element {
           )}
         </Field>
       </div>
+      <Updates />
     </section>
+  );
+}
+
+function Updates(): React.JSX.Element {
+  const { toast } = useToast();
+  const q = useUpdateSettings();
+  const set = useSetUpdateSettings();
+  const check = useCheckUpdates();
+  const update = useUpdateStatus().data?.available;
+  return (
+    <div className={s.stack}>
+      {q.isError && <p className={s.error}>Could not read the update setting: {q.error.message}</p>}
+      <Switch
+        label="Check for updates automatically"
+        disabled={!q.data}
+        checked={q.data?.autoCheck ?? false}
+        onCheckedChange={(autoCheck) =>
+          set.mutate(
+            { autoCheck },
+            {
+              onError: (e) =>
+                toast({ title: 'Could not save the update setting', description: e.message, tone: 'bad' }),
+            },
+          )
+        }
+      />
+      <p className={s.quiet}>
+        Asks GitHub for the newest release at start and once a day. Nothing about you is sent, and nothing is
+        downloaded or installed for you.
+      </p>
+      <div className={s.statusRow}>
+        <Button busy={check.isPending} onClick={() => check.mutate()}>
+          Check now
+        </Button>
+        <p role="status" className={check.isError ? s.error : s.quiet}>
+          {check.isError ? (
+            check.error.message
+          ) : update ? (
+            <>
+              Version {update.version} is available.{' '}
+              <a href={update.url} target="_blank" rel="noreferrer noopener" className={s.link}>
+                Open the release page
+              </a>
+            </>
+          ) : check.isSuccess ? (
+            'You have the newest version.'
+          ) : null}
+        </p>
+      </div>
+    </div>
   );
 }

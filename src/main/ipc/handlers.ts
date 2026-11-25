@@ -85,6 +85,10 @@ export function createHandlers(
 
     'notifications:get': () => ctx.notificationSettings.get(),
     'notifications:set': (v) => ctx.notificationSettings.set(v),
+    'updates:get': () => ctx.updates.get(),
+    'updates:set': (v) => ctx.updates.set(v),
+    'updates:status': () => ctx.updates.status(),
+    'updates:check': () => ctx.updates.checkNow(),
     'setup:get': () => ctx.setup.get(),
     'setup:set': (v) => ctx.setup.set(v),
     'backups:list': () => ctx.backups.list(),
