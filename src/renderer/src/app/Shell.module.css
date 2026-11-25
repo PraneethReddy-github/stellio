@@ -5,7 +5,8 @@
   height: 100%;
 }
 
-/* Rail: icon column that expands over the content on hover/focus to show labels. */
+/* Rail: icon column that expands over the content on hover or keyboard focus. Not `:focus-within`: a clicked
+   link keeps focus, which held the rail open after the mouse left. */
 .rail {
   grid-row: 1 / 4;
   position: relative;
@@ -24,7 +25,7 @@
   transition: width var(--t-med) var(--ease);
 }
 .rail:hover .railInner,
-.rail:focus-within .railInner {
+.rail:has(:focus-visible) .railInner {
   width: var(--rail-open);
 }
 .brand {
@@ -106,11 +107,11 @@
   transition: opacity var(--t-fast) var(--ease);
 }
 .rail:hover .brandText,
-.rail:focus-within .brandText,
+.rail:has(:focus-visible) .brandText,
 .rail:hover .navLabel,
-.rail:focus-within .navLabel,
+.rail:has(:focus-visible) .navLabel,
 .rail:hover .navKbd,
-.rail:focus-within .navKbd {
+.rail:has(:focus-visible) .navKbd {
   opacity: 1;
 }
 
@@ -161,6 +162,8 @@
 }
 
 .main {
+  /* Contains absolutely positioned children (sr-only text), which otherwise make the window itself scroll. */
+  position: relative;
   grid-column: 2;
   grid-row: 3;
   min-width: 0;

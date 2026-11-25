@@ -19,7 +19,8 @@
 }
 .control:focus-visible {
   outline: 2px solid var(--signal);
-  outline-offset: 0;
+  /* Inside the box: scrolling containers clip anything drawn outside it. */
+  outline-offset: -2px;
 }
 .control:disabled {
   opacity: 0.45;

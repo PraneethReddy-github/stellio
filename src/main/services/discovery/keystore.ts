@@ -34,7 +34,7 @@ export function createKeyStore(dir: string, crypto: SecretCrypto) {
     set(id: 'adzuna', value: Adzuna): void {
       if (!crypto.isEncryptionAvailable())
         throw new UserError(
-          'Secure storage is not available on this system (no keyring found), so the key was not saved.',
+          'Secure storage is not available (no working system keyring), so the key was not saved. Start and unlock GNOME Keyring or KWallet, restart Stellio, then try again.',
         );
       if (crypto.getSelectedStorageBackend?.() === 'basic_text')
         throw new UserError(

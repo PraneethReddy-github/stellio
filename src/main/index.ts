@@ -7,10 +7,16 @@ import { dispatch, UserError } from './ipc/dispatch';
 import { scanCommand } from './services/discovery/systemd';
 import { createHandlers } from './ipc/handlers';
 import { hardenAllWebContents } from './platform/hardening';
+import { kwalletDisabled, withUserBins } from './platform/desktopEnv';
 import { createFileLogger } from './platform/logger';
 import { resolvePaths } from './platform/paths';
 import { handleAppProtocol, registerAppScheme } from './platform/protocol';
 import { APP_ORIGIN, isAppUrl } from './platform/urls';
+
+process.env.PATH = withUserBins(process.env.PATH);
+// Must be set before `app.ready`.
+if (process.platform === 'linux' && !app.commandLine.hasSwitch('password-store') && kwalletDisabled())
+  app.commandLine.appendSwitch('password-store', 'gnome-libsecret');
 
 const paths = resolvePaths({
   defaultUserData: app.getPath('userData'),

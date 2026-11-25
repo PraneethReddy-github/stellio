@@ -25,6 +25,8 @@ export async function launchApp(extraEnv: Record<string, string> = {}): Promise<
       ...process.env,
       STELLIO_USER_DATA: join(sandbox, 'userData'),
       STELLIO_DATA_DIR: dataDir,
+      // The scan timer's unit files live here: never read or write the user's own.
+      XDG_CONFIG_HOME: join(sandbox, 'config'),
       ELECTRON_RENDERER_URL: '',
       STELLIO_E2E: '1',
       GIT_CONFIG_GLOBAL: '/dev/null',

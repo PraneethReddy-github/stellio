@@ -1,5 +1,5 @@
 import { useSearch } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Page } from '../../app/Page';
 import { AiSection } from './AiSection';
 import { BackupsSection } from './BackupsSection';
@@ -32,8 +32,21 @@ const scrollTo = (id: string): void =>
 export default function SettingsScreen(): React.JSX.Element {
   // Other screens link to one section (`/settings?section=profiles`).
   const search: { section?: string } = useSearch({ strict: false });
+  const sections = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (search.section) scrollTo(search.section);
+    const id = search.section;
+    const el = sections.current;
+    if (!id || !el) return;
+    // The sections above load their data later and push the target down: keep it in place until the user acts.
+    const observer = new ResizeObserver(() => scrollTo(id));
+    const stop = (): void => observer.disconnect();
+    const events = ['wheel', 'keydown', 'pointerdown'] as const;
+    observer.observe(el); // also fires once now
+    for (const e of events) window.addEventListener(e, stop, { once: true });
+    return () => {
+      stop();
+      for (const e of events) window.removeEventListener(e, stop);
+    };
   }, [search.section]);
 
   return (
@@ -46,7 +59,7 @@ export default function SettingsScreen(): React.JSX.Element {
             </button>
           ))}
         </nav>
-        <div className={s.sections}>
+        <div className={s.sections} ref={sections}>
           <GeneralSection />
           <AiSection />
           <ProfilesSection />

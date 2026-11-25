@@ -51,6 +51,10 @@
   --row: 32px;
   --rail: 56px;
   --rail-open: 200px;
+  /* Widest a page, a reading column and a form get. */
+  --page: 1280px;
+  --column: 880px;
+  --column-form: 760px;
   --topbar: 40px;
   --inspector: 360px;
 
@@ -123,5 +127,14 @@
     --t-fast: 0ms;
     --t-med: 0ms;
     --t-slow: 0ms;
+  }
+}
+
+/* Maximised and full-screen windows: pages and columns use the full width, so every screen shares its edges. */
+@media (min-width: 1440px) {
+  :root {
+    --page: none;
+    --column: none;
+    --column-form: none;
   }
 }

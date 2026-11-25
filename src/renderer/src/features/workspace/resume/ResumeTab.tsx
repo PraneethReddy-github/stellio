@@ -544,7 +544,7 @@ function Preview({ doc }: { doc: DocView }): React.JSX.Element {
       <EmptyState
         title="No LaTeX engine found."
         action={
-          <Link to={SETTINGS} className={s.quiet}>
+          <Link to={SETTINGS} search={{ section: 'latex' }} className={s.quiet}>
             Set up in Settings
           </Link>
         }

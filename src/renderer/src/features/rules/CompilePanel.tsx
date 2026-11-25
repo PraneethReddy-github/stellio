@@ -46,7 +46,7 @@ export function CompilePanel({
       <EmptyState
         title="No LaTeX engine found."
         action={
-          <Link to={SETTINGS} className={s.link}>
+          <Link to={SETTINGS} search={{ section: 'latex' }} className={s.link}>
             Set up in Settings
           </Link>
         }

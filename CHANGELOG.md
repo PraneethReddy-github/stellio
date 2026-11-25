@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 1.0.1 — 2026-11-25
+
+- Claude CLI is found when Stellio is started from a desktop menu: the per-user install folders (such as `~/.local/bin`) are now searched too.
+- The Adzuna key can be saved on KDE when KWallet is switched off and GNOME Keyring is running.
+- The sidebar collapses when the mouse leaves it after a click.
+- Settings: jumping to Backups (or any section) no longer pushes the window out of place.
+- "Set up in Settings" for LaTeX opens the LaTeX section, and section links stay in place while the page loads.
+- The focus ring of inputs is no longer cut off on some sides.
+- Full-screen and maximised windows: every screen uses the full width instead of staying on the left.
+
 ## 1.0.0 — 2026-11-22
 
 First release.
