@@ -8,6 +8,13 @@
 .scroller:focus-visible {
   outline-offset: -2px;
 }
+/* The sticky header paints over the scroller's ring: it draws its own part. */
+.scroller:focus-visible .head {
+  box-shadow:
+    inset 0 2px var(--signal),
+    inset 2px 0 var(--signal),
+    inset -2px 0 var(--signal);
+}
 .row {
   display: grid;
   grid-template-columns: var(--cols);
@@ -44,6 +51,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.check {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-left: var(--s-3);
+}
+.inert {
+  pointer-events: none;
 }
 .right {
   text-align: right;

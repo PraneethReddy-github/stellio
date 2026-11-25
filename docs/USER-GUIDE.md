@@ -105,6 +105,8 @@ So a restore can itself be undone by restoring the `pre-restore` snapshot. Resto
 
 ## 11. Troubleshooting
 
+**How do I delete several jobs or people?** Press Select above the list (Workspace, Applications table, Referrals), pick rows, then Delete. Esc leaves the mode. A single job is deleted from its Status menu.
+
 **How do I update?** A banner tells you when a new version is out; Download opens its release page. Install the new .deb over the old one (`sudo apt install ./Stellio-<version>-amd64.deb`) or replace the AppImage. Your data folder is not touched.
 
 **The Claude CLI is not found or not logged in.** Settings, AI shows the state. Install the CLI, run `claude` in a terminal once and log in, then reopen Settings (the check is cached for up to 5 minutes). Stellio runs it from an empty folder with your user settings turned off, so your own hooks and plugins do not affect results.

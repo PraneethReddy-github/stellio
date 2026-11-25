@@ -118,6 +118,7 @@ export function createHandlers(
       analysis: await ctx.tasks.run(requestId, (signal) => ctx.jobs.analyze(id, signal)),
     }),
     'jobs:delete': ({ id }) => ({ deleted: ctx.jobs.delete(id) }),
+    'jobs:deleteMany': ({ ids }) => ({ deleted: ctx.jobs.deleteMany(ids) }),
     'jobs:setState': ({ id, state }) => ctx.jobs.setState(id, state),
     'ai:runs': ({ limit }) => ctx.runs.list(limit),
     'ai:run': ({ id }) => ctx.runs.get(id),
@@ -322,6 +323,9 @@ export function createHandlers(
       ctx.tasks.run(requestId, (signal) => ctx.referrals.draft(personId, jobId, { signal })),
     'referrals:setStatus': ({ id, status, note }) => ctx.referrals.setStatus(id, status, note),
     'referrals:delete': async ({ personId }) => ({ deleted: await ctx.referrals.deletePerson(personId) }),
+    'referrals:deleteMany': async ({ personIds }) => ({
+      deleted: await ctx.referrals.deletePeople(personIds),
+    }),
     'referrals:deleteAll': async () => ({ deleted: await ctx.referrals.deleteAll() }),
     'referrals:settings': () => ctx.referrals.settings(),
     'referrals:setSettings': (v) => ctx.referrals.setSettings(v),

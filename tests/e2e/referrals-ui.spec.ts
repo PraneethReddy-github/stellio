@@ -314,6 +314,17 @@ test('referrals screen: filter by status, delete one person, retention persists,
   ).toHaveValue('30');
 
   // delete all
+  // multi-select: checkboxes only on demand; cancelling the confirm deletes nothing
+  const people = page.getByRole('grid', { name: 'All referral requests' });
+  await expect(people.locator('[role=checkbox]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+  await people.getByRole('checkbox', { name: 'Select all' }).click();
+  await page.getByRole('button', { name: 'Delete…' }).click();
+  await expect(page.getByRole('dialog')).toContainText('This cannot be undone');
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancel' }).click();
+  await page.keyboard.press('Escape');
+  await expect(people.locator('[role=checkbox]')).toHaveCount(0);
+
   await page.getByRole('button', { name: 'Delete all people' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Delete all people' }).click();
   await expect(page.getByText('No people yet')).toBeVisible();

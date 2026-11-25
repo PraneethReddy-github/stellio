@@ -124,6 +124,10 @@ export function deleteJob(db: Db, id: string): boolean {
   })();
 }
 
+/** All or none. Returns how many existed. */
+export const deleteJobs = (db: Db, ids: readonly string[]): number =>
+  db.sqlite.transaction(() => ids.filter((id) => deleteJob(db, id)).length)();
+
 export function listJobSources(db: Db, jobId: string): JobSource[] {
   return db.orm.select().from(jobSources).where(eq(jobSources.jobId, jobId)).all();
 }

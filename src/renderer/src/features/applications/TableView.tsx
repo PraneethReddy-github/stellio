@@ -22,12 +22,14 @@ import {
   ScoreMeter,
   StatusDot,
   Table,
+  useSelectMode,
   useToast,
   type Column,
   type MenuEntry,
   type SortState,
 } from '../../ui';
 import { exportCsv, useTable } from '../../lib/tracker';
+import { DeleteJobs } from '../workspace/DeleteJobs';
 import { FIT_THRESHOLDS, isoDay } from '../workspace/helpers';
 import {
   BUILT_IN_VIEWS,
@@ -124,7 +126,7 @@ const columns: Column<TableRow>[] = [
   },
 ];
 
-export function TableView({ onSelect }: { onSelect: (id: string) => void }): React.JSX.Element {
+export function TableView({ onSelect }: { onSelect: (id: string | null) => void }): React.JSX.Element {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [filters, setFilters] = useState<TableFilters>({});
@@ -190,12 +192,22 @@ export function TableView({ onSelect }: { onSelect: (id: string) => void }): Rea
   };
 
   const rows = q.data?.rows ?? [];
+  const mode = useSelectMode();
+  const chosen = rows.filter((r) => mode.ids.has(r.id)).map((r) => r.jobId);
+  // The inspector would show a row that is about to go.
+  const selecting = {
+    ...mode,
+    start: () => {
+      onSelect(null);
+      mode.start();
+    },
+  };
   const tableSort: SortState = { id: sortId(sort.by), dir: sort.dir };
   // Enter on the table opens the full page; a click opens the inspector (Table's own Enter handler is for clicks).
   const onEnter = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (e.key !== 'Enter' || !(e.target instanceof HTMLElement) || e.target.getAttribute('role') !== 'grid')
       return;
-    if (!active) return;
+    if (!active || mode.on) return;
     e.stopPropagation();
     void navigate({ to: `/applications/${active}` });
   };
@@ -261,18 +273,23 @@ export function TableView({ onSelect }: { onSelect: (id: string) => void }): Rea
           </Button>
         )}
         <span className={s.spacer} />
-        <DropdownMenu
-          align="end"
-          items={viewItems}
-          trigger={
-            <Button size="sm" icon={<ChevronDown aria-hidden="true" />}>
-              Views
+        <DeleteJobs mode={selecting} jobIds={chosen} empty={rows.length === 0} />
+        {!mode.on && (
+          <>
+            <DropdownMenu
+              align="end"
+              items={viewItems}
+              trigger={
+                <Button size="sm" icon={<ChevronDown aria-hidden="true" />}>
+                  Views
+                </Button>
+              }
+            />
+            <Button size="sm" icon={<Download aria-hidden="true" />} busy={exporting} onClick={doExport}>
+              Export CSV
             </Button>
-          }
-        />
-        <Button size="sm" icon={<Download aria-hidden="true" />} busy={exporting} onClick={doExport}>
-          Export CSV
-        </Button>
+          </>
+        )}
       </div>
 
       <div className={s.tableBody} onKeyDownCapture={onEnter}>
@@ -290,6 +307,7 @@ export function TableView({ onSelect }: { onSelect: (id: string) => void }): Rea
             columns={columns}
             rows={rows}
             getRowId={(r) => r.id}
+            checked={mode.checked}
             selectedId={active}
             onSelectedChange={setActive}
             onRowClick={(r) => onSelect(r.id)}

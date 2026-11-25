@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { Checkbox } from './Choice';
 import s from './Table.module.css';
 import { cx } from './cx';
 
@@ -31,6 +32,8 @@ export interface TableProps<T> {
   onSelectedChange?: (id: string) => void;
   sort?: SortState;
   onSortChange?: (sort: SortState) => void;
+  /** Multi-select mode: a checkbox column appears; click, Enter or Space toggles a row instead of opening it. */
+  checked?: { ids: ReadonlySet<string>; onChange: (ids: ReadonlySet<string>) => void };
   empty?: ReactNode;
   ariaLabel: string;
 }
@@ -62,6 +65,7 @@ export function Table<T>({
   onSelectedChange,
   sort,
   onSortChange,
+  checked,
   empty,
   ariaLabel,
 }: TableProps<T>): React.JSX.Element {
@@ -109,6 +113,16 @@ export function Table<T>({
     }
   };
 
+  const toggle = (row: T): void => {
+    if (!checked) return;
+    const next = new Set(checked.ids);
+    const id = getRowId(row);
+    if (!next.delete(id)) next.add(id);
+    checked.onChange(next);
+  };
+  const activate = (row: T): void => (checked ? toggle(row) : onRowClick?.(row));
+  const checkedCount = checked ? rows.filter((r) => checked.ids.has(getRowId(r))).length : 0;
+
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (e.target !== e.currentTarget || e.ctrlKey || e.metaKey || e.altKey) return;
     const last = rows.length - 1;
@@ -122,9 +136,9 @@ export function Table<T>({
       Home: 0,
       End: last,
     };
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' || (checked && e.key === ' ')) {
       const row = rows[activeIndex];
-      if (row && onRowClick) onRowClick(row);
+      if (row) activate(row);
     } else if (e.key in target && rows.length > 0) {
       select(target[e.key] ?? 0);
     } else return;
@@ -139,6 +153,7 @@ export function Table<T>({
       className={s.scroller}
       role="grid"
       aria-label={ariaLabel}
+      aria-multiselectable={checked ? true : undefined}
       aria-rowcount={rows.length + 1}
       aria-activedescendant={activeIndex >= start && activeIndex < end ? rowId(activeIndex) : undefined}
       tabIndex={0}
@@ -156,9 +171,25 @@ export function Table<T>({
             }
           : undefined
       }
-      style={{ '--cols': columns.map((c) => c.width ?? 'minmax(0, 1fr)').join(' ') } as React.CSSProperties}
+      style={
+        {
+          '--cols': [...(checked ? ['40px'] : []), ...columns.map((c) => c.width ?? 'minmax(0, 1fr)')].join(
+            ' ',
+          ),
+        } as React.CSSProperties
+      }
     >
       <div role="row" aria-rowindex={1} className={cx(s.row, s.head)}>
+        {checked && (
+          <div role="columnheader" className={s.check}>
+            <Checkbox
+              label={<span className="sr-only">Select all</span>}
+              disabled={rows.length === 0}
+              checked={checkedCount === 0 ? false : checkedCount === rows.length ? true : 'indeterminate'}
+              onCheckedChange={(on) => checked.onChange(new Set(on === true ? rows.map(getRowId) : []))}
+            />
+          </div>
+        )}
         {columns.map((c) => {
           const dir = sort?.id === c.id ? sort.dir : undefined;
           const label = (
@@ -191,7 +222,7 @@ export function Table<T>({
       </div>
       {rows.length === 0 && empty ? (
         <div role="row" className={s.emptyRow}>
-          <div role="gridcell" aria-colspan={columns.length}>
+          <div role="gridcell" aria-colspan={columns.length + (checked ? 1 : 0)}>
             {empty}
           </div>
         </div>
@@ -206,19 +237,28 @@ export function Table<T>({
         >
           {rows.slice(start, end).map((row, k) => {
             const i = start + k;
+            const isChecked = checked?.ids.has(getRowId(row)) ?? false;
             return (
               <div
                 key={getRowId(row)}
                 id={rowId(i)}
                 role="row"
                 aria-rowindex={i + 2}
-                aria-selected={i === activeIndex}
+                aria-selected={checked ? isChecked : i === activeIndex}
                 className={cx(s.row, s.body, i === activeIndex && s.selected)}
                 onClick={() => {
                   select(i);
-                  onRowClick?.(row);
+                  activate(row);
                 }}
               >
+                {checked && (
+                  // A picture of the row's state: the row itself is the control (aria-selected).
+                  <div role="gridcell" className={cx(s.check, s.inert)}>
+                    <span aria-hidden="true">
+                      <Checkbox label={null} checked={isChecked} tabIndex={-1} />
+                    </span>
+                  </div>
+                )}
                 {columns.map((c) => (
                   <div
                     key={c.id}

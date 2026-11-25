@@ -83,3 +83,5 @@ export function removedCitationsNote(warnings: readonly string[]): string | null
 // The router's route table is untyped (plain string paths), so links are built as strings.
 export const WORKSPACE: string = '/workspace';
 export const jobPath = (id: string): string => `/workspace/${id}`;
+
+export const jobCount = (n: number): string => `${String(n)} ${n === 1 ? 'job' : 'jobs'}`;

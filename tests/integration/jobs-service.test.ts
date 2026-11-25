@@ -475,6 +475,20 @@ describe('state and delete', () => {
   });
 });
 
+describe('deleteMany', () => {
+  it('deletes the given jobs, ignores unknown ids, and keeps the rest', async () => {
+    const s = setup();
+    const a = await s.jobs.intakeText(POSTING);
+    if (a.status !== 'ok') throw new Error('expected ok');
+    s.jobs.setState(a.jobId, 'shortlisted');
+    expect(s.jobs.deleteMany(['nope'])).toBe(0);
+    expect(s.jobs.list({ limit: 5, offset: 0 }).total).toBe(1);
+    expect(s.jobs.deleteMany([a.jobId, 'nope'])).toBe(1);
+    expect(s.jobs.list({ limit: 5, offset: 0 }).total).toBe(0);
+    expect(s.db.sqlite.prepare('select count(*) n from applications').get()).toEqual({ n: 0 });
+  });
+});
+
 describe('activity (ai runs)', () => {
   it('lists runs and reads the saved prompt/output by id only', async () => {
     const s = setup();

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type { IpcInput, IpcOutput } from '@shared/ipc/contract';
 import { call } from './ipc';
+import { refreshTracker } from './tracker';
 
 export type JobList = IpcOutput<'jobs:list'>;
 export type JobSummary = JobList['items'][number];
@@ -65,6 +66,15 @@ export function useDeleteJob() {
     mutationFn: (id: string) => call('jobs:delete', { id }),
     // only the list: refetching the deleted job while its page is still open would flash an error
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.list }),
+  });
+}
+
+export function useDeleteJobs() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => call('jobs:deleteMany', { ids }),
+    // their applications go with them
+    onSuccess: () => Promise.all([qc.invalidateQueries({ queryKey: keys.list }), refreshTracker(qc)]),
   });
 }
 

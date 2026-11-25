@@ -15,6 +15,7 @@ import type { Db } from '../../db/database';
 import { setAiRunRelated } from '../../db/repos/aiRuns';
 import {
   deleteJob,
+  deleteJobs,
   getJob,
   getJobSummary,
   insertAnalysis,
@@ -141,6 +142,12 @@ export function createJobsService({ db, runner, settings, profile, fetcher }: Jo
     delete(id: string): boolean {
       const deleted = deleteJob(db, id);
       if (deleted) recomputeSkillDemand(db);
+      return deleted;
+    },
+
+    deleteMany(ids: readonly string[]): number {
+      const deleted = deleteJobs(db, ids);
+      if (deleted > 0) recomputeSkillDemand(db);
       return deleted;
     },
 

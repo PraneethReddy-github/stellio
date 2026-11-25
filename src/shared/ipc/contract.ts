@@ -284,6 +284,10 @@ export const ipcContract = {
     output: z.object({ analysis: AnalysisRecordSchema }),
   },
   'jobs:delete': { input: z.object({ id: JobId }), output: z.object({ deleted: z.boolean() }) },
+  'jobs:deleteMany': {
+    input: z.object({ ids: z.array(JobId).min(1).max(10_000) }),
+    output: z.object({ deleted: z.number().int() }),
+  },
   'jobs:setState': {
     input: z.object({ id: JobId, state: z.enum(JOB_STATES) }),
     output: JobSummarySchema,
@@ -711,6 +715,10 @@ export const ipcContract = {
   'referrals:delete': {
     input: z.object({ personId: z.string().min(1).max(64) }),
     output: z.object({ deleted: z.boolean() }),
+  },
+  'referrals:deleteMany': {
+    input: z.object({ personIds: z.array(z.string().min(1).max(64)).min(1).max(10_000) }),
+    output: z.object({ deleted: z.number().int() }),
   },
   'referrals:deleteAll': { input: z.undefined(), output: z.object({ deleted: z.number().int() }) },
   'referrals:settings': { input: z.undefined(), output: ReferralSettingsSchema },

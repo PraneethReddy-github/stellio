@@ -51,6 +51,8 @@ export const useDraftMessage = () =>
 export const useSetReferralStatus = () =>
   useChanged((i: IpcInput<'referrals:setStatus'>) => call('referrals:setStatus', i), true);
 export const useDeletePerson = () => useChanged((personId: string) => call('referrals:delete', { personId }));
+export const useDeletePeople = () =>
+  useChanged((personIds: string[]) => call('referrals:deleteMany', { personIds }));
 export const useDeleteAllPeople = () => useChanged(() => call('referrals:deleteAll', undefined));
 export const useSetRetention = () =>
   useChanged((retentionDays: number) => call('referrals:setSettings', { retentionDays }));

@@ -359,6 +359,19 @@ export function createReferralsService(deps: ReferralsDeps) {
 
   const purge = (): number => purgeExpired(db, nowIso());
 
+  /** All or none, then the run logs that name them. Returns how many existed. */
+  async function deletePeople(ids: readonly string[]): Promise<number> {
+    const found = ids.flatMap((id) => getPerson(db, id) ?? []);
+    const deleted = db.sqlite.transaction(() => found.filter((p) => deletePerson(db, p.id)).length)();
+    if (found.length > 0 && deps.aiLogDir)
+      await deleteReferralLogs(
+        db,
+        deps.aiLogDir,
+        found.flatMap((p) => [p.fullName, ...p.profileUrls.map((u) => u.url)]),
+      );
+    return deleted;
+  }
+
   return {
     search,
     draft,
@@ -382,15 +395,9 @@ export function createReferralsService(deps: ReferralsDeps) {
     },
 
     async deletePerson(personId: string): Promise<boolean> {
-      const person = getPerson(db, personId);
-      const deleted = deletePerson(db, personId);
-      if (person && deps.aiLogDir)
-        await deleteReferralLogs(db, deps.aiLogDir, [
-          person.fullName,
-          ...person.profileUrls.map((u) => u.url),
-        ]);
-      return deleted;
+      return (await deletePeople([personId])) > 0;
     },
+    deletePeople,
     async deleteAll(): Promise<number> {
       const n = deleteAllPeople(db);
       if (deps.aiLogDir) await deleteReferralLogs(db, deps.aiLogDir);

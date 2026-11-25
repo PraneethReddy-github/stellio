@@ -2,8 +2,18 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { Page } from '../../app/Page';
 import { useRegisterCommands, type Command } from '../../app/commands';
-import { Button, EmptyState, ErrorState, Loading, ScoreMeter, Table, type Column } from '../../ui';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Loading,
+  ScoreMeter,
+  Table,
+  useSelectMode,
+  type Column,
+} from '../../ui';
 import { useJobs, type JobSummary } from '../../lib/jobs';
+import { DeleteJobs } from './DeleteJobs';
 import { IntakePanel } from './IntakePanel';
 import { FIT_THRESHOLDS, formatLocation, isoDay, WORKSPACE, jobPath } from './helpers';
 import { useIntakeIntent } from './intent';
@@ -64,13 +74,18 @@ export default function WorkspaceScreen(): React.JSX.Element {
   const jobs = useJobs();
   useIntakeCommands();
   const rows = jobs.data?.items ?? [];
+  const mode = useSelectMode();
+  const chosen = rows.filter((j) => mode.ids.has(j.id)).map((j) => j.id);
 
   return (
     <Page title="Workspace" subtitle="Add a job, check your fit, then build the resume and cover letter.">
       <div className={s.screen}>
         <IntakePanel />
         <section aria-label="Recent jobs" className={s.recent}>
-          <h3 className={s.sectionTitle}>Recent jobs</h3>
+          <div className={s.recentHead}>
+            <h3 className={s.sectionTitle}>Recent jobs</h3>
+            {rows.length > 0 && <DeleteJobs mode={mode} jobIds={chosen} empty={false} />}
+          </div>
           {jobs.isPending ? (
             <Loading what="Reading jobs" />
           ) : jobs.isError ? (
@@ -93,6 +108,7 @@ export default function WorkspaceScreen(): React.JSX.Element {
                 columns={columns}
                 rows={rows}
                 getRowId={(j) => j.id}
+                checked={mode.checked}
                 onRowClick={(j) => void navigate({ to: jobPath(j.id) })}
               />
             </div>

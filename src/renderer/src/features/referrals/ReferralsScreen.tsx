@@ -11,14 +11,17 @@ import {
   Input,
   Loading,
   Select,
+  SelectControls,
   SplitView,
   Table,
+  useSelectMode,
   useToast,
   type Column,
 } from '../../ui';
 import { useJobs } from '../../lib/jobs';
 import {
   useDeleteAllPeople,
+  useDeletePeople,
   useDueReferrals,
   useReferralSettings,
   useReferrals,
@@ -47,6 +50,8 @@ export default function ReferralsScreen(): React.JSX.Element {
   const [sel, setSel] = useState<string | null>(null);
   const [confirmAll, setConfirmAll] = useState(false);
   const delAll = useDeleteAllPeople();
+  const delSome = useDeletePeople();
+  const mode = useSelectMode();
   const { toast } = useToast();
   const due = useDueReferrals();
   const dueIds = useMemo(() => new Set((due.data ?? []).map((i) => i.id)), [due.data]);
@@ -55,7 +60,16 @@ export default function ReferralsScreen(): React.JSX.Element {
   const all = q.data ?? [];
   const rows = filterByStatus(all, status);
   const dueCount = dueIds.size;
-  const selected = rows.find((r) => r.id === sel) ?? null;
+  // One person can have several rows (one per job): deleting any of them deletes the person.
+  const chosen = [...new Set(rows.filter((r) => mode.ids.has(r.id)).map((r) => r.personId))];
+  const selecting = {
+    ...mode,
+    start: () => {
+      setSel(null);
+      mode.start();
+    },
+  };
+  const selected = mode.on ? null : (rows.find((r) => r.id === sel) ?? null);
 
   const columns: Column<ReferralItem>[] = [
     nameColumn,
@@ -122,6 +136,24 @@ export default function ReferralsScreen(): React.JSX.Element {
               {peopleCount(rows.length)}
               {dueCount > 0 ? ` · ${String(dueCount)} follow-up${dueCount === 1 ? '' : 's'} due` : ''}
             </p>
+            <span className={s.spacer} />
+            <SelectControls
+              mode={selecting}
+              count={chosen.length}
+              disabled={rows.length === 0}
+              busy={delSome.isPending}
+              confirmTitle={`Delete ${peopleCount(chosen.length)}?`}
+              confirmText="The people, their sources and every request and message for them, for all jobs, are removed. This cannot be undone."
+              onDelete={() =>
+                delSome.mutate(chosen, {
+                  onSuccess: (r) => {
+                    mode.stop();
+                    toast({ title: `Deleted ${peopleCount(r.deleted)}` });
+                  },
+                  onError: (e) => toast({ title: 'Could not delete', description: e.message, tone: 'bad' }),
+                })
+              }
+            />
           </div>
           <div className={s.screenTable}>
             <SplitView
@@ -148,6 +180,7 @@ export default function ReferralsScreen(): React.JSX.Element {
                 columns={columns}
                 rows={rows}
                 getRowId={(r) => r.id}
+                checked={mode.checked}
                 selectedId={sel ?? undefined}
                 onSelectedChange={setSel}
                 empty={

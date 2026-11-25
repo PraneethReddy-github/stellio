@@ -1,0 +1,10 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+.count {
+  color: var(--text-2);
+  font: 400 var(--fs-sm) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

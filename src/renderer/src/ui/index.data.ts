@@ -15,3 +15,5 @@ export { SectionHeader, KeyValue } from './Section';
 export type { KeyValueItem } from './Section';
 export { HBars } from './HBars';
 export type { HBarCell, HBarRow } from './HBars';
+export { SelectControls, useSelectMode } from './SelectMode';
+export type { SelectMode } from './SelectMode';

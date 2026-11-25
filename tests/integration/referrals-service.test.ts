@@ -422,6 +422,15 @@ describe('retention, purge and deletion', { timeout: 30_000 }, () => {
     expect(referrals.list()).toEqual([]);
   });
 
+  it('deletes several people at once and ignores unknown ids', async () => {
+    const { referrals, jobId, db } = await setup();
+    const { items } = await referrals.search({ ...SEARCH, jobId });
+    expect(await referrals.deletePeople(['nope'])).toBe(0);
+    expect(countPeople(db)).toBe(2);
+    expect(await referrals.deletePeople([...items.map((i) => i.personId), 'nope'])).toBe(2);
+    expect(countPeople(db)).toBe(0);
+  });
+
   it('deleting people also deletes the referrals run logs that name them', async () => {
     const { referrals, jobId, db, dir } = await setup();
     const { items } = await referrals.search({ ...SEARCH, jobId });
