@@ -1,8 +1,8 @@
 ---
 # Machine-checked rules (linted in code after every generation). Edit freely.
 version: 1
-page_limit: 1
-sections_order: [header, summary, experience, projects, skills, education, certifications]
+page_limit: 2
+sections_order: [header, summary, education, experience, projects, publications, patents, skills, certifications, misc]
 sections_required: [header, experience, skills, education]
 summary:
   enabled: true
@@ -23,7 +23,7 @@ skills_section:
   max_lines: 4
   max_skills: 24
 date_format: "MMM YYYY"     # Jan 2025 – Present
-photo: false
+photo: true                  # shows templates/photo.jpg (set it in Profile) when there is one
 banned_words:
   - spearheaded
   - synergy
@@ -78,6 +78,12 @@ A one-page resume a recruiter can scan in 10 seconds and an ATS can parse cleanl
 
 Two sentences, max 50 words: who you are (role + years + domain) and the 2–3 strongest matches with this job. No objective statements ("seeking a role…").
 
+## Publications, patents, miscellaneous
+
+1. Publications: the papers that fit this job best, most relevant first; usually at most 4. One short bullet each, or none.
+2. Patents: list patent applications from the profile's Patents section, with at most one bullet. Never call an application "granted".
+3. Miscellaneous (`awards`): positions of responsibility and achievements that show something the job values; usually at most 3. Languages are added by code from the profile.
+
 ## Skills section
 
 1. Grouped lines by category, e.g. `Languages: Python, SQL` · `Data: Airflow, dbt, Spark` · `Cloud & Tools: AWS, Docker, Git`.
@@ -87,9 +93,9 @@ Two sentences, max 50 words: who you are (role + years + domain) and the 2–3 s
 
 ## Formatting (enforced by template; listed so you can change it)
 
-- Single column, no tables for layout, no icons, no photo, no colours other than the template accent for name and links.
-- Standard headings: Summary, Experience, Projects, Skills, Education, Certifications.
-- Header: name, location (city, country), email, phone, LinkedIn, GitHub/portfolio. No full address, no date of birth, no marital status.
+- The template's design: photo and contact block at the top, single column, education as a table, a link symbol after project names, small-caps section headings with a rule.
+- Headings: Summary, Education, Experience, Projects, Publications, Patents, Technical Skills, Certifications, Miscellaneous (German versions use the German headings).
+- Header: name, current degree and university, location, phone, email, GitHub, portfolio, LinkedIn. No date of birth, no marital status.
 - Dates right-aligned, format `Jan 2025 – Present`.
 - File name: `Firstname_Lastname_Resume_<Company>.pdf`.
 

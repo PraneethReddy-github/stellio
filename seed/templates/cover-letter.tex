@@ -1,51 +1,60 @@
-%% Stellio cover letter template v1 — pdfLaTeX, single file, Overleaf-compatible.
-%% Stellio fills the STELLIO:SLOT markers. Edit layout here; content behaviour in rules/cover-letter.md.
-\documentclass[11pt]{article}
-
-\usepackage[a4paper,margin=1in]{geometry}
+%% Stellio cover letter template, format 2. pdfLaTeX (Overleaf) or Tectonic, single file.
+%% STELLIO:FORMAT 2
+%% Stellio fills the STELLIO:SLOT markers using only the macros defined below.
+%% Edit the layout here; edit content behaviour in rules/cover-letter.md.
+\documentclass[a4paper,11pt]{article}
+\usepackage[a4paper,left=2.5cm,right=2.5cm,top=2.2cm,bottom=2cm]{geometry}
+\usepackage{cfr-lm}
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{charter}
 \usepackage[hidelinks]{hyperref}
-\usepackage{xcolor}
 % pdfTeX only (Tectonic/XeTeX has no \pdfgentounicode and emits a Unicode text layer natively)
 \ifdefined\pdfgentounicode\input{glyphtounicode}\pdfgentounicode=1\fi
-
-\definecolor{accent}{HTML}{1F2A37}
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{8pt}
+\raggedright
 
-% \letterHeader{Name}{Location}{Email}{Phone}{LinkedIn URL}
-\newcommand{\letterHeader}[5]{%
-  {\Large\color{accent}#1}\\[2pt]
-  \small #2 \,|\, \href{mailto:#3}{\detokenize{#3}} \,|\, #4 \,|\, \href{#5}{LinkedIn}\normalsize\par\vspace{10pt}}
-% \letterRecipient{Date}{Company}{Role / Team}{Location}
-\newcommand{\letterRecipient}[4]{#1\par\vspace{2pt}#2\\#3\\#4\par\vspace{6pt}}
+% ---- Stellio macros (format 2; Stellio writes only these) ----
+% \letterSender{Name}{Postal address}{Telephone label}{Telephone}{E-Mail label}{E-Mail}
+\newcommand{\letterSender}[6]{%
+  #1\\
+  #2\\
+  #3: #4\\
+  #5: \href{mailto:#6}{\detokenize{#6}}\par\vspace{14pt}}
+% \letterTo{Company}{Location or empty}
+\newcommand{\letterTo}[2]{#1\if\relax\detokenize{#2}\relax\else\\#2\fi\par\vspace{18pt}}
+% \letterDateLine{Place, date}
+\newcommand{\letterDateLine}[1]{\textbf{#1}\par}
+% \letterSubject{Application for the position of ...}
+\newcommand{\letterSubject}[1]{\textbf{#1}\par\vspace{6pt}}
+% \letterClosing{Best regards,}{Name}
+\newcommand{\letterClosing}[2]{#1\par\vspace{22pt}\rule{5cm}{0.4pt}\\#2}
 
 \begin{document}
+\fontfamily{cmr}\selectfont
 
 %% STELLIO:SLOT header
-\letterHeader{Firstname Lastname}{City, Country}{name@example.com}{+00 000 000000}{https://linkedin.com/in/example}
+\letterSender{Firstname Lastname}{Street 1, 12345 City, Country}{Telephone}{+00 000 000000}{E-Mail}{name@example.com}
 %% STELLIO:END header
 
 %% STELLIO:SLOT recipient
-\letterRecipient{19 November 2026}{Company}{Hiring Team, Job Title}{City, Country}
+\letterTo{Company}{City, Country}
+\letterDateLine{City, 01.01.2026}
+\letterSubject{Application for the position of Job Title}
 %% STELLIO:END recipient
 
 %% STELLIO:SLOT body
 Dear Hiring Team,
 
-Opening paragraph.
+How you found the role and why this company.
 
-Evidence paragraph.
+Why you, with two or three achievements from your profile.
 
-Closing paragraph.
+What you want to learn there, and a request for a conversation.
 %% STELLIO:END body
 
 %% STELLIO:SLOT closing
-Kind regards,\\[14pt]
-Firstname Lastname
+\letterClosing{Best regards,}{Firstname Lastname}
 %% STELLIO:END closing
 
 \end{document}

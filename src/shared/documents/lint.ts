@@ -1,20 +1,17 @@
 import type { Profile } from '../profile';
 import { RESUME_SECTIONS, type ResumeRules } from '../rules';
+import { ALL_HEADINGS } from './labels';
 import { renderedOrder } from './render';
-import type { LintIssue, LintReport, ResumeContent } from './schemas';
+import type { DocLanguage, LintIssue, LintReport, ResumeContent } from './schemas';
 import { readResume } from './texread';
 
 type Section = (typeof RESUME_SECTIONS)[number];
 const HEADINGS: Record<string, Section> = {
-  summary: 'summary',
-  experience: 'experience',
+  ...Object.fromEntries(Object.entries(ALL_HEADINGS).map(([h, s]) => [h.toLowerCase(), s as Section])),
   'work experience': 'experience',
   'professional experience': 'experience',
-  projects: 'projects',
   skills: 'skills',
-  'technical skills': 'skills',
-  education: 'education',
-  certifications: 'certifications',
+  awards: 'misc',
 };
 export const sectionOf = (heading: string): Section | undefined => HEADINGS[heading.trim().toLowerCase()];
 
@@ -35,7 +32,12 @@ export const words = (s: string): number => s.split(/\s+/).filter(Boolean).lengt
  * length, verb-first, banned words, first person, summary length and skills limits. Works on hand-edited tex
  * that keeps the template macros. Pure.
  */
-export function lintResume(tex: string, rules: ResumeRules): LintReport {
+/** German text runs about a quarter longer than English: bullet length limits grow by this factor. */
+export const GERMAN_LENGTH_FACTOR = 1.25;
+
+export function lintResume(tex: string, rules: ResumeRules, lang: DocLanguage = 'en'): LintReport {
+  const maxChars = Math.round(rules.bullet.max_chars * (lang === 'de' ? GERMAN_LENGTH_FACTOR : 1));
+  const minChars = Math.round(rules.bullet.min_chars * (lang === 'de' ? GERMAN_LENGTH_FACTOR : 1));
   const issues: LintIssue[] = [];
   const add = (rule: string, severity: LintIssue['severity'], message: string, path: string | null): void => {
     issues.push({ rule, severity, message, path });
@@ -76,21 +78,22 @@ export function lintResume(tex: string, rules: ResumeRules): LintReport {
   };
   const bullet = (text: string, path: string): void => {
     const len = text.length;
-    if (len > rules.bullet.max_chars)
+    if (len > maxChars)
       add(
         'bullet_length',
         'error',
-        `Bullet is ${String(len)} characters; the maximum is ${String(rules.bullet.max_chars)}`,
+        `Bullet is ${String(len)} characters; the maximum is ${String(maxChars)}`,
         path,
       );
-    else if (len < rules.bullet.min_chars)
+    else if (len < minChars)
       add(
         'bullet_length',
         'warning',
-        `Bullet is ${String(len)} characters; the minimum is ${String(rules.bullet.min_chars)}`,
+        `Bullet is ${String(len)} characters; the minimum is ${String(minChars)}`,
         path,
       );
-    if (rules.bullet.must_start_with_verb) {
+    // German bullets often start with a noun ("Entwicklung von ..."); the verb check is English only.
+    if (rules.bullet.must_start_with_verb && lang === 'en') {
       const first = /^[\p{L}][\p{L}'-]*/u.exec(text)?.[0] ?? '';
       if (first === '' || NOT_VERBS.has(first.toLowerCase()) || first[0] !== first[0]?.toUpperCase())
         add(
@@ -148,11 +151,12 @@ export function lintResume(tex: string, rules: ResumeRules): LintReport {
     rules.experience.most_recent_role_bullets_max,
   );
   counts('projects', rules.projects.bullets_per_project, rules.projects.max);
-  present.get('education')?.entries.forEach((e, i) => {
-    e.bullets.forEach((b, j) => {
-      prose(b, `education[${String(i)}].bullets[${String(j)}]`);
+  for (const sec of ['education', 'publications', 'patents'] as const)
+    present.get(sec)?.entries.forEach((e, i) => {
+      e.bullets.forEach((b, j) => {
+        prose(b, `${sec}[${String(i)}].bullets[${String(j)}]`);
+      });
     });
-  });
 
   const summary = present.get('summary')?.summary ?? null;
   if (summary !== null) {
@@ -203,18 +207,21 @@ export function lintContent(
   rules: ResumeRules,
   content: ResumeContent,
   profile: Profile,
+  lang: DocLanguage = 'en',
 ): LintReport {
-  const report = lintResume(tex, rules);
+  const report = lintResume(tex, rules, lang);
   const order = renderedOrder(content, profile);
   const lines = content.skills.flatMap((l, i) => (l.skills.some((x) => x.trim() !== '') ? [i] : []));
   const issues = report.issues.map((issue) => {
-    const m = /^(experience|projects|education)\[(\d+)\](?:\.bullets\[(\d+)\])?$/.exec(issue.path ?? '');
+    const m = /^(experience|projects|education|publications|patents)\[(\d+)\](?:\.bullets\[(\d+)\])?$/.exec(
+      issue.path ?? '',
+    );
     if (!m) {
       const sk = /^skills\[(\d+)\]$/.exec(issue.path ?? '');
       const line = sk ? lines[Number(sk[1])] : undefined;
       return line === undefined ? issue : { ...issue, path: `skills[${String(line)}]` };
     }
-    const section = m[1] as 'experience' | 'projects' | 'education';
+    const section = m[1] as 'experience' | 'projects' | 'education' | 'publications' | 'patents';
     const hit = order[section][Number(m[2])];
     if (!hit) return issue;
     let path = `${section}[${String(hit.index)}]`;
@@ -226,7 +233,15 @@ export function lintContent(
   });
 
   const used = new Set<string>();
-  for (const section of ['experience', 'projects', 'education', 'certifications'] as const) {
+  for (const section of [
+    'experience',
+    'projects',
+    'education',
+    'certifications',
+    'publications',
+    'patents',
+    'awards',
+  ] as const) {
     const seen = new Set<string>();
     content[section].forEach((item, i) => {
       used.add(item.entry_id);

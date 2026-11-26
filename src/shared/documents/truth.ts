@@ -9,6 +9,7 @@ import {
   type ResumeContent,
   type TruthReport,
   type TruthViolation,
+  type DocLanguage,
   type TruthWarning,
 } from './schemas';
 import { hasTerm } from './text';
@@ -320,6 +321,11 @@ export interface TruthOptions {
   approvedSkills?: readonly string[];
   /** For the recency cut-off and "present" in experience dates; default now. */
   today?: Date;
+  /**
+   * German versions: no capitalised-term warnings (every German noun is capitalised). Their terms are checked
+   * against the English source instead (`checkTranslation`).
+   */
+  language?: DocLanguage;
 }
 
 /** Why a profile skill may not be listed, or null when it may (skills-policy.md). */
@@ -385,7 +391,8 @@ export function checkTruth(content: ResumeContent, profile: Profile, opts: Truth
       'summary',
     );
   const sectionEntries = (
-    section: 'experience' | 'projects' | 'education' | 'certifications',
+    section:
+      'experience' | 'projects' | 'education' | 'certifications' | 'publications' | 'patents' | 'awards',
     list: { entry_id: string; bullets?: ResumeContent['experience'][number]['bullets'] }[],
   ): void => {
     list.forEach((item, i) => {
@@ -432,6 +439,9 @@ export function checkTruth(content: ResumeContent, profile: Profile, opts: Truth
   sectionEntries('projects', content.projects);
   sectionEntries('education', content.education);
   sectionEntries('certifications', content.certifications);
+  sectionEntries('publications', content.publications);
+  sectionEntries('patents', content.patents);
+  sectionEntries('awards', content.awards);
 
   content.skills.forEach((line, i) => {
     if (!CATEGORY_LABELS.includes(line.category_label))
@@ -454,7 +464,7 @@ export function checkTruth(content: ResumeContent, profile: Profile, opts: Truth
     });
   });
 
-  return { ok: violations.length === 0, violations, warnings };
+  return { ok: violations.length === 0, violations, warnings: opts.language === 'de' ? [] : warnings };
 }
 
 export interface CoverTruthOptions extends TruthOptions {
@@ -466,7 +476,7 @@ export interface CoverTruthOptions extends TruthOptions {
 
 /** Words in a salutation that are not names. */
 const SALUTATION_GLUE = new Set(
-  'dear hello hi good morning afternoon evening mr mrs ms mx dr prof professor sir madam hiring team manager managers committee recruitment recruiting recruiter talent acquisition people department and or the to of'.split(
+  'dear hello hi good morning afternoon evening mr mrs ms mx dr prof professor sir madam hiring team manager managers committee recruitment recruiting recruiter talent acquisition people department and or the to of sehr geehrte geehrter geehrtes liebe lieber hallo guten tag damen herren frau herr personalabteilung personalteam recruiting-team einstellungsteam und'.split(
     ' ',
   ),
 );
@@ -519,7 +529,7 @@ export function checkCoverTruth(
     if (!hasWord(opts.company, w) && !hasWord(opts.jd?.company ?? '', w))
       add('name_not_in_source', salutation, `"${w}" is not in the posting or your notes`, 'salutation');
   }
-  return { ok: violations.length === 0, violations, warnings };
+  return { ok: violations.length === 0, violations, warnings: opts.language === 'de' ? [] : warnings };
 }
 
 function truthContext(profile: Profile, opts: TruthOptions, preps = 'at|for|with') {

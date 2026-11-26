@@ -60,9 +60,25 @@ export const goodContent: ResumeContent = {
     { category_label: 'Languages', skills: ['Python', 'SQL'] },
     { category_label: 'Data', skills: ['PostgreSQL', 'Airflow'] },
   ],
+  publications: [],
+  patents: [],
+  awards: [],
   omitted: [],
   change_log: ['Led with pipeline work'],
 };
+
+/** `goodContent` with the template format 2 sections filled. */
+export const fullContent: ResumeContent = {
+  ...goodContent,
+  publications: [{ entry_id: 'pub-col', bullets: [] }],
+  patents: [{ entry_id: 'patent-join', bullets: [] }],
+  awards: [{ entry_id: 'award-hack' }],
+};
+
+/** The template format 1 seed and rules (v1.0.4 and earlier), kept to prove older templates still work. */
+export const v1Template = read('tests/fixtures/latex/resume-v1.tex');
+export const v1Rules = lintRules('resume', read('tests/fixtures/latex/rules-resume-v1.md'))
+  .config as ResumeRules;
 
 /** `goodContent` with an invented number: the truth check flags the 73 (no source says so). */
 export const badContent: ResumeContent = {
@@ -81,7 +97,14 @@ export const badContent: ResumeContent = {
 };
 
 // Arbitrary content from the model, any unicode, any ids: render must stay valid and pass the pre-check.
-const ids = [...fullProfile.experience, ...fullProfile.projects, ...fullProfile.education].map((e) => e.id);
+const ids = [
+  ...fullProfile.experience,
+  ...fullProfile.projects,
+  ...fullProfile.education,
+  ...fullProfile.publications,
+  ...fullProfile.patents,
+  ...fullProfile.awards,
+].map((e) => e.id);
 const anyText = fc.oneof(
   fc.string({ unit: 'binary', maxLength: 120 }),
   fc.constantFrom('input', 'write', '\\input{x}', '^^5c', '%', '#', '}{', '\\', '{read}', '\\csname'),
@@ -96,6 +119,9 @@ export const arbContent: fc.Arbitrary<ResumeContent> = fc.record({
   projects: fc.array(entry, { maxLength: 3 }),
   education: fc.array(entry, { maxLength: 2 }),
   certifications: fc.array(fc.record({ entry_id: id }), { maxLength: 2 }),
+  publications: fc.array(entry, { maxLength: 2 }),
+  patents: fc.array(entry, { maxLength: 2 }),
+  awards: fc.array(fc.record({ entry_id: id }), { maxLength: 2 }),
   skills: fc.array(fc.record({ category_label: anyText, skills: fc.array(anyText, { maxLength: 6 }) }), {
     maxLength: 4,
   }),

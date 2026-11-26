@@ -113,6 +113,86 @@
         "additionalProperties": false
       }
     },
+    "publications": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["text", "source_ids"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["entry_id", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "patents": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          },
+          "bullets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "text": {
+                  "type": "string"
+                },
+                "source_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": ["text", "source_ids"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["entry_id", "bullets"],
+        "additionalProperties": false
+      }
+    },
+    "awards": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "entry_id": {
+            "type": "string"
+          }
+        },
+        "required": ["entry_id"],
+        "additionalProperties": false
+      }
+    },
     "skills": {
       "type": "array",
       "items": {
@@ -268,6 +348,9 @@
     "projects",
     "education",
     "certifications",
+    "publications",
+    "patents",
+    "awards",
     "skills",
     "omitted",
     "change_log"

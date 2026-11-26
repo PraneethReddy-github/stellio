@@ -12,6 +12,11 @@ const IDENTITY: { path: string; label: string; read: (m: Profile) => string }[] 
   { path: 'email', label: 'Email', read: (m) => m.frontMatter.email },
   { path: 'phone', label: 'Phone', read: (m) => m.frontMatter.phone },
   { path: 'location', label: 'Location', read: (m) => m.frontMatter.location },
+  {
+    path: 'address',
+    label: 'Postal address (cover letters only)',
+    read: (m) => m.frontMatter.address,
+  },
   { path: 'links.linkedin', label: 'LinkedIn', read: (m) => m.frontMatter.links.linkedin },
   { path: 'links.github', label: 'GitHub', read: (m) => m.frontMatter.links.github },
   { path: 'links.portfolio', label: 'Portfolio', read: (m) => m.frontMatter.links.portfolio },
@@ -168,8 +173,11 @@ export function OverviewTab({
   onAddSkill,
   onEditSkill,
   onJump,
+  photo,
 }: {
   model: Profile;
+  /** The resume photo section (it loads its own data), shown after Identity. */
+  photo?: React.ReactNode;
   /** Dotted front matter path + new value. */
   onField: (path: string, value: unknown, section: 'identity' | 'preferences') => void;
   onAddSkill: () => void;
@@ -197,6 +205,8 @@ export function OverviewTab({
           ))}
         </div>
       </section>
+
+      {photo}
 
       <section className={s.section} aria-label="Preferences">
         <SectionHeader title="Preferences" />

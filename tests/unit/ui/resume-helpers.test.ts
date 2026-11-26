@@ -6,6 +6,7 @@ import {
   modelLabel,
   reviseBlocker,
   stageLabel,
+  translateBlocker,
   versionLabel,
 } from '../../../src/renderer/src/features/workspace/resume/helpers';
 import type { ResumeSummary } from '../../../src/renderer/src/lib/resume';
@@ -24,6 +25,7 @@ const row = (version: number, extra: Partial<ResumeSummary['meta']> = {}): Resum
     instruction: null,
     userEdited: false,
     isFinal: false,
+    language: 'en',
     ...extra,
   },
   truthOk: true,
@@ -83,5 +85,20 @@ describe('resume tab helpers', () => {
     expect(reviseBlocker({ ...base, manual: true })).toMatch(/edited by hand/);
     expect(reviseBlocker({ ...base, manual: true, running: true })).toBeNull();
     expect(reviseBlocker({ ...base, hasVersion: false })).toBeNull();
+  });
+});
+
+describe('German versions', () => {
+  it('labels a German version and explains why it cannot be revised or translated again', () => {
+    expect(versionLabel(row(4, { language: 'de', isFinal: true }))).toBe('v4 · German · Final');
+    expect(
+      reviseBlocker({ hasVersion: true, manual: false, dirty: false, running: false, german: true }),
+    ).toMatch(/German version/);
+    expect(translateBlocker({ manual: false, dirty: false, german: false })).toBeNull();
+    expect(translateBlocker({ manual: false, dirty: false, german: true })).toBe(
+      'This version is already German.',
+    );
+    expect(translateBlocker({ manual: true, dirty: false, german: false })).toMatch(/drafted version/);
+    expect(translateBlocker({ manual: false, dirty: true, german: false })).toMatch(/Save your edits/);
   });
 });

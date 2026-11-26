@@ -93,6 +93,7 @@ describe('profileToMarkdown', () => {
         email: text,
         phone: fc.oneof(text, fc.constant('')),
         location: fc.oneof(text, fc.constant('')),
+        address: fc.oneof(text, fc.constant('')),
         links: fc.record({
           linkedin: fc.oneof(text, fc.constant('')),
           github: fc.constant(''),
@@ -124,6 +125,7 @@ describe('profileToMarkdown', () => {
       certifications: fc.array(entry, { maxLength: 2 }),
       awards: fc.array(entry, { maxLength: 2 }),
       publications: fc.array(entry, { maxLength: 2 }),
+      patents: fc.array(entry, { maxLength: 2 }),
       languages: fc.array(entry, { maxLength: 2 }),
       notes: multiline,
     })
@@ -138,6 +140,6 @@ describe('profileToMarkdown', () => {
       }),
       { numRuns: 300 },
     );
-    expect(ENTRY_SECTIONS).toHaveLength(7);
+    expect(ENTRY_SECTIONS).toHaveLength(8);
   });
 });

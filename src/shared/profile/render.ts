@@ -100,6 +100,7 @@ const TITLES: Record<string, string> = {
   certifications: 'Certifications',
   awards: 'Awards',
   publications: 'Publications',
+  patents: 'Patents',
   languages: 'Languages',
   notes: 'Notes',
 };

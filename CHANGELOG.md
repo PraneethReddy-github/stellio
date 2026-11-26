@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.1.0 — 2026-11-26
+
+- New default resume template: photo and contact block, Summary, Education as a table, Experience, Projects with a link symbol, Publications, Patents, Technical Skills, Certifications, Miscellaneous (positions, achievements, languages) and "Last updated". Resumes may run to two pages.
+- Resume photo: Profile, Resume photo. Pick a PNG or JPEG; Stellio keeps a small copy and shows it on your resumes.
+- German version: one button on a drafted resume or cover letter makes a German translation as a new version, with German headings and dates. It keeps every fact; Stellio checks that no number, technical term or company name was added.
+- Cover letters are laid out like a German business letter: your postal address (new Profile field, letters only), "Place, DD.MM.YYYY", "Application for the position of …" and a signature line. The letter says how you found the job when Stellio knows it.
+- New profile section `## Patents`; projects show their link, education its grade.
+- Letters such as ß, ł, ř and ō now print correctly in PDFs (ß used to print as "SS").
+- If you never changed the old default rules and templates, they are replaced by the new ones at start (the old text stays in History). Edited files stay as they are; Rules, Default shows the difference. Templates you made yourself keep working.
+- LaTeX: the new template needs a few more packages, so Settings, LaTeX may ask for one more warm-up.
+
 ## 1.0.4 — 2026-11-25
 
 - Update from inside Stellio: the banner opens a "what is new" window with the changes of every version you missed. Download and install fetches the update, checks its SHA-256 and installs it (a .deb asks for your password, an AppImage is replaced in place); then restart with one click.

@@ -2,7 +2,8 @@ import type { Jd } from '../jobs/schemas';
 import { canonicalSkillKey, matchesSkill, type Profile } from '../profile';
 import type { ResumeRules } from '../rules';
 import { sectionOf } from './lint';
-import type { AtsReport, KeywordHit } from './schemas';
+import { MONTHS_DE, MONTHS_DE_SHORT, PRESENT } from './render';
+import type { AtsReport, DocLanguage, KeywordHit } from './schemas';
 import { hasTerm } from './text';
 import { readResume } from './texread';
 
@@ -16,6 +17,14 @@ const DATE_RE: Record<ResumeRules['date_format'], RegExp> = {
   'YYYY-MM': /^\d{4}-(0[1-9]|1[0-2])$/,
 };
 
+const alt = (words: string[]): string => words.join('|');
+const DATE_RE_DE: Record<ResumeRules['date_format'], RegExp> = {
+  'MMM YYYY': new RegExp(`^(${alt(MONTHS_DE_SHORT)}) \\d{4}$`),
+  'MMMM YYYY': new RegExp(`^(${alt(MONTHS_DE)}) \\d{4}$`),
+  'MM/YYYY': DATE_RE['MM/YYYY'],
+  'YYYY-MM': DATE_RE['YYYY-MM'],
+};
+
 export interface AtsInput {
   tex: string;
   jd: Jd | null;
@@ -24,6 +33,8 @@ export interface AtsInput {
   /** Text layer of the compiled PDF; when given it is matched instead of the text read from the tex. */
   pdfText?: string;
   pdfBytes?: number;
+  /** Month names and "present" are checked in this language. Default en. */
+  language?: DocLanguage;
 }
 
 /**
@@ -77,13 +88,21 @@ export function checkAts(input: AtsInput): AtsReport {
   );
   check(
     'no_images',
-    !/\\includegraphics|\\begin\{(tikzpicture|picture)\}/.test(body),
+    !/\\includegraphics|\\resumephototrue|\\begin\{(tikzpicture|picture)\}/.test(body),
     'No images',
     'Contains images or drawings',
   );
+  // An environment the template defines as a table (format 2's education grid) is a table too.
+  const tableEnvs = doc.preamble.split(/^(?=\\(?:re)?new(?:environment|command))/m).flatMap((def) => {
+    const m = /^\\(?:re)?newenvironment\{(\w+)\}/.exec(def);
+    return m?.[1] && /\\(?:begin\{)?tabular/.test(def) ? [m[1]] : [];
+  });
+  const tableRe = new RegExp(
+    `\\\\begin\\{(tabular|tabularx|table|longtable${tableEnvs.map((e) => `|${e}`).join('')})\\}`,
+  );
   check(
     'no_layout_tables',
-    !/\\begin\{(tabular|tabularx|table|longtable)\}/.test(body),
+    !tableRe.test(body),
     'No tables in the body',
     'Uses tables for layout in the body',
   );
@@ -110,9 +129,9 @@ export function checkAts(input: AtsInput): AtsReport {
     .flatMap((d) => d.split(/\s*[–—]\s*|\s+-\s+/))
     .map((d) => d.trim())
     .filter((d) => d !== '');
-  const badDates = dates.filter(
-    (d) => !DATE_RE[input.rules.date_format].test(d) && d !== 'Present' && !/^\d{4}$/.test(d),
-  );
+  const lang = input.language ?? 'en';
+  const dateRe = (lang === 'de' ? DATE_RE_DE : DATE_RE)[input.rules.date_format];
+  const badDates = dates.filter((d) => !dateRe.test(d) && d !== PRESENT[lang] && !/^\d{4}$/.test(d));
   check(
     'date_format',
     badDates.length === 0,

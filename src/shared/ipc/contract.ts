@@ -67,6 +67,7 @@ import {
   SkillAuditRowSchema,
 } from '../skills/schemas';
 
+const PhotoState = z.object({ present: z.boolean(), dataUrl: z.string().nullable() });
 const ProfileSnapshot = z.object({
   markdown: z.string(),
   model: ProfileSchema,
@@ -162,6 +163,17 @@ export const ipcContract = {
       z.object({ status: z.literal('draft'), draft: ProfileDraft, sourceName: z.string() }),
     ]),
   },
+  /** The resume photo (templates/photo.jpg, D26) as a data URL for the Profile screen. */
+  'photo:get': { input: z.undefined(), output: PhotoState },
+  /** Main shows the file picker (PNG/JPEG), checks and re-encodes the image, stores and commits it. */
+  'photo:choose': {
+    input: z.undefined(),
+    output: z.discriminatedUnion('status', [
+      z.object({ status: z.literal('cancelled') }),
+      z.object({ status: z.literal('saved'), photo: PhotoState }),
+    ]),
+  },
+  'photo:clear': { input: z.undefined(), output: PhotoState },
   'rules:list': {
     input: z.undefined(),
     output: z.array(
@@ -327,6 +339,11 @@ export const ipcContract = {
     }),
     output: ResumeView,
   },
+  /** German version of a drafted English version (resume.translate, D27); same checks plus the translation check. */
+  'resume:translate': {
+    input: z.object({ jobId: JobId, fromVersion: Version, requestId: RequestId }),
+    output: ResumeView,
+  },
   /** All versions, oldest first, with summary checks and staleness. */
   'resume:list': { input: z.object({ jobId: JobId }), output: z.array(ResumeVersionSummarySchema) },
   'resume:get': { input: z.object({ jobId: JobId, version: Version }), output: ResumeView },
@@ -371,6 +388,10 @@ export const ipcContract = {
       instruction: z.string().trim().min(1).max(2000),
       requestId: RequestId,
     }),
+    output: CoverView,
+  },
+  'cover:translate': {
+    input: z.object({ jobId: JobId, fromVersion: Version, requestId: RequestId }),
     output: CoverView,
   },
   'cover:list': { input: z.object({ jobId: JobId }), output: z.array(CoverVersionSummarySchema) },

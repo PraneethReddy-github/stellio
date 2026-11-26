@@ -69,6 +69,23 @@ export function createHandlers(
       return { status: 'draft' as const, draft, sourceName: basename(file) };
     },
 
+    'photo:get': () => ctx.photo.get(),
+    'photo:choose': async () => {
+      const parent = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+      const options = {
+        title: 'Choose a resume photo',
+        properties: ['openFile' as const],
+        filters: [{ name: 'Image', extensions: ['jpg', 'jpeg', 'png'] }],
+      };
+      const picked = parent
+        ? await dialog.showOpenDialog(parent, options)
+        : await dialog.showOpenDialog(options);
+      const file = picked.filePaths[0];
+      if (picked.canceled || !file) return { status: 'cancelled' as const };
+      return { status: 'saved' as const, photo: await ctx.photo.setFromFile(file) };
+    },
+    'photo:clear': () => ctx.photo.clear(),
+
     'rules:list': () => ctx.rules.list(),
     'rules:get': ({ path }) => ctx.rules.get(path),
     'rules:save': ({ path, content, expectedHash, message }) =>
@@ -149,6 +166,13 @@ export function createHandlers(
           onStage: (stage, issues) => emit('resume:progress', { jobId, requestId, stage, issues }),
         }),
       ),
+    'resume:translate': ({ jobId, fromVersion, requestId }) =>
+      ctx.tasks.run(requestId, (signal) =>
+        ctx.documents.translate(jobId, fromVersion, {
+          signal,
+          onStage: (stage, issues) => emit('resume:progress', { jobId, requestId, stage, issues }),
+        }),
+      ),
     'resume:list': ({ jobId }) => ctx.documents.list(jobId),
     'resume:get': ({ jobId, version }) => ctx.documents.get(jobId, version),
     'resume:saveManual': ({ jobId, fromVersion, tex }) => ctx.documents.saveManual(jobId, fromVersion, tex),
@@ -188,6 +212,13 @@ export function createHandlers(
     'cover:revise': ({ jobId, fromVersion, instruction, requestId }) =>
       ctx.tasks.run(requestId, (signal) =>
         ctx.cover.revise(jobId, fromVersion, instruction, {
+          signal,
+          onStage: (stage, issues) => emit('cover:progress', { jobId, requestId, stage, issues }),
+        }),
+      ),
+    'cover:translate': ({ jobId, fromVersion, requestId }) =>
+      ctx.tasks.run(requestId, (signal) =>
+        ctx.cover.translate(jobId, fromVersion, {
           signal,
           onStage: (stage, issues) => emit('cover:progress', { jobId, requestId, stage, issues }),
         }),

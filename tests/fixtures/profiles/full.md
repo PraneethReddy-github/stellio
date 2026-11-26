@@ -105,6 +105,14 @@ Prefers small teams.
 
 - Short write-up of the thesis.
 
+## Patents
+
+### Streaming join operator {#patent-join}
+- number: DE 102023000001
+- date: 2023-09
+
+- Co-inventor on a published application for a windowed join operator.
+
 ## Languages
 
 ### English {#lang-en}

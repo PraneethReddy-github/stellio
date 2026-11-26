@@ -5,6 +5,11 @@ export const REQUIRED_SLOTS: Record<TemplateKind, readonly string[]> = {
   resume: ['header', 'summary', 'experience', 'projects', 'skills', 'education', 'certifications'],
   'cover-letter': ['header', 'recipient', 'body', 'closing'],
 };
+/** Slots Stellio fills when a template has them (template format 2, D25). */
+export const OPTIONAL_SLOTS: Record<TemplateKind, readonly string[]> = {
+  resume: ['publications', 'patents', 'misc', 'updated'],
+  'cover-letter': [],
+};
 
 export interface Slot {
   name: string;
@@ -100,7 +105,7 @@ export function parseTemplate(tex: string, kind?: TemplateKind): ParsedTemplate 
       if (!slots.some((s) => s.name === name)) err('slot_missing', `Required slot "${name}" is missing`, 1);
     }
     for (const s of slots) {
-      if (!REQUIRED_SLOTS[kind].includes(s.name))
+      if (!REQUIRED_SLOTS[kind].includes(s.name) && !OPTIONAL_SLOTS[kind].includes(s.name))
         diagnostics.push({
           severity: 'warning',
           code: 'slot_unknown',
@@ -203,12 +208,66 @@ const INVISIBLE = /[\u0000-\u0008\u000B-\u001F\u007F\u200B-\u200D\u2060\uFEFF]/g
 // Tectonic would drop it); upgrade when non-Latin resumes are needed.
 const UNSUPPORTED = /[^\n\t -~\u00A0-\u017F]/g;
 
+/**
+ * Under Tectonic (XeTeX) the 8-bit T1 fonts place a Unicode letter by its code point: Latin-1 letters land on
+ * the right T1 slots, but ß lands on "SS", ÿ on ß, and every Latin Extended-A letter is dropped. LaTeX's own
+ * commands for them (`\ss{}`, `\"{y}`, `\v{r}`, `\l{}`) pick the T1 glyph on both engines.
+ */
+const LETTER_CMD: Record<string, string> = {
+  ß: '\\ss{}',
+  Đ: '\\DJ{}',
+  đ: '\\dj{}',
+  Ħ: 'H',
+  ħ: 'h',
+  ı: '\\i{}',
+  Ĳ: 'IJ',
+  ĳ: 'ij',
+  ĸ: 'k',
+  Ŀ: 'L',
+  ŀ: 'l',
+  Ł: '\\L{}',
+  ł: '\\l{}',
+  ŉ: "'n",
+  Ŋ: '\\NG{}',
+  ŋ: '\\ng{}',
+  Œ: '\\OE{}',
+  œ: '\\oe{}',
+  ſ: 's',
+};
+/** Combining mark → accent command. */
+export const ACCENT_CMD: Record<string, string> = {
+  '\u0300': '`',
+  '\u0301': "'",
+  '\u0302': '^',
+  '\u0303': '~',
+  '\u0304': '=',
+  '\u0306': 'u',
+  '\u0307': '.',
+  '\u0308': '"',
+  '\u030A': 'r',
+  '\u030B': 'H',
+  '\u030C': 'v',
+  '\u0327': 'c',
+  '\u0328': 'k',
+};
+const NEEDS_CMD = /[\u00DF\u00FF\u0100-\u017F]/g;
+const letterCmd = (c: string): string => {
+  const fixed = LETTER_CMD[c];
+  if (fixed !== undefined) return fixed;
+  const d = c.normalize('NFD'); // one base letter plus one combining mark, all in the BMP
+  const base = d.charAt(0);
+  const mark = d.slice(1);
+  const acc = ACCENT_CMD[mark];
+  return acc === undefined ? base : `\\${acc}{${base}}`;
+};
+
 /** Escapes plain text for use as LaTeX body text. Do not use it for header arguments (see checkHeaderArg). */
 export function escapeLatex(text: string): string {
   return text
     .normalize('NFC')
     .replace(INVISIBLE, '')
     .replace(SPECIAL, (c) => ESCAPES[c] ?? c)
+    .replace(NEEDS_CMD, letterCmd)
     .replace(UNSUPPORTED, '');
 }
 

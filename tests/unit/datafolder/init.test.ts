@@ -2,7 +2,9 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { initDataFolder } from '../../../src/main/services/datafolder/init';
-import { log } from '../../../src/main/services/datafolder/git';
+import { hashText } from '../../../src/main/services/datafolder/files';
+import { commitFiles, log } from '../../../src/main/services/datafolder/git';
+import { PREVIOUS_SEEDS } from '../../../src/main/services/datafolder/seedHistory';
 import { SEED_FILES } from '../../../src/main/services/datafolder/layout';
 import { SEED_DIR, isolateGit, useTempDirs } from './helpers';
 
@@ -71,5 +73,79 @@ describe('initDataFolder', () => {
     expect(await readFile(join(d, 'rules/resume.md'), 'utf8')).toBe(
       await readFile(join(SEED_DIR, 'rules/resume.md'), 'utf8'),
     );
+  });
+});
+
+describe('initDataFolder: new defaults for untouched seed files (D28)', () => {
+  const OLD: [string, string][] = [
+    ['templates/resume.tex', 'tests/fixtures/latex/resume-v1.tex'],
+    ['templates/cover-letter.tex', 'tests/fixtures/latex/cover-letter-v1.tex'],
+    ['rules/resume.md', 'tests/fixtures/latex/rules-resume-v1.md'],
+    ['rules/cover-letter.md', 'tests/fixtures/latex/rules-cover-letter-v1.md'],
+  ];
+
+  it('the recorded hashes are the shipped v1 files', async () => {
+    for (const [rel, fixture] of OLD)
+      expect(PREVIOUS_SEEDS[rel]).toContain(hashText(await readFile(fixture, 'utf8')));
+    expect(Object.keys(PREVIOUS_SEEDS)).not.toContain('profile/praneethreddy.md');
+  });
+
+  it('replaces a file that is exactly an old default, commits it, and keeps the old one in git', async () => {
+    const d = join(await tmp(), 'Stellio');
+    await initDataFolder(d, SEED_DIR);
+    for (const [rel, fixture] of OLD) await writeFile(join(d, rel), await readFile(fixture));
+    // an old default with CRLF line endings is still the old default
+    await writeFile(
+      join(d, 'rules/cover-letter.md'),
+      (await readFile(OLD[3]?.[1] ?? '', 'utf8')).replace(/\n/g, '\r\n'),
+    );
+    await commitFiles(
+      d,
+      OLD.map(([rel]) => rel),
+      'test: back to v1',
+    );
+    const r = await initDataFolder(d, SEED_DIR);
+    expect(r.updated.sort()).toEqual(OLD.map(([rel]) => rel).sort());
+    for (const [rel] of OLD)
+      expect(await readFile(join(d, rel), 'utf8')).toBe(await readFile(join(SEED_DIR, rel), 'utf8'));
+    const [last, previous] = await log(d, { limit: 2 });
+    expect(last?.message).toMatch(/^seed: update .* to the new default$/);
+    expect(previous?.message).toBe('test: back to v1');
+    expect((await initDataFolder(d, SEED_DIR)).updated).toEqual([]);
+  });
+
+  it('a template and its rules move together: an edited template keeps its old rules (review finding)', async () => {
+    const d = join(await tmp(), 'Stellio');
+    await initDataFolder(d, SEED_DIR);
+    const mine = `${await readFile('tests/fixtures/latex/resume-v1.tex', 'utf8')}% mine\n`;
+    await writeFile(join(d, 'templates/resume.tex'), mine);
+    await writeFile(join(d, 'rules/resume.md'), await readFile('tests/fixtures/latex/rules-resume-v1.md'));
+    await writeFile(
+      join(d, 'templates/cover-letter.tex'),
+      await readFile('tests/fixtures/latex/cover-letter-v1.tex'),
+    );
+    await writeFile(
+      join(d, 'rules/cover-letter.md'),
+      await readFile('tests/fixtures/latex/rules-cover-letter-v1.md'),
+    );
+    const r = await initDataFolder(d, SEED_DIR);
+    expect(r.updated.sort()).toEqual(['rules/cover-letter.md', 'templates/cover-letter.tex']);
+    expect(await readFile(join(d, 'templates/resume.tex'), 'utf8')).toBe(mine);
+    expect(await readFile(join(d, 'rules/resume.md'), 'utf8')).toBe(
+      await readFile('tests/fixtures/latex/rules-resume-v1.md', 'utf8'),
+    );
+  });
+
+  it('never touches a file the user changed, even by one character', async () => {
+    const d = join(await tmp(), 'Stellio');
+    await initDataFolder(d, SEED_DIR);
+    const mine = (await readFile('tests/fixtures/latex/resume-v1.tex', 'utf8')).replace(
+      'accent}{HTML}{1F2A37}',
+      'accent}{HTML}{1F2A38}',
+    );
+    await writeFile(join(d, 'templates/resume.tex'), mine);
+    const r = await initDataFolder(d, SEED_DIR);
+    expect(r.updated).toEqual([]);
+    expect(await readFile(join(d, 'templates/resume.tex'), 'utf8')).toBe(mine);
   });
 });

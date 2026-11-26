@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { createClaudeRunner } from '../../src/main/ai/runner';
 import { createDbRecorder } from '../../src/main/services/ai/recorder';
-import { createCoverService } from '../../src/main/services/documents/cover';
+import { createCoverService, jobSourceLine } from '../../src/main/services/documents/cover';
 import { createJobsService } from '../../src/main/services/jobs/service';
 import { compileTex } from '../../src/main/services/latex/compile';
 import { detectEngine, type Engine } from '../../src/main/services/latex/engine';
@@ -12,7 +12,7 @@ import { createLatexService } from '../../src/main/services/latex/service';
 import { createProfileService } from '../../src/main/services/profile/service';
 import { createRulesService } from '../../src/main/services/rules/service';
 import { createAiSettings } from '../../src/main/services/settings/ai';
-import type { CoverContent } from '../../src/shared/documents';
+import { coverTexts, type CoverContent } from '../../src/shared/documents';
 import { badCover, coverPosting, coverTemplate, goodCover } from '../fixtures/cover';
 import { sampleAnalysis, sampleJd } from '../fixtures/jobs';
 import { freshDb, tempDir } from '../unit/db/helpers';
@@ -24,6 +24,14 @@ const engine: Engine | null = existsSync(BIN)
   : null;
 const canCompile = engine !== null && (await compileTex({ engine, tex: coverTemplate })).ok;
 const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+/** A stand-in translation: same numbers and terms, German glue words, about the same length. */
+const germanParagraph = (s: string): string =>
+  s
+    .replace(/\bI am\b/g, 'Ich bin')
+    .replace(/\band\b/g, 'und')
+    .replace(/\bthe\b/g, 'die')
+    .replace(/\bwith\b/g, 'mit');
 
 async function setup(env: Record<string, string> = {}) {
   const db = freshDb();
@@ -55,6 +63,9 @@ async function setup(env: Record<string, string> = {}) {
         ...goodCover,
         closing: 'Best regards,',
       } satisfies CoverContent),
+      FAKE_CLAUDE_OUTPUT_COVER_TRANSLATE: JSON.stringify({
+        items: coverTexts(goodCover).map((i) => ({ key: i.key, text: germanParagraph(i.text) })),
+      }),
       FAKE_CLAUDE_CAPTURE: cap,
       ...env,
     },
@@ -92,22 +103,71 @@ async function setup(env: Record<string, string> = {}) {
       .filter(Boolean)
       .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
       .filter((r) => r.kind === 'call' && r.stdin.includes('<cover_rules>'));
-  return { db, dir, cover, jobId: intake.jobId, calls };
+  const translateCalls = () =>
+    readFileSync(cap, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
+      .filter((r) => r.kind === 'call' && r.stdin.includes('<texts>'));
+  return { db, dir, cover, jobId: intake.jobId, calls, translateCalls };
 }
 
+describe('jobSourceLine', () => {
+  it('names the board, the careers page or the host, and says when nothing is recorded', () => {
+    expect(jobSourceLine([{ source: 'ba', url: null }])).toBe(
+      'The candidate found this posting on the job board of the Bundesagentur für Arbeit.',
+    );
+    expect(
+      jobSourceLine([
+        { source: 'greenhouse', url: 'https://x' },
+        { source: 'lever', url: null },
+      ]),
+    ).toBe("The candidate found this posting on the company's careers page.");
+    expect(jobSourceLine([{ source: 'manual', url: 'https://www.example.test/jobs/1' }])).toBe(
+      'The candidate found this posting on example.test.',
+    );
+    expect(jobSourceLine([{ source: 'manual', url: 'not a url' }])).toMatch(/not recorded/);
+    expect(jobSourceLine([])).toMatch(/not recorded: do not say how/);
+  });
+});
+
 describe('cover letter pipeline (fake CLI)', { timeout: 60_000 }, () => {
+  it('the prompt carries where the posting was found; the letter is laid out in format 2', async () => {
+    const { cover, jobId, calls } = await setup();
+    const v = await cover.generate(jobId);
+    expect(calls()[0]?.stdin).toMatch(/<job_source>\nWhere the candidate found this posting is not recorded/);
+    expect(v.tex).toContain('\\letterDateLine{Berlin, 20.11.2026}');
+    expect(v.tex).toContain('\\letterSubject{Application for the position of Data Engineer}');
+  });
+
+  it('German version: translated paragraphs, German letter lines, checks pass; not twice, not revisable', async () => {
+    const { cover, jobId, translateCalls } = await setup();
+    await cover.generate(jobId);
+    const de = await cover.translate(jobId, 1);
+    expect(de.meta).toMatchObject({ version: 2, parentVersion: 1, language: 'de' });
+    expect(de.meta.promptVersion).toBe('cover.translate@v1');
+    expect(de.checks.truth?.violations).toEqual([]);
+    expect(de.tex).toContain('\\letterSubject{Bewerbung für die Position als Data Engineer}');
+    expect(de.tex).toContain('Sehr geehrte Damen und Herren,');
+    expect(de.tex).toContain('\\letterClosing{Mit freundlichen Grü\\ss{}en}{Alex Example}');
+    expect(de.content?.paragraphs.map((p) => p.source_ids)).toEqual(
+      goodCover.paragraphs.map((p) => p.source_ids),
+    );
+    expect(translateCalls()[0]?.argv.join(' ')).toContain('English cover letter into German');
+    await expect(cover.translate(jobId, 2)).rejects.toThrow(/already German/);
+    await expect(cover.revise(jobId, 2, 'shorter')).rejects.toThrow(/German version/);
+  });
+
   it('generate → checks → compile → stored as a cover_letter version 1', async () => {
     const { cover, jobId, calls, db, dir } = await setup();
     const stages: string[] = [];
     const v = await cover.generate(jobId, { onStage: (s) => stages.push(s) });
     expect(v.meta).toMatchObject({ version: 1, parentVersion: null, userEdited: false, isFinal: false });
-    expect(v.meta.promptVersion).toBe('cover.generate@v1');
+    expect(v.meta.promptVersion).toBe('cover.generate@v2');
     expect(v.checks.truth).toEqual({ ok: true, violations: [], warnings: [] });
     expect(v.checks.lint).toEqual({ ok: true, issues: [] });
     expect(v.content).toEqual(goodCover);
-    expect(v.tex).toContain(
-      '\\letterRecipient{20 November 2026}{Nimbus Analytics GmbH}{Hiring Team, Data Engineer}{Berlin, Germany}',
-    );
+    expect(v.tex).toContain('\\letterTo{Nimbus Analytics GmbH}{Berlin, Germany}');
     expect(v.tex).toContain('Dear Hiring Team,');
     expect(stages).toEqual(['drafting', 'checking', 'compiling']);
     if (canCompile) {
@@ -177,7 +237,7 @@ describe('cover letter pipeline (fake CLI)', { timeout: 60_000 }, () => {
     await cover.generate(jobId);
     const v2 = await cover.revise(jobId, 1, 'sign off differently');
     expect(v2.meta).toMatchObject({ version: 2, parentVersion: 1, instruction: 'sign off differently' });
-    expect(v2.meta.promptVersion).toBe('cover.revise@v1');
+    expect(v2.meta.promptVersion).toBe('cover.revise@v2');
     expect(v2.tex).toContain('Best regards,');
     expect(calls()[1]?.stdin).toContain('<user_instruction>\nsign off differently\n</user_instruction>');
     expect(calls()[1]?.argv.join(' ')).toContain('You revise');
@@ -222,7 +282,7 @@ describe('cover letter pipeline (fake CLI)', { timeout: 60_000 }, () => {
       path: join(dir, `${name}.tex`),
     });
     expect(pick).toHaveBeenCalledWith(name, 'tex');
-    expect(readFileSync(join(dir, `${name}.tex`), 'utf8')).toContain('\\letterHeader{Alex Example}');
+    expect(readFileSync(join(dir, `${name}.tex`), 'utf8')).toContain('\\letterSender{Alex Example}');
     expect(await cover.export(jobId, 1, 'tex', () => Promise.resolve(null))).toEqual({ status: 'cancelled' });
     if (canCompile) {
       await cover.export(jobId, 1, 'pdf', pick);

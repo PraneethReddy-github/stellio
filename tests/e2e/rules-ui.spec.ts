@@ -105,12 +105,12 @@ test('an invalid value shows a live diagnostic with its line; fixing and saving 
   await row.click();
   await expect(page.locator('.cm-activeLineGutter')).toHaveText(line);
 
-  await limit(2);
+  await limit(1);
   await expect(row).toHaveCount(0);
   await expect(page.getByText('No problems found.')).toBeVisible();
   await page.keyboard.press('Control+s');
   await expect(toast('resume.md saved')).toBeVisible();
-  await expect.poll(() => onDisk(RESUME)).toContain('page_limit: 2');
+  await expect.poll(() => onDisk(RESUME)).toContain('page_limit: 1');
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
   await expect(fileButton('resume.md')).toContainText('modified');
 
@@ -140,20 +140,20 @@ test('Discard drops unsaved edits; edits survive switching files', async () => {
   await fileButton('resume.md').click();
   await expect(editor('resume.md')).toContainText('page_limit: 3');
   await page.getByRole('button', { name: 'Discard' }).click();
-  await expect(editor('resume.md')).toContainText('page_limit: 1');
+  await expect(editor('resume.md')).toContainText('page_limit: 2');
   expect(onDisk(RESUME)).toBe(seedOf(RESUME));
 });
 
 test('history: restore an older version after confirming', async () => {
   const seed = seedOf(RESUME);
-  await save(RESUME, seed.replace('page_limit: 1', 'page_limit: 2'), 'rules: edit resume.md');
-  await save(RESUME, seed.replace('page_limit: 1', 'page_limit: 3'), 'rules: edit resume.md');
+  await save(RESUME, seed.replace('page_limit: 2', 'page_limit: 1'), 'rules: edit resume.md');
+  await save(RESUME, seed.replace('page_limit: 2', 'page_limit: 3'), 'rules: edit resume.md');
   await openRules();
   await page.getByRole('tab', { name: 'History' }).click();
   const versions = page.getByRole('grid', { name: 'Versions' });
   await expect(page.getByText('Current version')).toBeVisible();
-  await versions.getByRole('row').nth(2).click(); // the page_limit: 2 version
-  await expect(page.getByRole('table', { name: /^Changes in/ })).toContainText('page_limit: 2');
+  await versions.getByRole('row').nth(2).click(); // the page_limit: 1 version
+  await expect(page.getByRole('table', { name: /^Changes in/ })).toContainText('page_limit: 1');
   await expect(page.getByRole('columnheader', { name: 'Before' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'After' })).toBeVisible();
   await page.getByRole('button', { name: 'Restore this version' }).click();
@@ -161,17 +161,17 @@ test('history: restore an older version after confirming', async () => {
   await expect(dialog).toContainText('kept in history');
   await dialog.getByRole('button', { name: 'Restore' }).click();
   await expect(toast('Version restored')).toBeVisible();
-  await expect.poll(() => onDisk(RESUME)).toContain('page_limit: 2');
+  await expect.poll(() => onDisk(RESUME)).toContain('page_limit: 1');
   await page.getByRole('tab', { name: 'Edit' }).click();
-  await expect(editor('resume.md')).toContainText('page_limit: 2');
+  await expect(editor('resume.md')).toContainText('page_limit: 1');
 });
 
 test('default tab shows the diff; reset keeps the old text in history', async () => {
   const seed = seedOf(RESUME);
-  await save(RESUME, seed.replace('page_limit: 1', 'page_limit: 2'));
+  await save(RESUME, seed.replace('page_limit: 2', 'page_limit: 1'));
   await openRules();
   await page.getByRole('tab', { name: 'Default' }).click();
-  await expect(page.getByRole('table', { name: 'Current to default' })).toContainText('page_limit: 1');
+  await expect(page.getByRole('table', { name: 'Current to default' })).toContainText('page_limit: 2');
   await expect(page.getByRole('columnheader', { name: 'Current' })).toBeVisible();
   await expect(page.getByRole('columnheader', { name: 'Default' })).toBeVisible();
   await page.getByRole('button', { name: 'Reset to default' }).click();
@@ -250,15 +250,15 @@ test('template diagnostics are live', async () => {
 });
 
 test('external edit while clean reloads', async () => {
-  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
   await expect(toast('Reloaded — the file changed outside Stellio')).toBeVisible();
-  await expect(editor('resume.md')).toContainText('page_limit: 2');
+  await expect(editor('resume.md')).toContainText('page_limit: 1');
   await expect(fileButton('resume.md')).toContainText('modified');
 });
 
 test('external edit while dirty warns; saving conflicts; reload recovers', async () => {
   await limit(3);
-  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
   await expect(
     page.getByText('The file changed on disk. Your unsaved edits are based on the old version.'),
   ).toBeVisible();
@@ -268,14 +268,14 @@ test('external edit while dirty warns; saving conflicts; reload recovers', async
   await expect(alert).toContainText('changed on disk');
   await alert.getByRole('button', { name: 'Reload from disk' }).click();
   await expect(alert).toHaveCount(0);
-  await expect(editor('resume.md')).toContainText('page_limit: 2');
+  await expect(editor('resume.md')).toContainText('page_limit: 1');
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
 });
 
 /** Edit resume.md, change it on disk, then leave the file and come back: the editor remounts and re-reads disk. */
 async function conflictAfterRemount(): Promise<void> {
   await limit(3);
-  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
   await expect(page.getByText('The file changed on disk.')).toBeVisible();
   await fileButton('cover-letter.md').click();
   await expect(editor('cover-letter.md')).toBeVisible();
@@ -288,9 +288,9 @@ test('a conflict is still caught after switching files and back (no silent overw
   await conflictAfterRemount();
   const alert = page.getByRole('alert').filter({ hasText: 'Could not save resume.md' });
   await expect(alert).toContainText('changed on disk');
-  expect(onDisk(RESUME)).toContain('page_limit: 2');
+  expect(onDisk(RESUME)).toContain('page_limit: 1');
   await alert.getByRole('button', { name: 'Reload from disk (discard mine)' }).click();
-  await expect(editor('resume.md')).toContainText('page_limit: 2');
+  await expect(editor('resume.md')).toContainText('page_limit: 1');
 });
 
 test('overwrite with my version needs a confirmation and keeps the disk version in history', async () => {
@@ -299,7 +299,7 @@ test('overwrite with my version needs a confirmation and keeps the disk version 
   await alert.getByRole('button', { name: 'Overwrite with my version' }).click();
   const dialog = page.getByRole('dialog', { name: 'Overwrite the version on disk?' });
   await expect(dialog).toContainText('kept in history');
-  expect(onDisk(RESUME)).toContain('page_limit: 2'); // nothing is written before the confirmation
+  expect(onDisk(RESUME)).toContain('page_limit: 1'); // nothing is written before the confirmation
   await dialog.getByRole('button', { name: 'Overwrite' }).click();
   await expect(toast('resume.md saved')).toBeVisible();
   await expect.poll(() => onDisk(RESUME)).toContain('page_limit: 3');
@@ -307,23 +307,23 @@ test('overwrite with my version needs a confirmation and keeps the disk version 
   const versions = page.getByRole('grid', { name: 'Versions' });
   await expect(versions.getByRole('row').nth(1)).toContainText('rules: edit resume.md');
   await versions.getByRole('row').nth(2).click(); // "snapshot before save": the external edit
-  await expect(page.getByRole('table', { name: /^Changes in/ })).toContainText('page_limit: 2');
+  await expect(page.getByRole('table', { name: /^Changes in/ })).toContainText('page_limit: 1');
 });
 
 test('the on-disk warning goes away with the edits it was about', async () => {
   await limit(3);
-  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
   const warning = page.getByText('The file changed on disk.');
   await expect(warning).toBeVisible();
   await editor('resume.md').click();
   for (let i = 0; i < 4; i++) await page.keyboard.press('Control+z'); // undo back to the text this edit started from
   await expect(warning).toHaveCount(0);
-  await expect(editor('resume.md')).toContainText('page_limit: 2'); // and the file is shown as it is on disk now
+  await expect(editor('resume.md')).toContainText('page_limit: 1'); // and the file is shown as it is on disk now
   await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeDisabled();
 });
 
 test('Save and Discard belong to the Edit tab', async () => {
-  await save(RESUME, seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2')); // differs from the default
+  await save(RESUME, seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1')); // differs from the default
   await openRules();
   await limit(3);
   await page.getByRole('tab', { name: 'History' }).click();
@@ -339,11 +339,11 @@ test('Save and Discard belong to the Edit tab', async () => {
 test('external edit of a file that is not open is kept as a warning on that file', async () => {
   await limit(3);
   await fileButton('cover-letter.md').click();
-  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+  writeFileSync(join(l.dataDir, RESUME), seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
   await fileButton('resume.md').click();
   await expect(page.getByText('The file changed on disk.')).toBeVisible();
   await page.getByRole('button', { name: 'Reload (discard my edits)' }).click();
-  await expect(editor('resume.md')).toContainText('page_limit: 2');
+  await expect(editor('resume.md')).toContainText('page_limit: 1');
 });
 
 test('with no engine the template says so and links to Settings', async () => {
@@ -380,20 +380,20 @@ const axeScenes: Record<string, () => Promise<void>> = {
     await expect(page.getByRole('img', { name: 'PDF preview, page 1' })).toBeVisible({ timeout: 30_000 });
   },
   'history tab': async () => {
-    await save(RESUME, seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'), 'rules: edit resume.md');
+    await save(RESUME, seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'), 'rules: edit resume.md');
     await openRules();
     await page.getByRole('tab', { name: 'History' }).click();
     await page.getByRole('grid', { name: 'Versions' }).getByRole('row').nth(2).click();
     await expect(page.getByRole('table', { name: /^Changes in/ })).toBeVisible();
   },
   'default tab': async () => {
-    await save(RESUME, seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+    await save(RESUME, seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
     await openRules();
     await page.getByRole('tab', { name: 'Default' }).click();
     await expect(page.getByRole('table', { name: 'Current to default' })).toBeVisible();
   },
   'reset dialog': async () => {
-    await save(RESUME, seedOf(RESUME).replace('page_limit: 1', 'page_limit: 2'));
+    await save(RESUME, seedOf(RESUME).replace('page_limit: 2', 'page_limit: 1'));
     await openRules();
     await page.getByRole('tab', { name: 'Default' }).click();
     await page.getByRole('button', { name: 'Reset to default' }).click();

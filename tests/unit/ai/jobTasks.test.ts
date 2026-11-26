@@ -69,6 +69,7 @@ describe('validateAnalysis (never trusts model evidence)', () => {
       'exp-globex',
       'exp-initrode',
       'lang-en',
+      'patent-join',
       'proj-ledger',
       'pub-col',
     ]);

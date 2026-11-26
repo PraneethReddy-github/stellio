@@ -1,0 +1,51 @@
+%% Stellio cover letter template v1 — pdfLaTeX, single file, Overleaf-compatible.
+%% Stellio fills the STELLIO:SLOT markers. Edit layout here; content behaviour in rules/cover-letter.md.
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+% pdfTeX only (Tectonic/XeTeX has no \pdfgentounicode and emits a Unicode text layer natively)
+\ifdefined\pdfgentounicode\input{glyphtounicode}\pdfgentounicode=1\fi
+
+\definecolor{accent}{HTML}{1F2A37}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{8pt}
+
+% \letterHeader{Name}{Location}{Email}{Phone}{LinkedIn URL}
+\newcommand{\letterHeader}[5]{%
+  {\Large\color{accent}#1}\\[2pt]
+  \small #2 \,|\, \href{mailto:#3}{\detokenize{#3}} \,|\, #4 \,|\, \href{#5}{LinkedIn}\normalsize\par\vspace{10pt}}
+% \letterRecipient{Date}{Company}{Role / Team}{Location}
+\newcommand{\letterRecipient}[4]{#1\par\vspace{2pt}#2\\#3\\#4\par\vspace{6pt}}
+
+\begin{document}
+
+%% STELLIO:SLOT header
+\letterHeader{Firstname Lastname}{City, Country}{name@example.com}{+00 000 000000}{https://linkedin.com/in/example}
+%% STELLIO:END header
+
+%% STELLIO:SLOT recipient
+\letterRecipient{19 November 2026}{Company}{Hiring Team, Job Title}{City, Country}
+%% STELLIO:END recipient
+
+%% STELLIO:SLOT body
+Dear Hiring Team,
+
+Opening paragraph.
+
+Evidence paragraph.
+
+Closing paragraph.
+%% STELLIO:END body
+
+%% STELLIO:SLOT closing
+Kind regards,\\[14pt]
+Firstname Lastname
+%% STELLIO:END closing
+
+\end{document}

@@ -11,7 +11,7 @@ import { invoke, launchApp, type Launched } from './helpers';
 const FAKE_CLAUDE = resolve('tests/fixtures/fake-claude/claude.mjs');
 const TECTONIC = process.env.STELLIO_TECTONIC_BIN || resolve('spikes/latex/bin/tectonic');
 const SHOTS = process.env.SCREENSHOTS ? (process.env.SCREENSHOT_DIR ?? 'docs/screenshots/current') : null;
-const revised = { ...goodCover, closing: 'Best regards,' };
+const revised = { ...goodCover, closing: 'Kind regards,' };
 
 /** Every test gets its own app and data folder. Opens the Cover letter tab of an analysed job. */
 async function withApp(
@@ -99,7 +99,7 @@ test('revise creates v2; Changes shows the instruction and a Before/After diff',
     await expect(page.getByRole('region', { name: 'Change log' })).toHaveCount(0);
     const diff = page.getByRole('table', { name: 'Changes from v1 to v2' });
     await expect(diff.getByRole('columnheader', { name: 'Before' })).toBeVisible();
-    await expect(diff.getByText(/added: .*Best regards/)).toBeVisible();
+    await expect(diff.getByText(/added: .*Kind regards/)).toBeVisible();
   });
 });
 

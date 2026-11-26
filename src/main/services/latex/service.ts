@@ -35,6 +35,8 @@ export interface LatexServiceDeps {
   seedDir: string;
   /** Settings → LaTeX engine path override. */
   override?: () => string | undefined;
+  /** The resume photo (D26); copied into resume compiles only. */
+  photo?: () => Promise<Uint8Array | null>;
 }
 
 export function createLatexService(deps: LatexServiceDeps) {
@@ -47,12 +49,15 @@ export function createLatexService(deps: LatexServiceDeps) {
     return engine;
   }
 
+  const seeds = (): Promise<string[]> =>
+    Promise.all(TEMPLATE_FILES.map((t) => readFile(join(deps.seedDir, t), 'utf8')));
+
   async function status(): Promise<LatexStatus> {
     const engine = await detect();
     const sandbox = engine && (await probeSandbox(engine.path)).ok ? 'bwrap' : null;
     return {
       engine,
-      cacheWarm: engine && sandbox ? await isCacheWarm(engine) : null,
+      cacheWarm: engine && sandbox ? await isCacheWarm(engine, await seeds()) : null,
       installSupported: installSupported(),
       sandbox,
     };
@@ -73,8 +78,7 @@ export function createLatexService(deps: LatexServiceDeps) {
   function warm(signal?: AbortSignal): Promise<LatexStatus> {
     warming ??= (async () => {
       const engine = await requireEngine();
-      const seeds = await Promise.all(TEMPLATE_FILES.map((t) => readFile(join(deps.seedDir, t), 'utf8')));
-      const res = await warmUp(engine, seeds, signal);
+      const res = await warmUp(engine, await seeds(), signal);
       if (!res.ok)
         throw new UserError(
           `Warm-up failed: ${res.errors[0]?.message ?? 'unknown error'}. It needs internet access once.`,
@@ -90,7 +94,8 @@ export function createLatexService(deps: LatexServiceDeps) {
   async function compileTemplate(path: TemplateFile, content?: string): Promise<TemplateCompile> {
     const engine = await requireEngine();
     const tex = content ?? (await readFile(join(deps.dataDir, path), 'utf8'));
-    const r = await compileTex({ engine, tex });
+    const photo = path === 'templates/resume.tex' ? await deps.photo?.() : null;
+    const r = await compileTex({ engine, tex, ...(photo ? { photo } : {}) });
     const warnings = [...r.warnings];
     let pdfBase64: string | undefined;
     if (r.pdf) {

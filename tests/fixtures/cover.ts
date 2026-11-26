@@ -8,6 +8,10 @@ const read = (p: string): string => readFileSync(resolve(p), 'utf8');
 export const coverTemplate = read('seed/templates/cover-letter.tex');
 export const coverRules = lintRules('cover-letter', read('seed/rules/cover-letter.md'))
   .config as CoverLetterRules;
+/** The template format 1 seed and rules (v1.0.4 and earlier). */
+export const coverTemplateV1 = read('tests/fixtures/latex/cover-letter-v1.tex');
+export const coverRulesV1 = lintRules('cover-letter', read('tests/fixtures/latex/rules-cover-letter-v1.md'))
+  .config as CoverLetterRules;
 
 /** The job the fake CLI's `sampleJd` describes. */
 export const coverJob: CoverJob = {

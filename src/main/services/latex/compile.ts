@@ -40,6 +40,8 @@ export interface CompileOptions {
   sandbox?: Sandbox | null;
   /** Tests only: false skips the static pre-check to prove the sandbox holds on its own. */
   precheck?: boolean;
+  /** The resume photo (D26), written into the work dir as photo.jpg. */
+  photo?: Uint8Array;
 }
 
 export const CACHE_MISSING_MESSAGE = 'LaTeX packages not downloaded yet — run warm-up';
@@ -137,6 +139,7 @@ export async function compileTex(o: CompileOptions): Promise<CompileResult> {
   const dir = await mkdtemp(join(tmpdir(), 'stellio-tex-'));
   try {
     await writeFile(join(dir, 'main.tex'), o.tex, 'utf8');
+    if (o.photo) await writeFile(join(dir, 'photo.jpg'), o.photo);
     const args = bwrapArgs({ engine: o.engine.path, workDir: dir, cacheDir, network: !onlyCached });
     args.push('-X', 'compile', '--untrusted', '--keep-logs', '--outdir', '/work');
     if (onlyCached) args.push('--only-cached');
@@ -187,7 +190,7 @@ function stderrErrors(stderr: string): CompileError[] {
   return out.length > 0 ? out : [{ message: 'LaTeX compile failed' }];
 }
 
-/** A tiny document using the packages the seed templates use: compiles only if the cache is warm. */
+/** A tiny document using the packages the format 1 seed templates use: compiles only if the cache is warm. */
 const PROBE = String.raw`\documentclass{article}
 \usepackage[a4paper]{geometry}\usepackage[T1]{fontenc}\usepackage{charter}\usepackage[hidelinks]{hyperref}
 \usepackage{xcolor,titlesec,enumitem,tabularx}
@@ -196,10 +199,15 @@ const PROBE = String.raw`\documentclass{article}
 
 /** Engine paths whose offline compile worked: a different engine has to prove it again. */
 const warmEngines = new Set<string>();
-/** True when an offline compile of the template packages works. Only a positive answer is memoized. */
-export async function isCacheWarm(engine: Engine): Promise<boolean> {
+/**
+ * True when an offline compile of the template packages works: the probe, then the given templates (the seeds),
+ * so a cache warmed for older templates is reported cold once and the warm-up fetches the rest. Only a positive
+ * answer is memoized.
+ */
+export async function isCacheWarm(engine: Engine, texes: string[] = []): Promise<boolean> {
   if (warmEngines.has(engine.path)) return true;
-  if (!(await compileTex({ engine, tex: PROBE, timeoutMs: 20_000 })).ok) return false;
+  for (const tex of [PROBE, ...texes])
+    if (!(await compileTex({ engine, tex, timeoutMs: 30_000 })).ok) return false;
   warmEngines.add(engine.path);
   return true;
 }

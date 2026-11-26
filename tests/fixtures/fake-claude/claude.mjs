@@ -5,8 +5,8 @@
 // FAKE_CLAUDE_STATE (counter file for *_then_ok modes), FAKE_CLAUDE_PIDFILE (hang modes write the grandchild pid).
 // Per-task overrides: the task is recognised from the --json-schema keys (JD_PARSE, JOB_ANALYZE, PROFILE_IMPORT, SKILLS_AUDIT,
 // JOB_TRIAGE, DISCOVERY_WEBSEARCH, REFERRALS_SEARCH, REFERRALS_MESSAGE, INSIGHTS_ASK, LEARNING_RESOURCES, PROFILE_SUGGEST;
-// RESUME_GENERATE / RESUME_REVISE and COVER_GENERATE / COVER_REVISE share a schema per pair and are told apart by the
-// system prompt);
+// RESUME_GENERATE / RESUME_REVISE, COVER_GENERATE / COVER_REVISE and RESUME_TRANSLATE / COVER_TRANSLATE share a schema
+// per pair and are told apart by the system prompt);
 // FAKE_CLAUDE_OUTPUT_<TASK>, FAKE_CLAUDE_MODE_<TASK> and FAKE_CLAUDE_DELAY_MS_<TASK> win over the plain variables.
 // A resume, cover, referral-message or insights-ask repair round (stdin has <repair_issues>) answers FAKE_CLAUDE_OUTPUT_<TASK>_REPAIR when set.
 import { spawn } from 'node:child_process';
@@ -29,7 +29,10 @@ const taskOf = () => {
     if (keys.includes('numbers_used')) return 'INSIGHTS_ASK';
     if (keys.includes('resources')) return 'LEARNING_RESOURCES';
     if (keys.includes('skill_updates')) return 'PROFILE_SUGGEST';
-    const revise = /^You revise/.test(argv[argv.indexOf('--system-prompt') + 1] ?? '');
+    const system = argv[argv.indexOf('--system-prompt') + 1] ?? '';
+    if (keys.length === 1 && keys[0] === 'items')
+      return /cover letter/.test(system.split('\n')[0] ?? '') ? 'COVER_TRANSLATE' : 'RESUME_TRANSLATE';
+    const revise = /^You revise/.test(system);
     if (keys.includes('paragraphs')) return revise ? 'COVER_REVISE' : 'COVER_GENERATE';
     if (keys.includes('change_log')) return revise ? 'RESUME_REVISE' : 'RESUME_GENERATE';
   } catch {

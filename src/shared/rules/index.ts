@@ -2,6 +2,7 @@ export * from './files';
 export { lintRules, type LintResult } from './lint';
 export {
   DATE_FORMATS,
+  LETTER_DATE_FORMATS,
   MESSAGE_MUST_INCLUDE,
   RESUME_SECTIONS,
   TENSES,

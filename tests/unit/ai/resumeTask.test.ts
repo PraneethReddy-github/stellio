@@ -16,7 +16,7 @@ describe('resume prompts', () => {
       const generated: Record<string, unknown> = { ...z.toJSONSchema(ResumeContentSchema) };
       delete generated.$schema;
       expect(onDisk).toEqual(generated);
-      expect(loadPrompt(task).version).toBe(1);
+      expect(loadPrompt(task).version).toBe(2);
     },
   );
 

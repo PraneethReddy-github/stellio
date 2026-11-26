@@ -41,7 +41,7 @@ Default `~/Stellio` (shown in Settings, General). You can open every file in any
 ~/Stellio/
   profile/praneethreddy.md   your master profile
   rules/                     resume.md, cover-letter.md, skills-policy.md, referral-message.md
-  templates/                 resume.tex, cover-letter.tex
+  templates/                 resume.tex, cover-letter.tex, photo.jpg (your resume photo, if set)
   applications/              one folder per application, with the exact files you used
   .stellio/                  database, backups, logs (do not edit)
 ```
@@ -53,7 +53,9 @@ Default `~/Stellio` (shown in Settings, General). You can open every file in any
 Paste a link or the text of a posting (Workspace). Stellio structures it and scores your fit with evidence from your profile and a list of red flags. Then:
 
 - **Resume.** Generate a tailored resume. Employers, titles and dates always come from the profile. Every number and skill is checked against the profile (the truth check), plus an ATS keyword check and the lint rules from `rules/resume.md`. Revise by instruction or edit the LaTeX yourself; versions are kept and can be compared.
-- **Cover letter.** Same pipeline, with `rules/cover-letter.md`.
+- **Cover letter.** Same pipeline, with `rules/cover-letter.md`. Laid out as a German business letter: sender block with your postal address (Profile), the company, "Place, DD.MM.YYYY", "Application for the position of …", the letter, closing and signature line.
+- **German version.** On a drafted resume or letter, German version makes a German translation as a new version. Only the wording changes; Stellio checks that no number or technical term was added.
+- **Photo.** Profile, Resume photo: pick a PNG or JPEG. It is shown on resumes while `rules/resume.md` has `photo: true`.
 - **Skill audit.** Every skill on the page is labelled with where it comes from and a recommendation: keep, remove, learn, or add to the profile.
 - **Use it.** Copy the LaTeX, export a PDF, or Open in Overleaf. Mark the version final when you apply; it is frozen with the application.
 
@@ -71,7 +73,7 @@ Rules decide how Stellio writes for you. Open Rules (`G R`) to edit `resume.md`,
 
 ## 7. Overleaf
 
-Open in Overleaf creates a new Overleaf project from the LaTeX source in your browser (Stellio posts the source to `overleaf.com/docs` through a short-lived local form). Overleaf compiles with pdfLaTeX while the local preview uses Tectonic, so line breaks can differ slightly; Stellio warns when a one-page resume may spill over on Overleaf.
+Open in Overleaf creates a new Overleaf project from the LaTeX source in your browser (Stellio posts the source to `overleaf.com/docs` through a short-lived local form). The photo cannot travel with it: the project gets the resume without the photo; upload `photo.jpg` to the project and change `\resumephotofalse` to `\resumephototrue` to add it. Overleaf compiles with pdfLaTeX while the local preview uses Tectonic, so line breaks can differ slightly; Stellio warns when a one-page resume may spill over on Overleaf.
 
 ## 8. Referrals and their boundaries
 

@@ -95,6 +95,19 @@ export function useReviseDoc(kind: DocKind, jobId: string) {
   });
 }
 
+/** German version of a drafted English version (resume:translate / cover:translate). */
+export function useTranslateDoc(kind: DocKind, jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { requestId: string; fromVersion: number }): Promise<DocView> =>
+      kind === 'cover'
+        ? call('cover:translate', { jobId, ...input })
+        : call('resume:translate', { jobId, ...input }),
+    onSuccess: () => refreshDocs(qc, kind, jobId),
+    onSettled: settle(qc),
+  });
+}
+
 export function useSaveManualDoc(kind: DocKind, jobId: string) {
   const qc = useQueryClient();
   return useMutation({

@@ -16,6 +16,8 @@ export interface CoverTaskRequest {
   jd: Jd | null;
   descriptionMd: string;
   analysis: AnalysisResult | null;
+  /** Where the candidate found the posting (one sentence), for "how did you find us". */
+  jobSource?: string;
   /** Raw rules files, embedded verbatim as USER RULES (docs/04 §4). */
   coverRules: string;
   skillsPolicy: string;
@@ -41,6 +43,7 @@ export function buildCoverInput(req: CoverTaskRequest): string {
     wrapData('job_structured', JSON.stringify(req.jd)),
     wrapData('job_description', req.descriptionMd.slice(0, MAX_JD_CHARS)),
     wrapData('fit_analysis', JSON.stringify(req.analysis)),
+    wrapData('job_source', req.jobSource ?? 'Not recorded: do not say how the posting was found.'),
   ];
   if (req.previous) blocks.push(wrapData('previous_draft', JSON.stringify(req.previous, null, 1)));
   if (req.instruction?.trim()) blocks.push(wrapData('user_instruction', req.instruction.trim()));

@@ -6,11 +6,16 @@ import {
   LintReportSchema,
   ResumeContentSchema,
   TruthReportSchema,
+  DocLanguageSchema,
   checkAts,
+  checkTranslation,
   checkTruth,
   lintContent,
   lintResume,
   renderResume,
+  resumeTexts,
+  withResumeTexts,
+  type DocLanguage,
   type ResumeChecks,
   type ResumeContent,
   type ResumeDocument,
@@ -22,7 +27,9 @@ import type { Profile } from '@shared/profile';
 import { requireRealProfile } from '../profile/guard';
 import { lintRules, type ResumeRules, type SkillsPolicy } from '@shared/rules';
 import type { ClaudeRunner } from '../../ai/runner';
+import { loadPrompt } from '../../ai/prompts';
 import { runResumeTask, type ResumeTask } from '../../ai/tasks/resume';
+import { runTranslateTask, type Translation } from '../../ai/tasks/translate';
 import type { Db } from '../../db/database';
 import {
   approvedSkillsForJob,
@@ -34,7 +41,7 @@ import {
   updateDocument,
   type DocumentRow,
 } from '../../db/repos/documents';
-import { getJob, latestAnalysis } from '../../db/repos/jobs';
+import { getJob, getJobSummary, latestAnalysis } from '../../db/repos/jobs';
 import { UserError } from '../../ipc/dispatch';
 import { hashText } from '../datafolder/files';
 import { pdfText } from '../latex/compile';
@@ -64,6 +71,7 @@ const StoredChecks = z.object({
   parentVersion: z.number().int().nullable(),
   instruction: z.string().nullable(),
   changeLog: z.array(z.string()).default([]),
+  language: DocLanguageSchema.default('en'),
 });
 
 export type ResumeView = ResumeDocument & { pdfBase64?: string };
@@ -78,6 +86,8 @@ export interface DocumentsServiceDeps {
   rules: RulesService;
   latex: LatexService;
   dataDir: string;
+  /** The resume photo (D26); its presence turns the photo on when the rules allow it. */
+  photo?: { read: () => Promise<Uint8Array | null> };
 }
 
 interface Inputs {
@@ -90,6 +100,8 @@ interface Inputs {
   template: string;
   rulesHash: string;
   templateHash: string;
+  /** A photo is set. */
+  photo: boolean;
 }
 
 interface Evaluated {
@@ -100,13 +112,20 @@ interface Evaluated {
   issues: string[];
   /** Lower is better, compared in order: [truth violations, lint errors + page overflow]. */
   rank: [number, number];
+  language: DocLanguage;
 }
+
+/** Puts `\resumephotofalse` in place of `\resumephototrue`: Overleaf gets the tex without the photo file. */
+export const withoutPhoto = (tex: string): string =>
+  tex.replace(/^\\resumephototrue$/gm, '\\resumephotofalse');
 
 export function createDocumentsService(deps: DocumentsServiceDeps) {
   const { db, runner, settings } = deps;
   const files = createDocFiles(deps);
   const { storePdf, readPdf } = files;
-  const compile = (tex: string) => files.compile(tex, 'templates/resume.tex');
+  // A version made while a photo was set still says \resumephototrue; without the photo it compiles without it.
+  const compile = async (tex: string) =>
+    files.compile((await deps.photo?.read()) ? tex : withoutPhoto(tex), 'templates/resume.tex');
 
   async function loadInputs(): Promise<Inputs> {
     const snap = await deps.profile.get();
@@ -131,6 +150,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
       template: template.content,
       rulesHash: hashText(`${resume.hash}\n${policy.hash}`),
       templateHash: template.hash,
+      photo: (await deps.photo?.read()) != null,
     };
   }
 
@@ -146,32 +166,57 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
     return row;
   }
 
-  async function atsFor(tex: string, jd: Jd | null, inputs: Inputs, pdf: Buffer | null) {
+  async function atsFor(
+    tex: string,
+    jd: Jd | null,
+    inputs: Inputs,
+    pdf: Buffer | null,
+    language: DocLanguage,
+  ) {
     return checkAts({
       tex,
       jd,
       profile: inputs.profile,
       rules: inputs.rules,
+      language,
       ...(pdf ? { pdfText: await pdfText(pdf), pdfBytes: pdf.length } : {}),
     });
   }
 
-  /** render → truth → lint → compile → ATS; `issues` are the blocking ones the repair round must fix. */
+  /**
+   * render → truth → lint → compile → ATS; `issues` are the blocking ones the repair round must fix. A German
+   * version (`source` = the English content it was translated from) also gets the translation check (D27).
+   */
   async function evaluate(
     content: ResumeContent,
     jd: Jd | null,
     inputs: Inputs,
     approved: string[],
     onStage: StageListener,
+    language: DocLanguage = 'en',
+    source?: ResumeContent,
   ): Promise<Evaluated> {
     onStage('checking');
-    const tex = renderResume(content, inputs.profile, inputs.template, inputs.rules, inputs.policy);
+    const tex = renderResume(content, inputs.profile, inputs.template, inputs.rules, inputs.policy, {
+      language,
+      photo: inputs.photo,
+    });
     const truth = checkTruth(content, inputs.profile, {
       policy: inputs.policy,
       jd,
       approvedSkills: approved,
+      language,
     });
-    const lint = lintContent(tex, inputs.rules, content, inputs.profile);
+    if (source) {
+      const english = new Map(resumeTexts(source).map((i) => [i.key, i.text]));
+      truth.violations.push(
+        ...checkTranslation(
+          resumeTexts(content).map((i) => ({ key: i.key, source: english.get(i.key) ?? '', target: i.text })),
+        ),
+      );
+      truth.ok = truth.violations.length === 0;
+    }
+    const lint = lintContent(tex, inputs.rules, content, inputs.profile, language);
     onStage('compiling');
     const compiled = await compile(tex);
     // Overleaf compiles with pdfTeX, whose line breaks can differ slightly from Tectonic's (docs/06 §7).
@@ -186,7 +231,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         message: 'May spill onto another page on Overleaf (pdfTeX): the last page is nearly full.',
         path: null,
       });
-    const ats = await atsFor(tex, jd, inputs, compiled?.pdf ?? null);
+    const ats = await atsFor(tex, jd, inputs, compiled?.pdf ?? null, language);
     const issues = [
       ...truth.violations.map((v) => `Truth (${v.kind}) at ${v.path}: "${v.text}" — ${v.detail}`),
       ...lint.issues
@@ -209,6 +254,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         truth.violations.length,
         lint.issues.filter((i) => i.severity === 'error').length + (overflow ? 1 : 0),
       ],
+      language,
     };
   }
 
@@ -270,7 +316,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
 
     return storeEvaluated(jobId, best, inputs, {
       model,
-      promptVersion: `${task}@v1`,
+      promptVersion: `${task}@v${String(loadPrompt(task).version)}`,
       parentVersion: opts.parentVersion,
       instruction: opts.instruction,
     });
@@ -305,6 +351,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         parentVersion: meta.parentVersion,
         instruction: meta.instruction,
         changeLog: best.content.change_log,
+        language: best.language,
       },
       userEdited: false,
     });
@@ -332,6 +379,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         instruction: checks.instruction,
         userEdited: row.userEdited,
         isFinal: row.isFinal,
+        language: checks.language,
       },
     };
   }
@@ -398,6 +446,10 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         throw new UserError(
           `Version ${String(fromVersion)} is a manual edit. Revise works on drafted versions; edit the LaTeX directly instead.`,
         );
+      if (from.meta.language !== 'en')
+        throw new UserError(
+          `Version ${String(fromVersion)} is the German version. Revise the English version, then make a German version of it.`,
+        );
       return runPipeline('resume.revise', jobId, {
         instruction: instruction.trim(),
         previous: from.content,
@@ -415,6 +467,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
     /** A hand-edited tex becomes a new version: lint + ATS re-run, truth not applied (flagged in the UI). */
     async saveManual(jobId: string, fromVersion: number, tex: string): Promise<ResumeView> {
       const parent = requireVersion(jobId, fromVersion);
+      const language = toDocument(parent).meta.language;
       const job = requireJob(jobId);
       const inputs = await loadInputs();
       const jd = JdSchema.safeParse(job.structuredJson).data ?? null;
@@ -431,12 +484,13 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         promptVersion: null,
         truthReportJson: { content: null, truth: null },
         atsReportJson: {
-          ats: await atsFor(tex, jd, inputs, compiled?.pdf ?? null),
-          lint: lintResume(tex, inputs.rules),
+          ats: await atsFor(tex, jd, inputs, compiled?.pdf ?? null, language),
+          lint: lintResume(tex, inputs.rules, language),
           compile: compiled?.summary ?? null,
           parentVersion: fromVersion,
           instruction: null,
           changeLog: ['Manually edited LaTeX'],
+          language,
         },
         userEdited: true,
       });
@@ -456,7 +510,8 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
       changeLog: string,
     ): Promise<ResumeView> {
       const parent = requireVersion(jobId, fromVersion);
-      const base = toDocument(parent).content;
+      const parentDoc = toDocument(parent);
+      const base = parentDoc.content;
       if (!base)
         throw new UserError(
           `Version ${String(fromVersion)} is a manual edit. Skill decisions work on drafted versions.`,
@@ -469,6 +524,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
         inputs,
         approvedSkillsForJob(db, jobId),
         () => undefined,
+        parentDoc.meta.language,
       );
       return storeEvaluated(jobId, best, inputs, {
         model: parent.model,
@@ -489,7 +545,7 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
       updateDocument(db, row.id, {
         atsReportJson: {
           ...stored,
-          ats: await atsFor(row.tex, jd, inputs, compiled.pdf),
+          ats: await atsFor(row.tex, jd, inputs, compiled.pdf, stored.language),
           compile: compiled.summary,
         },
       });
@@ -508,8 +564,72 @@ export function createDocumentsService(deps: DocumentsServiceDeps) {
       return files.export(requireVersion(jobId, version), 'Resume', format, pick);
     },
 
+    /** Overleaf cannot receive the photo file, so the tex it gets has the photo turned off. */
     openOverleaf(jobId: string, version: number, open: (url: string) => Promise<void>) {
-      return files.openOverleaf(requireVersion(jobId, version), open);
+      const row = requireVersion(jobId, version);
+      return files.openOverleaf({ ...row, tex: withoutPhoto(row.tex) }, open);
+    },
+
+    /**
+     * German version of a drafted English version (D27): `resume.translate` translates only the texts, code
+     * keeps ids, skills and structure, and the result goes through the normal checks plus the translation check,
+     * with one repair round. Stored as the next version with language "de".
+     */
+    async translate(
+      jobId: string,
+      fromVersion: number,
+      opts: { signal?: AbortSignal; onStage?: StageListener } = {},
+    ): Promise<ResumeView> {
+      const onStage: StageListener = opts.onStage ?? (() => undefined);
+      const from = toDocument(requireVersion(jobId, fromVersion));
+      if (!from.content)
+        throw new UserError(
+          `Version ${String(fromVersion)} is a manual edit. A German version is made from a drafted version.`,
+        );
+      if (from.meta.language !== 'en')
+        throw new UserError(`Version ${String(fromVersion)} is already German.`);
+      const source = from.content;
+      const job = requireJob(jobId);
+      const inputs = await loadInputs();
+      const jd = JdSchema.safeParse(job.structuredJson).data ?? null;
+      const approved = approvedSkillsForJob(db, jobId);
+      const items = resumeTexts(source);
+      const config = settings.forTask('resume.translate');
+      const context = [job.title, getJobSummary(db, jobId)?.company ?? ''].filter(Boolean).join(' at ');
+      const apply = (tr: Translation): ResumeContent => ({
+        ...withResumeTexts(source, new Map(tr.items.map((i) => [i.key, i.text]))),
+        change_log: [`German version of version ${String(fromVersion)}`],
+      });
+      // The repair round sees the issues; draftWithRepair works on content, so the translation is kept alongside.
+      let last: Translation | undefined;
+      onStage('drafting');
+      const { best, model } = await draftWithRepair<ResumeContent, Evaluated>({
+        db,
+        jobId,
+        model: config.model,
+        onStage,
+        run: async (repair) => {
+          const res = await runTranslateTask(runner, {
+            task: 'resume.translate',
+            items,
+            context,
+            previous: repair ? last : undefined,
+            repairIssues: repair?.issues,
+            config,
+            signal: opts.signal,
+          });
+          if (!res.ok) return res;
+          last = res.data;
+          return { ...res, data: apply(res.data) };
+        },
+        evaluate: (content) => evaluate(content, jd, inputs, approved, onStage, 'de', source),
+      });
+      return storeEvaluated(jobId, best, inputs, {
+        model,
+        promptVersion: `resume.translate@v${String(loadPrompt('resume.translate').version)}`,
+        parentVersion: fromVersion,
+        instruction: null,
+      });
     },
 
     dispose: () => {

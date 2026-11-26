@@ -78,8 +78,8 @@ test.describe('cover letter pipeline over IPC (fake CLI)', () => {
     expect(v1.checks.truth?.ok).toBe(true);
     expect(v1.checks.lint.ok).toBe(true);
     expect(v1.content).toEqual(goodCover);
-    expect(v1.tex).toContain('\\letterRecipient{');
-    expect(v1.tex).toContain('{Nimbus Analytics GmbH}{Hiring Team, Data Engineer}{Berlin, Germany}');
+    expect(v1.tex).toContain('\\letterTo{Nimbus Analytics GmbH}{Berlin, Germany}');
+    expect(v1.tex).toContain('\\letterSubject{Application for the position of Data Engineer}');
     if (existsSync(TECTONIC)) {
       expect(v1.checks.compile).toMatchObject({ ok: true, pages: 1 });
       expect(v1.pdfBase64).toBeDefined();
@@ -157,7 +157,7 @@ test.describe('cover letter pipeline over IPC (fake CLI)', () => {
       status: 'saved',
       path: target,
     });
-    expect(readFileSync(target, 'utf8')).toContain('\\letterHeader{Alex Example}');
+    expect(readFileSync(target, 'utf8')).toContain('\\letterSender{Alex Example}');
     const name = await l.app.evaluate(() => (globalThis as unknown as { __saveName?: string }).__saveName);
     expect(name).toMatch(/Alex_Example_CoverLetter_Nimbus_Analytics_GmbH\.tex$/);
     if (existsSync(TECTONIC)) {

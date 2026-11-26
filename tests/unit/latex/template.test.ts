@@ -5,6 +5,7 @@ import {
   checkHeaderArg,
   escapeLatex,
   fillTemplate,
+  OPTIONAL_SLOTS,
   parseTemplate,
   REQUIRED_SLOTS,
 } from '../../../src/shared/latex/template';
@@ -19,7 +20,9 @@ describe('parseTemplate', () => {
     (kind) => {
       const p = parseTemplate(seed(`${kind}.tex`), kind);
       expect(p.diagnostics).toEqual([]);
-      expect(p.slots.map((s) => s.name)).toEqual(REQUIRED_SLOTS[kind]);
+      const names = p.slots.map((s) => s.name);
+      expect(names).toEqual(expect.arrayContaining([...REQUIRED_SLOTS[kind]]));
+      expect(names.filter((n) => !REQUIRED_SLOTS[kind].includes(n))).toEqual(OPTIONAL_SLOTS[kind]);
     },
   );
 
@@ -38,9 +41,23 @@ describe('parseTemplate', () => {
         'skillLine',
         'resumeSummary',
         'resumeProject',
+        'resumeEduRow',
+        'resumePublication',
+        'resumePatent',
+        'resumeCert',
+        'resumeMisc',
+        'resumeUpdated',
       ]),
     );
-    expect(p.environments).toEqual(['resumeItems']);
+    expect(p.environments).toEqual([
+      'resumeEducation',
+      'resumeEntries',
+      'resumeExperience',
+      'resumeItems',
+      'resumeSkills',
+      'resumeCerts',
+      'resumeMiscList',
+    ]);
     expect(parseTemplate('% \\newcommand{\\nope}{}\n\\def\\yes{1}').macros).toEqual(['yes']);
   });
 
@@ -138,6 +155,10 @@ describe('escapeLatex', () => {
 
   it('keeps Latin text, maps typographic characters to engine-neutral ASCII, drops what no engine can set', () => {
     expect(escapeLatex('C++ Zoë München')).toBe('C++ Zoë München');
+    // Letters Tectonic's T1 fonts cannot place by code point become LaTeX commands (both engines know them).
+    expect(escapeLatex('Straße, Grüßen, Dvořák, Łódź, Kőbánya, ÿ')).toBe(
+      String.raw`Stra\ss{}e, Grü\ss{}en, Dvo\v{r}ák, \L{}ód\'{z}, K\H{o}bánya, \"{y}`,
+    );
     expect(escapeLatex('a — b – c')).toBe('a --- b -- c');
     expect(escapeLatex('ﬁle ﬂow oﬀer eﬃcient baﬄe ﬅﬆ')).toBe('file flow offer efficient baffle stst');
     expect(escapeLatex('“q” it’s …')).toBe("``q'' it's ...");
@@ -147,9 +168,10 @@ describe('escapeLatex', () => {
 
   it('property: no special character survives unescaped', () => {
     fc.assert(
-      fc.property(fc.string(), (s) => {
+      fc.property(fc.string({ unit: 'binary' }), (s) => {
         const rest = escapeLatex(s)
-          .replace(/\\(?:textbackslash|textasciitilde|textasciicircum)\{\}/g, '')
+          .replace(/\\(?:textbackslash|textasciitilde|textasciicircum|ss|DJ|dj|i|L|l|NG|ng|OE|oe)\{\}/g, '')
+          .replace(/\\[`'^~=u."rHvck]\{[A-Za-z]\}/g, '')
           .replace(/\\[&%$#_{}]/g, '');
         expect(rest).not.toMatch(/[\\&%$#_{}^]/);
       }),
@@ -170,5 +192,14 @@ describe('checkHeaderArg', () => {
   it('rejects % and #, newlines and unbalanced braces', () => {
     for (const v of ['https://a.b/#frag', 'a%20b', 'a\nb', 'a{b', 'a}b'])
       expect(checkHeaderArg(v).ok).toBe(false);
+  });
+});
+
+describe('optional slots', () => {
+  it('a format 2 slot in a resume template is known; an unknown slot is still a warning', () => {
+    const tex = (extra: string) =>
+      [...REQUIRED_SLOTS.resume, extra].map((n) => `%% STELLIO:SLOT ${n}\n%% STELLIO:END ${n}`).join('\n');
+    expect(parseTemplate(tex('patents'), 'resume').diagnostics).toEqual([]);
+    expect(parseTemplate(tex('hobbies'), 'resume').diagnostics.map((d) => d.code)).toEqual(['slot_unknown']);
   });
 });

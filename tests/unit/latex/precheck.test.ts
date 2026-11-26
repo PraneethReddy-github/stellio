@@ -73,3 +73,44 @@ describe('precheckTex', () => {
     ).toEqual([]);
   });
 });
+
+describe('precheckTex: the resume photo (D26)', () => {
+  it.each([
+    '\\includegraphics{photo}',
+    '\\includegraphics[width=2.4cm,clip]{photo}',
+    '  \\includegraphics [height=3cm] {photo}',
+  ])('allows %s', (line) => {
+    expect(precheckTex(line)).toEqual([]);
+  });
+
+  it.each([
+    '\\includegraphics{photo.jpg}',
+    '\\includegraphics{/etc/photo}',
+    '\\includegraphics{../photo}',
+    '\\includegraphics{photo}\\includegraphics{x}',
+    '\\includegraphics[width=\\input{x}]{photo}',
+    '\\includegraphics{photos}',
+    '\\let\\g\\includegraphics \\g{x}',
+  ])('refuses %s', (line) => {
+    expect(precheckTex(line).length).toBeGreaterThan(0);
+  });
+});
+
+describe('precheckTex: graphicx settings stay out of reach (review finding)', () => {
+  it.each([
+    '\\graphicspath{{/home/u/}}',
+    '\\setkeys{Gin}{ext=.txt}',
+    '\\DeclareGraphicsRule{.txt}{txt}{}{}',
+    '\\DeclareGraphicsExtensions{.txt}',
+    '\\makeatletter\\def\\Gin@ext{.txt}',
+    '\\includegraphics[type=eps,ext=.txt,read=.txt]{photo}',
+    '\\includegraphics[command={cat x}]{photo}',
+  ])('refuses %s', (line) => {
+    expect(precheckTex(line).length).toBeGreaterThan(0);
+  });
+  it('still allows the size options', () => {
+    expect(
+      precheckTex('\\includegraphics[width=2.4cm, height=3cm, keepaspectratio, trim=1 2 3 4, clip]{photo}'),
+    ).toEqual([]);
+  });
+});

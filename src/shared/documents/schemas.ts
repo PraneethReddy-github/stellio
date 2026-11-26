@@ -32,6 +32,11 @@ export const CATEGORY_LABELS = [
 
 const EntryContent = z.object({ entry_id: z.string(), bullets: z.array(BulletSchema) });
 
+/** Language a document version is written in. Drafts are English; a German version is translated from one. */
+export const DOC_LANGUAGES = ['en', 'de'] as const;
+export const DocLanguageSchema = z.enum(DOC_LANGUAGES);
+export type DocLanguage = z.infer<typeof DocLanguageSchema>;
+
 /**
  * What `resume.generate` / `resume.revise` return (docs/phases/phase-5-plan.md, D21). Never LaTeX: code renders
  * the .tex, and employers, titles, dates, locations, degrees and institutions come from the profile.
@@ -45,6 +50,11 @@ export const ResumeContentSchema = z.object({
   /** Bullets optional (coursework, thesis). */
   education: z.array(EntryContent),
   certifications: z.array(z.object({ entry_id: z.string() })),
+  /** Template format 2 sections; default [] so versions stored before them still parse. */
+  publications: z.array(EntryContent).default([]),
+  patents: z.array(EntryContent).default([]),
+  /** Awards and positions of responsibility (the Miscellaneous section). */
+  awards: z.array(z.object({ entry_id: z.string() })).default([]),
   /** Skill names must exist in the profile (name or alias). */
   skills: z.array(z.object({ category_label: z.enum(CATEGORY_LABELS), skills: z.array(z.string()) })),
   omitted: z.array(z.object({ id: z.string(), reason: z.string() })),
@@ -61,6 +71,8 @@ export const TRUTH_KINDS = [
   'label_not_allowed',
   /** Cover letter: a name in the salutation that the posting does not contain. */
   'name_not_in_source',
+  /** German version: a number or a technical term that its English source text does not contain. */
+  'term_not_in_source',
 ] as const;
 export const TruthReportSchema = z.object({
   ok: z.boolean(),
@@ -145,6 +157,7 @@ export const ResumeMetaSchema = z.object({
   instruction: z.string().nullable(),
   userEdited: z.boolean(),
   isFinal: z.boolean(),
+  language: DocLanguageSchema.default('en'),
 });
 export type ResumeMeta = z.infer<typeof ResumeMetaSchema>;
 

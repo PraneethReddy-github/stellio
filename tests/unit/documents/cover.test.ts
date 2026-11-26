@@ -9,10 +9,20 @@ import {
   renderCover,
   type CoverContent,
 } from '../../../src/shared/documents';
+import { cityOf } from '../../../src/shared/documents/cover';
 import { parseTemplate } from '../../../src/shared/latex/template';
 import type { CoverLetterRules } from '../../../src/shared/rules';
 import { sampleJd } from '../../fixtures/jobs';
-import { badCover, coverJob, coverPosting, coverRules, coverTemplate, goodCover } from '../../fixtures/cover';
+import {
+  badCover,
+  coverJob,
+  coverPosting,
+  coverRules,
+  coverRulesV1,
+  coverTemplate,
+  coverTemplateV1,
+  goodCover,
+} from '../../fixtures/cover';
 import { fullProfile, seedPolicy } from '../../fixtures/resume';
 
 const today = new Date('2026-11-20T12:00:00');
@@ -23,9 +33,9 @@ const para = (text: string, n = 1): CoverContent => ({
   paragraphs: [{ text, source_ids: [] }, ...goodCover.paragraphs.slice(n)],
 });
 
-describe('renderCover', () => {
+describe('renderCover (template format 1)', () => {
   it('fills header, recipient, date, salutation fallback and closing; the template stays valid', () => {
-    const tex = render();
+    const tex = renderCover(goodCover, fullProfile, coverJob, coverTemplateV1, coverRulesV1, today);
     expect(tex).toContain(
       '\\letterHeader{Alex Example}{Berlin, Germany}{alex@example.test}{+49 000 0000000}{https://linkedin.example.test/in/alex}',
     );
@@ -43,13 +53,71 @@ describe('renderCover', () => {
       { ...goodCover, salutation: 'Dear Ms Weber,', closing: 'Best regards,' },
       fullProfile,
       { ...coverJob, location: '' },
-      coverTemplate,
-      coverRules,
+      coverTemplateV1,
+      coverRulesV1,
       today,
     );
     expect(tex).toContain('Dear Ms Weber,\n\n');
     expect(tex).toContain('Best regards,\\\\[14pt]');
     expect(tex).toContain('{Hiring Team, Data Engineer}{~}');
+  });
+});
+
+describe('renderCover (template format 2)', () => {
+  const withAddress = {
+    ...fullProfile,
+    frontMatter: { ...fullProfile.frontMatter, address: 'Example Street 1, 10115 Berlin, Germany' },
+  };
+
+  it('lays the letter out like a German business letter: sender, recipient, place and date, subject', () => {
+    const tex = renderCover(goodCover, withAddress, coverJob, coverTemplate, coverRules, today);
+    expect(tex).toContain(
+      '\\letterSender{Alex Example}{Example Street 1, 10115 Berlin, Germany}{Telephone}{+49 000 0000000}{E-Mail}{alex@example.test}',
+    );
+    expect(tex).toContain('\\letterTo{Nimbus Analytics GmbH}{Berlin, Germany}');
+    expect(tex).toContain('\\letterDateLine{Berlin, 20.11.2026}');
+    expect(tex).toContain('\\letterSubject{Application for the position of Data Engineer}');
+    expect(tex).toContain('Dear Hiring Team,\n\nI am applying for the Data Engineer role');
+    expect(tex).toContain('\\letterClosing{Best regards,}{Alex Example}');
+    expect(parseTemplate(tex, 'cover-letter').diagnostics).toEqual([]);
+    expect(precheckTex(tex)).toEqual([]);
+  });
+
+  it('falls back to the location without an address; uses the rules place, date format and subject', () => {
+    const rules = {
+      ...coverRules,
+      place: 'Potsdam',
+      date_format: 'D MMMM YYYY' as const,
+      subject: 'Re: {role}',
+    };
+    const tex = renderCover(
+      goodCover,
+      fullProfile,
+      { ...coverJob, location: '' },
+      coverTemplate,
+      rules,
+      today,
+    );
+    expect(tex).toContain('{Alex Example}{Berlin, Germany}{Telephone}');
+    expect(tex).toContain('\\letterTo{Nimbus Analytics GmbH}{}');
+    expect(tex).toContain('\\letterDateLine{Potsdam, 20 November 2026}');
+    expect(tex).toContain('\\letterSubject{Re: Data Engineer}');
+  });
+
+  it('German: fixed German subject, salutation, closing and labels', () => {
+    const tex = renderCover(goodCover, withAddress, coverJob, coverTemplate, coverRules, today, 'de');
+    expect(tex).toContain('{Telefon}{+49 000 0000000}{E-Mail}');
+    expect(tex).toContain('\\letterSubject{Bewerbung für die Position als Data Engineer}');
+    expect(tex).toContain('Sehr geehrte Damen und Herren,\n\n');
+    expect(tex).toContain('\\letterClosing{Mit freundlichen Grü\\ss{}en}{Alex Example}');
+    expect(tex).toContain('\\letterDateLine{Berlin, 20.11.2026}');
+  });
+
+  it('takes the city from a location with a postcode', () => {
+    expect(cityOf('10115 Berlin-Mitte, Germany')).toBe('Berlin-Mitte');
+    expect(cityOf('Berlin, Germany')).toBe('Berlin');
+    expect(cityOf('D-10115 Berlin')).toBe('Berlin');
+    expect(cityOf('')).toBe('');
   });
 
   it('escapes model text, joins lines and drops empty paragraphs', () => {

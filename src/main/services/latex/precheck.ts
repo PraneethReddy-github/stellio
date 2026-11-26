@@ -10,9 +10,25 @@ import { DENY_EXACT, DENY_GROUP, DENY_PARTS, norm } from '@shared/latex/deny';
 /** The one file input the seed templates use, pdfTeX only (spikes/latex/FINDINGS.md). */
 const GLYPHTOUNICODE = '\\ifdefined\\pdfgentounicode\\input{glyphtounicode}\\pdfgentounicode=1\\fi';
 
+/**
+ * The one image a template may load: the user's photo, copied into the sandbox work dir as photo.jpg by the
+ * compile (D26). Only the literal name `photo`, with plain options; any other \includegraphics is refused.
+ */
+export const PHOTO_INCLUDE =
+  /\\includegraphics\s*(?:\[\s*(?:(?:width|height|scale|clip|trim|keepaspectratio|angle)\s*(?:=\s*[A-Za-z0-9. -]*)?\s*(?:,\s*)?)*\])?\s*\{photo\}/g;
+
+/** graphicx settings that change where or how `{photo}` is read; the photo exception must not reach them. */
+const GRAPHICS_SETUP = new Set(['graphicspath', 'setkeys']);
+
 const denied = (name: string): boolean => {
   const n = norm(name);
-  return DENY_EXACT.has(n) || DENY_PARTS.some((p) => n.includes(p));
+  return (
+    DENY_EXACT.has(n) ||
+    DENY_PARTS.some((p) => n.includes(p)) ||
+    GRAPHICS_SETUP.has(n) ||
+    n.startsWith('declaregraphics') ||
+    n.startsWith('gin') // \Gin@... internals of graphicx
+  );
 };
 
 const ALLOWED_SCHEMES = new Set(['http', 'https', 'mailto']);
@@ -30,7 +46,10 @@ export function precheckTex(tex: string): CompileError[] {
   tex.split(/\r\n?|\n/).forEach((raw, i) => {
     const line = i + 1;
     // Drop the comment (an unescaped %): it is never executed.
-    const text = raw.replace(/(^|[^\\])((?:\\\\)*)%.*$/, '$1$2').replaceAll(GLYPHTOUNICODE, '');
+    const text = raw
+      .replace(/(^|[^\\])((?:\\\\)*)%.*$/, '$1$2')
+      .replaceAll(GLYPHTOUNICODE, '')
+      .replace(PHOTO_INCLUDE, '');
     if (text.includes('^^')) add(line, '^^ character escapes');
     for (const m of text.matchAll(/\\([A-Za-z@]+)/g)) if (denied(m[1] ?? '')) add(line, `\\${m[1] ?? ''}`);
     const loads = /\\(?:usepackage|RequirePackage|documentclass|LoadClass)\s*(?:\[[^\]]*\])?\s*\{([^}]*)\}/g;

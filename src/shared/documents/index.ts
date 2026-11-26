@@ -1,5 +1,13 @@
 export * from './schemas';
-export { renderResume, renderedOrder, formatDate, entryDates, splitTitle } from './render';
+export {
+  renderResume,
+  renderedOrder,
+  formatDate,
+  entryDates,
+  splitTitle,
+  templateFormat,
+  type RenderOptions,
+} from './render';
 export {
   checkCoverTruth,
   checkTruth,
@@ -33,3 +41,12 @@ export {
   type CoverJob,
   type CoverVersionSummary,
 } from './cover';
+export { RESUME_LABELS, categoryLabel } from './labels';
+export {
+  checkTranslation,
+  coverTexts,
+  resumeTexts,
+  withCoverTexts,
+  withResumeTexts,
+  type TextItem,
+} from './translate';

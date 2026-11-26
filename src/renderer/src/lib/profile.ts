@@ -111,3 +111,29 @@ export function useSuggestProfile() {
   });
   return { ...m, cancel: () => (requestId ? cancelTask(requestId) : Promise.resolve()) };
 }
+
+const photoKey = ['photo'] as const;
+
+/** The resume photo (templates/photo.jpg) as a data URL, or none. */
+export function usePhoto() {
+  return useQuery({ queryKey: photoKey, queryFn: () => call('photo:get', undefined) });
+}
+
+/** Main opens the file picker; the answer is the new photo state, or cancelled. */
+export function useChoosePhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call('photo:choose', undefined),
+    onSuccess: (r) => {
+      if (r.status === 'saved') qc.setQueryData(photoKey, r.photo);
+    },
+  });
+}
+
+export function useClearPhoto() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => call('photo:clear', undefined),
+    onSuccess: (r) => qc.setQueryData(photoKey, r),
+  });
+}

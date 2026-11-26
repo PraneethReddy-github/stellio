@@ -1,16 +1,22 @@
 import { z } from 'zod';
 
+/** Default order is template format 2's; `misc` is awards, positions and languages. */
 export const RESUME_SECTIONS = [
   'header',
   'summary',
+  'education',
   'experience',
   'projects',
+  'publications',
+  'patents',
   'skills',
-  'education',
   'certifications',
+  'misc',
 ] as const;
 export const MESSAGE_MUST_INCLUDE = ['role_title', 'job_reference', 'shared_ground', 'small_ask'] as const;
 export const DATE_FORMATS = ['MMM YYYY', 'MMMM YYYY', 'MM/YYYY', 'YYYY-MM'] as const;
+/** Letter date: "26.11.2026" or "26 November 2026". */
+export const LETTER_DATE_FORMATS = ['DD.MM.YYYY', 'D MMMM YYYY'] as const;
 export const TENSES = ['past_for_past_roles_present_for_current', 'past', 'present', 'any'] as const;
 
 const int = (min: number, max: number) => z.number().int().min(min).max(max);
@@ -93,6 +99,11 @@ function build(strict: boolean) {
     paragraphs: range(1, 12, 3, 4).default({ min: 3, max: 4 }),
     salutation_fallback: z.string().trim().min(1).max(80).default('Dear Hiring Team,'),
     closing: z.string().trim().min(1).max(80).default('Kind regards,'),
+    /** Place before the date ("Berlin, 26.11.2026"); empty = the city in the profile location. */
+    place: z.string().trim().max(80).default(''),
+    date_format: z.enum(LETTER_DATE_FORMATS).default('DD.MM.YYYY'),
+    /** Subject line; {role} is the job title. */
+    subject: z.string().trim().min(1).max(160).default('Application for the position of {role}'),
     banned_phrases: words.default([]),
     first_person: z.boolean().default(true),
   });

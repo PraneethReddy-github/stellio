@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import fc from 'fast-check';
@@ -19,7 +19,7 @@ import { createLatexService } from '../../src/main/services/latex/service';
 import { createProfileService } from '../../src/main/services/profile/service';
 import { createRulesService } from '../../src/main/services/rules/service';
 import { createAiSettings } from '../../src/main/services/settings/ai';
-import { renderResume, type ResumeContent } from '../../src/shared/documents';
+import { renderResume, resumeTexts, type ResumeContent } from '../../src/shared/documents';
 import { sampleAnalysis, sampleJd } from '../fixtures/jobs';
 import {
   airflowBullet,
@@ -57,7 +57,28 @@ const badContent: ResumeContent = {
   ],
 };
 
-async function setup(env: Record<string, string> = {}) {
+/** A faithful German translation of `goodContent`'s texts, as the fake CLI returns it. */
+const GERMAN: Record<string, string> = {
+  summary:
+    'Data Engineer mit fünf Jahren Erfahrung im Aufbau von Batch-Pipelines in Python, SQL und Airflow.',
+  'experience[0].bullets[0]':
+    'Wöchentliche Dashboards für das Finanzteam gebaut, die rohe Buchungsdaten in SQL-Berichte verwandeln.',
+  'experience[1].bullets[0]':
+    'Laufzeit der nächtlichen Berichte von 2 h auf 10 min gesenkt, durch neu geschriebene SQL-Pipelines in PostgreSQL.',
+  'experience[1].bullets[1]':
+    'Verantwortlich für das Airflow-Deployment von 6 Teams; nächtliche Pipelines liefen planmäßig.',
+  'projects[0].bullets[0]':
+    'Persönlichen Finanz-Tracker in Python und Docker gebaut, der CSV-Dateien von Banken importiert.',
+};
+const translation = (over: Record<string, string> = {}) =>
+  JSON.stringify({
+    items: resumeTexts(goodContent).map((i) => ({
+      key: i.key,
+      text: over[i.key] ?? GERMAN[i.key] ?? i.text,
+    })),
+  });
+
+async function setup(env: Record<string, string> = {}, opts: { photo?: boolean } = {}) {
   const db = freshDb();
   const dir = tempDir();
   for (const d of ['profile', 'rules', 'templates']) mkdirSync(join(dir, d), { recursive: true });
@@ -87,10 +108,14 @@ async function setup(env: Record<string, string> = {}) {
         projects: [],
         change_log: ['Dropped Ledger'],
       }),
+      FAKE_CLAUDE_OUTPUT_RESUME_TRANSLATE: translation(),
       FAKE_CLAUDE_CAPTURE: cap,
       ...env,
     },
   });
+  const photoFile = join(dir, 'templates/photo.jpg');
+  if (opts.photo) writeFileSync(photoFile, readFileSync('tests/fixtures/latex/photo.jpg'));
+  const photo = { read: () => Promise.resolve(existsSync(photoFile) ? readFileSync(photoFile) : null) };
   const profile = createProfileService({
     dataDir: dir,
     gitAvailable: false,
@@ -103,9 +128,10 @@ async function setup(env: Record<string, string> = {}) {
     dataDir: dir,
     seedDir: resolve('seed'),
     override: () => (engine ? BIN : join(dir, 'no-engine')),
+    photo: photo.read,
   });
   const jobs = createJobsService({ db, runner, settings, profile });
-  const docs = createDocumentsService({ db, runner, settings, profile, rules, latex, dataDir: dir });
+  const docs = createDocumentsService({ db, runner, settings, profile, rules, latex, dataDir: dir, photo });
   const intake = await jobs.intakeText(POSTING);
   if (intake.status !== 'ok') throw new Error('intake failed');
   await jobs.analyze(intake.jobId);
@@ -116,7 +142,8 @@ async function setup(env: Record<string, string> = {}) {
       .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
       .filter((r) => r.kind === 'call');
   const resumeCalls = () => calls().filter((c) => c.stdin.includes('<resume_rules>'));
-  return { db, dir, docs, jobId: intake.jobId, calls: resumeCalls };
+  const translateCalls = () => calls().filter((c) => c.stdin.includes('<texts>'));
+  return { db, dir, docs, jobId: intake.jobId, calls: resumeCalls, translateCalls };
 }
 
 describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
@@ -137,7 +164,7 @@ describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
     const stages: string[] = [];
     const v = await docs.generate(jobId, { onStage: (s) => stages.push(s) });
     expect(v.meta).toMatchObject({ version: 1, parentVersion: null, userEdited: false, isFinal: false });
-    expect(v.meta.promptVersion).toBe('resume.generate@v1');
+    expect(v.meta.promptVersion).toBe('resume.generate@v2');
     expect(v.checks.truth).toEqual({ ok: true, violations: [], warnings: [] });
     expect(v.checks.lint.ok).toBe(true);
     expect(v.content).toEqual(goodContent);
@@ -263,6 +290,77 @@ describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
       readFileSync('seed/rules/resume.md', 'utf8').replace('max_words: 50', 'max_words: 40'),
     );
     expect((await docs.list(jobId)).every((s) => s.stale)).toBe(true);
+  });
+
+  it('German version: translates only the texts, keeps ids and skills, renders German, passes its checks', async () => {
+    const { docs, jobId, translateCalls } = await setup();
+    await docs.generate(jobId);
+    const stages: string[] = [];
+    const de = await docs.translate(jobId, 1, { onStage: (s) => stages.push(s) });
+    expect(de.meta).toMatchObject({ version: 2, parentVersion: 1, language: 'de', userEdited: false });
+    expect(de.meta.promptVersion).toBe('resume.translate@v1');
+    expect(de.checks.truth).toEqual({ ok: true, violations: [], warnings: [] });
+    expect(de.content?.summary).toBe(GERMAN.summary);
+    expect(de.content?.experience.map((e) => e.entry_id)).toEqual(
+      goodContent.experience.map((e) => e.entry_id),
+    );
+    expect(de.content?.skills).toEqual(goodContent.skills);
+    expect(de.tex).toContain('\\section{Berufserfahrung}');
+    expect(de.tex).toContain('{Mär 2022 -- heute}');
+    expect(stages).toEqual(['drafting', 'checking', 'compiling']);
+    expect(de.checks.lint.issues.filter((i) => i.severity === 'error')).toEqual([]);
+    if (canCompile) expect(de.checks.compile?.ok).toBe(true);
+    const [call] = translateCalls();
+    expect(call?.stdin).toContain('"key": "experience[1].bullets[0]"');
+    expect(call?.stdin).toContain('Data Engineer at Nimbus Analytics GmbH');
+    expect((await docs.list(jobId)).map((s) => s.meta.language)).toEqual(['en', 'de']);
+
+    await expect(docs.translate(jobId, 2)).rejects.toThrow(/already German/);
+    await expect(docs.revise(jobId, 2, 'shorter')).rejects.toThrow(/German version/);
+    const manual = await docs.saveManual(jobId, 2, de.tex.replace('Laufzeit', 'Die Laufzeit'));
+    expect(manual.meta.language).toBe('de');
+    await expect(docs.translate(jobId, 3)).rejects.toThrow(/manual edit/);
+  });
+
+  it('German version: an invented number or term is a violation and gets one repair round', async () => {
+    const { docs, jobId, translateCalls } = await setup({
+      FAKE_CLAUDE_OUTPUT_RESUME_TRANSLATE: translation({
+        'experience[1].bullets[1]': 'Verantwortlich für das Airflow-Deployment von 9 Teams auf Kubernetes.',
+      }),
+      FAKE_CLAUDE_OUTPUT_RESUME_TRANSLATE_REPAIR: translation(),
+    });
+    await docs.generate(jobId);
+    const de = await docs.translate(jobId, 1);
+    const [first, repair] = translateCalls();
+    expect(first).toBeDefined();
+    expect(repair?.stdin).toContain('<repair_issues>');
+    expect(repair?.stdin).toMatch(/number_not_in_source\) at experience\[1\]\.bullets\[1\]: "9"/);
+    expect(repair?.stdin).toContain('<previous_translation>');
+    expect(de.checks.truth?.ok).toBe(true);
+    expect(de.content?.experience[1]?.bullets[1]?.text).toBe(GERMAN['experience[1].bullets[1]']);
+  });
+
+  it('photo: on in the header when set, compiled from the work dir, left out for Overleaf', async () => {
+    const { docs, jobId } = await setup({}, { photo: true });
+    const v = await docs.generate(jobId);
+    expect(v.tex).toMatch(/^\\resumephototrue$/m);
+    if (canCompile) {
+      expect(v.checks.compile).toMatchObject({ ok: true });
+      expect(v.checks.ats.format.find((f) => f.check === 'no_images')?.ok).toBe(false);
+    }
+    const open = vi.fn(() => Promise.resolve());
+    const { url } = await docs.openOverleaf(jobId, 1, open);
+    const html = readFileSync(fileURLToPath(url), 'utf8');
+    expect(html).toContain(encodeURIComponent('\\resumephotofalse\n\\resumeHeader'));
+    expect(html).not.toContain(encodeURIComponent('\\resumephototrue\n'));
+    docs.dispose();
+  });
+
+  it('a version made with the photo still compiles after the photo is removed (review finding)', async () => {
+    const { docs, jobId, dir } = await setup({}, { photo: true });
+    await docs.generate(jobId);
+    rmSync(join(dir, 'templates/photo.jpg'));
+    if (canCompile) expect((await docs.compile(jobId, 1)).checks.compile?.ok).toBe(true);
   });
 
   it('export writes the tex (and the PDF) to the picked path; cancel writes nothing', async () => {

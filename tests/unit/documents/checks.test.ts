@@ -12,13 +12,14 @@ import {
 import type { Jd } from '../../../src/shared/jobs/schemas';
 import type { Profile } from '../../../src/shared/profile';
 import { sampleJd } from '../../fixtures/jobs';
+// The checks are template-agnostic; these tests use the format 1 template, whose output they were written for.
 import {
   airflowBullet,
   fullProfile,
   goodContent,
   seedPolicy,
-  seedRules,
-  seedTemplate,
+  v1Rules as seedRules,
+  v1Template as seedTemplate,
 } from '../../fixtures/resume';
 
 const truth = (

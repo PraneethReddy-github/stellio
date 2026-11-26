@@ -34,7 +34,7 @@ describe('cover prompts', () => {
     const generated: Record<string, unknown> = { ...z.toJSONSchema(CoverContentSchema) };
     delete generated.$schema;
     expect(onDisk).toEqual(generated);
-    expect(loadPrompt(task).version).toBe(1);
+    expect(loadPrompt(task).version).toBe(2);
   });
 
   it.each(['cover.generate', 'cover.revise'] as const)(

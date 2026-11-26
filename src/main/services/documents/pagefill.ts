@@ -1,7 +1,9 @@
 /**
  * True when the text on the last page of `pdf` ends within ~2 lines of the bottom margin (docs/06 §7).
  * Margins are not in the PDF, so the bottom margin is taken to equal the top one: the gap above the highest
- * text on page 1. Line height is the median distance between baselines on the last page.
+ * text on page 1. Line height is the median distance between baselines on the last page. A footer pinned to the
+ * bottom (template format 2's "Last updated" line, set with \vfill) is not content: when the lowest line sits more
+ * than three lines below the one above it, the line above is the end of the text.
  */
 export async function lastPageNearlyFull(pdf: Uint8Array, lines = 2): Promise<boolean> {
   // pdfjs is ESM-only; dynamic import keeps the CJS main bundle working.
@@ -22,7 +24,6 @@ export async function lastPageNearlyFull(pdf: Uint8Array, lines = 2): Promise<bo
     if (first.length === 0 || last.length === 0) return false;
     const [, y0 = 0, , y1 = 0] = lastPage.view;
     const topGap = y1 - Math.max(...first.map((i) => i.y + i.h));
-    const bottomGap = Math.min(...last.map((i) => i.y)) - y0;
     const ys = [...new Set(last.map((i) => Math.round(i.y)))].sort((a, b) => b - a);
     const gaps = ys
       .slice(1)
@@ -30,6 +31,9 @@ export async function lastPageNearlyFull(pdf: Uint8Array, lines = 2): Promise<bo
       .filter((g) => g > 1)
       .sort((a, b) => a - b);
     const lineHeight = gaps[Math.floor(gaps.length / 2)] ?? 12;
+    const [lowest = 0, above] = [...ys].reverse();
+    const footer = above !== undefined && above - lowest > 3 * lineHeight;
+    const bottomGap = (footer ? above : Math.min(...last.map((i) => i.y))) - y0;
     return bottomGap - topGap < lines * lineHeight;
   } finally {
     await task.destroy();

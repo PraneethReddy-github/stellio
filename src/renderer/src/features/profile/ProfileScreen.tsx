@@ -32,6 +32,7 @@ import { useElapsedSeconds } from '../../lib/hooks';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
 import { HistoryTab } from './HistoryTab';
 import { ImportDialog, type ImportDraft } from './ImportDialog';
+import { PhotoSection } from './PhotoSection';
 import { OverviewTab } from './OverviewTab';
 import { SkillDialog } from './SkillDialog';
 import { SuggestDialog } from './SuggestDialog';
@@ -482,6 +483,7 @@ function ProfileEditor({
             </div>
             <TabsContent value="overview" className={s.pane}>
               <OverviewTab
+                photo={<PhotoSection />}
                 model={model}
                 onField={onField}
                 onAddSkill={() => setSkillDialog({ row: null })}

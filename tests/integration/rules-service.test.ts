@@ -52,16 +52,16 @@ describe('rules service', () => {
   it('saves with diagnostics, marks modified, commits, shows history and diffs, and reverts', async () => {
     const { service } = await setup();
     const before = await service.get(RESUME);
-    const edited = before.content.replace('page_limit: 1', 'page_limit: 2');
-    const after = await service.save(RESUME, edited, before.hash, 'rules: allow 2 pages');
+    const edited = before.content.replace('page_limit: 2', 'page_limit: 1');
+    const after = await service.save(RESUME, edited, before.hash, 'rules: one page');
     expect(after.diagnostics).toEqual([]);
     expect((await service.list()).find((f) => f.path === RESUME)?.modified).toBe(true);
 
     const history = await service.history(RESUME, 10);
-    expect(history.map((h) => h.message)).toEqual(['rules: allow 2 pages', expect.any(String)]);
+    expect(history.map((h) => h.message)).toEqual(['rules: one page', expect.any(String)]);
     const [latest, initial] = history;
     if (!latest || !initial) throw new Error('expected two commits');
-    expect(await service.changesIn(RESUME, latest.hash)).toContain('+page_limit: 2');
+    expect(await service.changesIn(RESUME, latest.hash)).toContain('+page_limit: 1');
     // Another file's history stays separate.
     expect(await service.history('rules/skills-policy.md', 10)).toHaveLength(1);
 
@@ -75,7 +75,7 @@ describe('rules service', () => {
     const snap = await service.get(RESUME);
     const bad = await service.save(
       RESUME,
-      snap.content.replace('page_limit: 1', 'page_limit: 9'),
+      snap.content.replace('page_limit: 2', 'page_limit: 9'),
       snap.hash,
       'x',
     );
@@ -115,9 +115,9 @@ describe('rules service', () => {
   it('reset previews the default, then restores it as a commit', async () => {
     const { service } = await setup();
     const snap = await service.get(RESUME);
-    await service.save(RESUME, snap.content.replace('page_limit: 1', 'page_limit: 2'), snap.hash, 'edit');
+    await service.save(RESUME, snap.content.replace('page_limit: 2', 'page_limit: 1'), snap.hash, 'edit');
     const preview = await service.resetPreview(RESUME);
-    expect(preview.current).toContain('page_limit: 2');
+    expect(preview.current).toContain('page_limit: 1');
     expect(preview.seedDefault).toBe(snap.content);
 
     const now = await service.get(RESUME);
@@ -132,8 +132,8 @@ describe('rules service', () => {
     const { service } = await setup();
     const snap = await service.get(RESUME);
     const results = await Promise.allSettled([
-      service.save(RESUME, snap.content.replace('page_limit: 1', 'page_limit: 2'), snap.hash, 'a'),
-      service.save(RESUME, snap.content.replace('page_limit: 1', 'page_limit: 3'), snap.hash, 'b'),
+      service.save(RESUME, snap.content.replace('page_limit: 2', 'page_limit: 1'), snap.hash, 'a'),
+      service.save(RESUME, snap.content.replace('page_limit: 2', 'page_limit: 3'), snap.hash, 'b'),
     ]);
     expect(results.map((r) => r.status).sort()).toEqual(['fulfilled', 'rejected']);
   });

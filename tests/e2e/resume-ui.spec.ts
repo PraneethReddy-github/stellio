@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { sampleAnalysis, sampleJd } from '../fixtures/jobs';
+import { resumeTexts } from '../../src/shared/documents';
 import { badContent, goodContent } from '../fixtures/resume';
 import { invoke, launchApp, type Launched } from './helpers';
 
@@ -22,6 +23,8 @@ const fakeEnv = (extra: Record<string, string> = {}): Record<string, string> => 
   FAKE_CLAUDE_OUTPUT_JOB_ANALYZE: JSON.stringify(sampleAnalysis),
   FAKE_CLAUDE_OUTPUT_RESUME_GENERATE: JSON.stringify(goodContent),
   FAKE_CLAUDE_OUTPUT_RESUME_REVISE: JSON.stringify(reviseOutput),
+  // The stand-in "translation" keeps the English texts: the German version still gets German headings and dates.
+  FAKE_CLAUDE_OUTPUT_RESUME_TRANSLATE: JSON.stringify({ items: resumeTexts(goodContent) }),
   ...extra,
 });
 
@@ -102,6 +105,22 @@ test('empty: says what to do, then draft shows its stages and a rendered PDF wit
     await expect(page.getByRole('region', { name: 'Lint' })).toBeVisible();
   });
   expect(cspErrors).toEqual([]);
+});
+
+test('German version: a new German version; it cannot be revised or translated again', async () => {
+  await withApp({}, async ({ page }, jobId) => {
+    await draft(page);
+    await page.getByRole('button', { name: 'German version' }).click();
+    await onVersion(page, 'v2 · German');
+    await expect(page.getByText('German', { exact: true }).first()).toBeVisible();
+    const v2 = (await invoke(page, 'resume:get', { jobId, version: 2 })) as {
+      data: { tex: string; meta: { language: string } };
+    };
+    expect(v2.data.meta.language).toBe('de');
+    expect(v2.data.tex).toContain('\\section{Berufserfahrung}');
+    await expect(page.getByRole('button', { name: 'German version' })).toBeDisabled();
+    await expect(page.getByText(/This is the German version\. Revise the English version/)).toBeVisible();
+  });
 });
 
 test('cancel during the draft: nothing is stored and Draft resume is back', async () => {
@@ -268,7 +287,7 @@ test('stale: editing rules/resume.md shows the banner, and Regenerate makes the 
     const rules = readFileSync('seed/rules/resume.md', 'utf8');
     const saved = await invoke(page, 'rules:save', {
       path: 'rules/resume.md',
-      content: rules.replace('page_limit: 1', 'page_limit: 2'),
+      content: rules.replace('page_limit: 2', 'page_limit: 1'),
       expectedHash: null,
       message: 'rules: edit resume.md',
     });

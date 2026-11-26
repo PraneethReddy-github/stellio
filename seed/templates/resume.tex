@@ -1,95 +1,194 @@
-%% Stellio resume template v1 — pdfLaTeX, single file, Overleaf-compatible.
+%% Stellio resume template, format 2. pdfLaTeX (Overleaf) or Tectonic, single file.
+%% STELLIO:FORMAT 2
 %% Stellio fills the STELLIO:SLOT markers using only the macros defined below.
-%% Edit layout here; edit content behaviour in rules/resume.md.
-\documentclass[10pt]{article}
-
-\usepackage[a4paper,margin=0.6in,top=0.5in,bottom=0.5in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{charter}
-\usepackage[hidelinks]{hyperref}
+%% Edit the layout here; edit content behaviour in rules/resume.md. The photo is templates/photo.jpg (Profile).
+\documentclass[a4paper,11pt]{article}
 \usepackage{xcolor}
-\usepackage{titlesec}
-\usepackage{enumitem}
+\usepackage{ragged2e}
+\usepackage[empty]{fullpage}
 \usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{graphicx}
+\usepackage{cfr-lm}
+\usepackage[T1]{fontenc}
+\usepackage{fontawesome5} % only for the project link symbol
 % pdfTeX only (Tectonic/XeTeX has no \pdfgentounicode and emits a Unicode text layer natively)
 \ifdefined\pdfgentounicode\input{glyphtounicode}\pdfgentounicode=1\fi
-
-\definecolor{accent}{HTML}{1F2A37}
 \pagestyle{empty}
-\setlength{\parindent}{0pt}
-\setlength{\tabcolsep}{0pt}
+\geometry{left=0.6cm, top=0.5cm, right=0.6cm, bottom=0.5cm}
+\urlstyle{same}
 \raggedright
+\setlength{\tabcolsep}{5pt}
 
-% Section headings: small caps, hairline rule
-\titleformat{\section}{\large\scshape\color{accent}}{}{0pt}{}[\vspace{-6pt}\rule{\linewidth}{0.4pt}]
-\titlespacing*{\section}{0pt}{8pt}{5pt}
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large\bfseries
+}{}{0em}{}[\color{black}\titlerule \vspace{-7pt}]
 
-\setlist[itemize]{leftmargin=1.1em,label=\textbullet,itemsep=1pt,topsep=2pt,parsep=0pt}
+\renewcommand{\labelitemi}{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{C}{>{\centering\arraybackslash}X}
 
-% ---- Stellio macros (the AI may use only these) ----
-% \resumeHeader{Name}{Location}{Email}{Phone}{LinkedIn URL}{Other URL}
-\newcommand{\resumeHeader}[6]{%
-  \begin{center}
-    {\LARGE\color{accent}#1}\\[3pt]
-    \small #2 \,|\, \href{mailto:#3}{\detokenize{#3}} \,|\, #4 \,|\, \href{#5}{LinkedIn} \,|\, \href{#6}{\detokenize{#6}}
-  \end{center}\vspace{-4pt}}
-% \resumeSummary{text}
-\newcommand{\resumeSummary}[1]{\section{Summary}\small #1}
+% ---- Stellio macros (format 2; Stellio writes only these) ----
+\newcommand{\thinul}[1]{\setbox0\hbox{#1}\rlap{\rule[-1.6pt]{\wd0}{0.2pt}}\box0}
+\newcommand{\resumeLink}[2]{\if\relax\detokenize{#1}\relax\else\href{#1}{\thinul{#2}}\fi}
+\newcommand{\resumeLinks}[2]{\resumeLink{#1}{GitHub}\if\relax\detokenize{#1}\relax\else\if\relax\detokenize{#2}\relax\else{} $|$ \fi\fi\resumeLink{#2}{Portfolio}}
+\newif\ifresumephoto
+% \resumeHeader{Name}{Course}{University}{Address}{Phone}{Email}{GitHub URL}{Portfolio URL}{LinkedIn URL}
+% The photo is shown when the header slot sets the resumephoto switch to true.
+\newcommand{\resumeHeader}[9]{%
+  \ifresumephoto\parbox{2.8cm}{%
+
+  \includegraphics[width=2.4cm,clip]{photo}
+
+  }\fi\parbox{\dimexpr\linewidth-\ifresumephoto 2.8cm\else 0cm\fi\relax}{\setlength{\tabcolsep}{0in}
+  \begin{tabularx}{\linewidth}{L r}
+    \textbf{\LARGE #1} & #5\\
+    #2 & \href{mailto:#6}{\detokenize{#6}}\\
+    {#3} & \resumeLinks{#7}{#8}\\
+    {#4} & \resumeLink{#9}{LinkedIn}
+  \end{tabularx}
+  }\vspace{-2mm}}
+% \resumeSummary{text} (after \section{...})
+\newcommand{\resumeSummary}[1]{#1}
+% Education table: \begin{resumeEducation}{Degree}{Institute}{Grade}{Year} rows \end{resumeEducation}
+\newcommand{\edustrut}{\rule[-1.1ex]{0pt}{3.4ex}}
+\newenvironment{resumeEducation}[4]{%
+  \small\renewcommand{\tabularxcolumn}[1]{m{##1}}%
+  \tabularx{\dimexpr\textwidth-2mm\relax}{|c|C|c|c|}
+  \hline
+  \edustrut \textbf{#1} & \textbf{#2} & \textbf{#3} & \textbf{#4}\\
+  \hline}{\endtabularx\vspace{-1mm}}
+% \resumeEduRow{Degree}{Institute}{Grade}{Years}
+\newcommand{\resumeEduRow}[4]{\edustrut #1 & #2 & #3 & #4\\ \hline}
+% Entry lists: experience, projects, publications, patents. \resumeGap goes between two entries.
+\newenvironment{resumeEntries}{\begin{itemize}[leftmargin=*,labelsep=0mm]}{\end{itemize}\vspace{2mm}\vspace{-7.5mm}}
+\newenvironment{resumeExperience}{\begin{resumeEntries}}{\end{resumeEntries}\vspace{1mm}}
+\newcommand{\resumeGap}{\vspace{-1mm}}
 % \resumeEntry{Title}{Dates}{Organisation}{Location}
-\newcommand{\resumeEntry}[4]{%
-  \begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{#1} & \small #2\\
-    \textit{\small #3} & \textit{\small #4}
-  \end{tabularx}\vspace{-2pt}}
-% \resumeProject{Name}{Stack}{Dates}
-\newcommand{\resumeProject}[3]{%
-  \begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{#1} \,\textit{\small | #2} & \small #3
-  \end{tabularx}\vspace{-2pt}}
-\newenvironment{resumeItems}{\begin{itemize}\small}{\end{itemize}\vspace{2pt}}
-\newcommand{\resumeItem}[1]{\item #1}
-% \skillLine{Category}{comma-separated skills}
-\newcommand{\skillLine}[2]{\small\textbf{#1:} #2\\}
+\newcommand{\resumeEntry}[4]{\vspace{0.5mm}\item
+    \begin{tabular*}{0.98\textwidth}[t]{l@{\extracolsep{\fill}}r}
+        \textbf{#3} & \textit{\footnotesize{#2}} \\
+        \textit{\footnotesize{#1}} &  \footnotesize{#4}\\
+    \end{tabular*}
+    \vspace{-2.4mm}}
+\newcommand{\projlink}[1]{\hspace{0.8mm}\href{#1}{\raisebox{0.2ex}{\tiny\faLink}}}
+% \resumeProject{Name}{Stack}{Dates}{Link URL or empty}
+\newcommand{\resumeProject}[4]{\vspace{0.5mm}\item
+    \begin{tabular*}{0.98\textwidth}[t]{l@{\extracolsep{\fill}}r}
+        \textbf{#1\if\relax\detokenize{#4}\relax\else\projlink{#4}\fi} & \textit{\footnotesize{#3}} \\
+        \footnotesize{\textit{#2}} & \footnotesize{}
+    \end{tabular*}
+    \vspace{-2.4mm}}
+% \resumePublication{Title}{Venue}{Year}{Link URL or empty}
+\newcommand{\resumePublication}[4]{\resumeProject{#1}{#2}{#3}{#4}}
+% \resumePatent{Title}{Number label}{Number}{Date label}{Date}
+\newcommand{\resumePatent}[5]{\resumeProject{#1}{#2 #3}{#4 #5}{}}
+\newenvironment{resumeItems}{\begin{justify}\begin{itemize}[leftmargin=3ex, rightmargin=2ex, noitemsep,labelsep=1.2mm,itemsep=0mm]\small}{\end{itemize}\end{justify}\vspace{-2mm}}
+\newcommand{\resumeItem}[1]{\item {#1}}
+% Skills: \begin{resumeSkills} \skillLine{Category}{comma-separated skills} \end{resumeSkills}
+\newenvironment{resumeSkills}{\begin{itemize}[leftmargin=*,itemsep=1.7mm, rightmargin=2ex]}{\end{itemize}\vspace{-2mm}\vspace{-1.5mm}}
+\newcommand{\skillLine}[2]{\item{\textbf{#1}{:\hspace{0.5mm}#2 \vspace{-0.5mm}}}\vspace{-4pt}}
+% Certifications: \begin{resumeCerts} \resumeCert{Name}{Issuer}{Link URL or empty} \end{resumeCerts}
+\newenvironment{resumeCerts}{\begin{resumeItems}}{\end{resumeItems}\vspace{-4mm}}
+\newcommand{\resumeCert}[3]{\item {\if\relax\detokenize{#3}\relax\textbf{#1}\else\href{#3}{\textbf{#1}}\fi}\if\relax\detokenize{#2}\relax\else{ : #2}\fi}
+% Miscellaneous: \begin{resumeMiscList} \resumeMisc{Label}{Detail}{Dates} \end{resumeMiscList}
+\newenvironment{resumeMiscList}{\vspace{-0.1mm}\begin{itemize}[leftmargin=*,labelsep=0mm]}{\end{itemize}\vspace{2mm}}
+\newcommand{\resumeMisc}[3]{\vspace{0.5mm}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+        \textbf{#1}\if\relax\detokenize{#2}\relax\else,\hspace{0.3mm}#2\fi & \textit{\small{#3}}
+    \end{tabular*}
+    \vspace{-2mm}\vspace{-0.1mm}}
+% \resumeUpdated{Label}{Date}
+\newcommand{\resumeUpdated}[2]{\vfill\center{\footnotesize #1: #2}}
 
 \begin{document}
+\fontfamily{cmr}\selectfont
 
 %% STELLIO:SLOT header
-\resumeHeader{Firstname Lastname}{City, Country}{name@example.com}{+00 000 000000}{https://linkedin.com/in/example}{https://github.com/example}
+\resumeHeader{Firstname Lastname}{M.Sc. in Computer Science}{University}{12345 City, Country}{+00 000 000000}{name@example.com}{https://github.com/example}{https://example.com}{https://www.linkedin.com/in/example/}
 %% STELLIO:END header
 
 %% STELLIO:SLOT summary
+\section{Summary}
 \resumeSummary{Data engineer with 3 years building batch and streaming pipelines in Python and SQL.}
 %% STELLIO:END summary
 
+\small % everything after the summary is set small (the original design's education block left it on)
+
+%% STELLIO:SLOT education
+\section{Education}
+\begin{resumeEducation}{Degree}{Institute}{CGPA/Percentage}{Year}
+\resumeEduRow{M.Sc.}{University}{1.7}{2023--Present}
+\resumeEduRow{B.Sc.}{University}{8.0/10}{2019--2023}
+\end{resumeEducation}
+%% STELLIO:END education
+
 %% STELLIO:SLOT experience
 \section{Experience}
+\begin{resumeExperience}
 \resumeEntry{Job Title}{Jan 2023 -- Present}{Company}{City, Country}
 \begin{resumeItems}
   \resumeItem{Reduced report generation time from 2 hours to 10 minutes by rewriting SQL pipelines.}
 \end{resumeItems}
+\end{resumeExperience}
 %% STELLIO:END experience
 
 %% STELLIO:SLOT projects
 \section{Projects}
-\resumeProject{Project Name}{Python, Docker}{Mar 2024 -- Jun 2024}
+\begin{resumeEntries}
+\resumeProject{Project Name}{Python, Docker}{Mar 2024 -- Jun 2024}{https://github.com/example/project}
 \begin{resumeItems}
   \resumeItem{What it does, your role, and the outcome.}
 \end{resumeItems}
+\end{resumeEntries}
 %% STELLIO:END projects
 
+%% STELLIO:SLOT publications
+\section{Publications}
+\begin{resumeEntries}
+\resumePublication{Paper Title}{Conference Name, Location}{2024}{https://doi.org/10.0000/example}
+\begin{resumeItems}
+  \resumeItem{One line about the paper.}
+\end{resumeItems}
+\end{resumeEntries}
+%% STELLIO:END publications
+
+%% STELLIO:SLOT patents
+\section{Patents}
+\begin{resumeEntries}
+\resumePatent{Patent Title}{Application No.}{000000000000}{Published}{Jan 2025}
+\end{resumeEntries}
+%% STELLIO:END patents
+
 %% STELLIO:SLOT skills
-\section{Skills}
+\section{Technical Skills}
+\begin{resumeSkills}
 \skillLine{Languages}{Python, SQL}
 \skillLine{Tools}{Docker, Git}
+\end{resumeSkills}
 %% STELLIO:END skills
 
-%% STELLIO:SLOT education
-\section{Education}
-\resumeEntry{B.Sc. Computer Science}{Sep 2019 -- Jun 2023}{University}{City, Country}
-%% STELLIO:END education
-
 %% STELLIO:SLOT certifications
+\section{Certifications}
+\begin{resumeCerts}
+\resumeCert{Certificate Name}{Certifying Institution}{https://example.com/credential}
+\end{resumeCerts}
 %% STELLIO:END certifications
+
+%% STELLIO:SLOT misc
+\section{Miscellaneous}
+\begin{resumeMiscList}
+\resumeMisc{Position}{Club / Organisation}{Jan 2022 -- Jan 2023}
+\resumeMisc{Languages}{English (C1), German (A2)}{}
+\end{resumeMiscList}
+%% STELLIO:END misc
+
+%% STELLIO:SLOT updated
+\resumeUpdated{Last updated}{January 1, 2026}
+%% STELLIO:END updated
 
 \end{document}

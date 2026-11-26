@@ -638,3 +638,23 @@ for (const theme of ['dark', 'light'] as const) {
     });
   }
 }
+
+test('resume photo: choose a transparent PNG, see it, remove it; a non-image is refused', async () => {
+  const section = page.getByRole('region', { name: 'Resume photo' });
+  await expect(section.getByText('No photo. Resumes are made without one.')).toBeVisible();
+  await mockOpenDialog(resolve('tests/fixtures/latex/photo.png'));
+  await section.getByRole('button', { name: 'Choose photo…' }).click();
+  await expect(page.getByText('Photo saved', { exact: true })).toBeVisible();
+  await expect(section.getByRole('img', { name: 'Your resume photo' })).toBeVisible();
+  // Electron decoded the PNG, put the transparent pixels on white and stored a JPEG.
+  const state = (await invoke(page, 'photo:get')) as { data: { dataUrl: string } };
+  expect(state.data.dataUrl.startsWith('data:image/jpeg;base64,/9j/')).toBe(true);
+
+  await mockOpenDialog(resolve('tests/fixtures/profiles/full.md'));
+  await section.getByRole('button', { name: 'Change photo…' }).click();
+  await expect(page.getByText('Pick a PNG or JPEG image.')).toBeVisible();
+  await expect(section.getByRole('img', { name: 'Your resume photo' })).toBeVisible();
+
+  await section.getByRole('button', { name: 'Remove' }).click();
+  await expect(section.getByText('No photo. Resumes are made without one.')).toBeVisible();
+});

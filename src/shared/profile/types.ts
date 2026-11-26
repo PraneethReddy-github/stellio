@@ -19,6 +19,7 @@ export const ENTRY_SECTIONS = [
   'certifications',
   'awards',
   'publications',
+  'patents',
   'languages',
 ] as const;
 export type EntrySection = (typeof ENTRY_SECTIONS)[number];
@@ -33,6 +34,7 @@ export const SECTION_KINDS = [
   'certifications',
   'awards',
   'publications',
+  'patents',
   'languages',
   'notes',
 ] as const;
@@ -49,6 +51,8 @@ export const FrontMatterSchema = z.object({
   email: str,
   phone: str,
   location: str,
+  /** Full postal address; printed only on cover letters (the resume shows `location`). */
+  address: str,
   links: z.object({ linkedin: str, github: str, portfolio: str }).prefault({}),
   work_authorization: str,
   notice_period: str,
@@ -101,6 +105,7 @@ export const ProfileSchema = z.object({
   certifications: entries,
   awards: entries,
   publications: entries,
+  patents: entries,
   languages: entries,
   notes: str,
 });

@@ -15,6 +15,7 @@ import {
   type DocumentsService,
 } from './services/documents/service';
 import { createCoverService, type CoverService } from './services/documents/cover';
+import { createPhotoService, type PhotoEncoder, type PhotoService } from './services/documents/photo';
 import { createJobsService, type JobsService } from './services/jobs/service';
 import { createSkillsService, type SkillsService } from './services/skills/service';
 import { createLearningService, type LearningService } from './services/skills/learning';
@@ -56,6 +57,7 @@ export interface AppContext {
   /** False when `git` is not installed: the app works, but without history/undo. */
   gitAvailable: boolean;
   runner: ClaudeRunner;
+  photo: PhotoService;
   profile: ProfileService;
   rules: RulesService;
   latex: LatexService;
@@ -103,16 +105,22 @@ export interface BootstrapHooks {
   secretCrypto?: SecretCrypto;
   /** What the systemd timer runs: this app with `--scan`. */
   scanCommand?: () => string[];
+  /** Resume photo re-encoder (Electron nativeImage in the app). Default: JPEGs are kept as they are. */
+  encodePhoto?: PhotoEncoder;
   // --- end D1
 }
+
+/** Default photo encoder outside the app (tests, headless): JPEGs pass unchanged, anything else is refused. */
+const keepJpeg: PhotoEncoder = (b) => (b[0] === 0xff && b[1] === 0xd8 ? b : null);
 
 /**
  * Startup order matters: data folder first (creates .stellio/), then DB (migrations run before any window opens).
  * Throws on failure; the caller shows the error and quits without touching data further.
  */
 export async function bootstrap(paths: AppPaths, logger: Logger, hooks: BootstrapHooks): Promise<AppContext> {
-  const { created, gitAvailable, gitError } = await initDataFolder(paths.dataDir, paths.seedDir);
+  const { created, updated, gitAvailable, gitError } = await initDataFolder(paths.dataDir, paths.seedDir);
   if (created.length > 0) logger.info('datafolder.created', { dataDir: paths.dataDir, created });
+  if (updated.length > 0) logger.info('datafolder.seed_updated', { updated });
   if (!gitAvailable) logger.warn('datafolder.git_unavailable', { error: gitError ?? 'git not installed' });
 
   const stellioDir = join(paths.dataDir, '.stellio');
@@ -161,10 +169,16 @@ export async function bootstrap(paths: AppPaths, logger: Logger, hooks: Bootstra
   });
 
   const rules = createRulesService({ dataDir: paths.dataDir, seedDir: paths.seedDir, gitAvailable });
+  const photo = createPhotoService({
+    dataDir: paths.dataDir,
+    gitAvailable,
+    encode: hooks.encodePhoto ?? keepJpeg,
+  });
   const latex = createLatexService({
     userDataDir: paths.userData,
     dataDir: paths.dataDir,
     seedDir: paths.seedDir,
+    photo: photo.read,
   });
 
   const jobs = createJobsService({ db, runner, settings: aiSettings, profile });
@@ -176,6 +190,7 @@ export async function bootstrap(paths: AppPaths, logger: Logger, hooks: Bootstra
     rules,
     latex,
     dataDir: paths.dataDir,
+    photo,
   });
   const skills = createSkillsService({ db, runner, settings: aiSettings, profile, rules, documents });
   const learning = createLearningService({ db, runner, settings: aiSettings, profile });
@@ -259,6 +274,7 @@ export async function bootstrap(paths: AppPaths, logger: Logger, hooks: Bootstra
     db,
     gitAvailable,
     runner,
+    photo,
     profile,
     rules,
     latex,

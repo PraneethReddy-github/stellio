@@ -10,6 +10,7 @@ import { createHandlers } from './ipc/handlers';
 import { hardenAllWebContents } from './platform/hardening';
 import { kwalletDisabled, withUserBins } from './platform/desktopEnv';
 import { createFileLogger } from './platform/logger';
+import { encodePhoto } from './platform/photo';
 import { resolvePaths } from './platform/paths';
 import { handleAppProtocol, registerAppScheme } from './platform/protocol';
 import { APP_ORIGIN, isAppUrl } from './platform/urls';
@@ -168,6 +169,7 @@ async function runHeadlessScan(): Promise<void> {
       notify,
       updates,
       secretCrypto,
+      encodePhoto,
     });
     const out = await ctx.discovery.runScan({ trigger: 'schedule' });
     logger.info('scan.headless_done', {
@@ -211,6 +213,7 @@ async function start(): Promise<void> {
     // --- D1 discovery
     secretCrypto,
     scanCommand: timerCommand,
+    encodePhoto,
     // --- end D1
   });
 

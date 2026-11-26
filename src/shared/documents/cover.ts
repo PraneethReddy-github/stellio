@@ -3,13 +3,14 @@ import { escapeLatex, fillTemplate, parseTemplate } from '../latex/template';
 import type { Profile } from '../profile';
 import type { CoverLetterRules } from '../rules';
 import { FIRST_PERSON, escapeRe, words } from './lint';
-import { MONTHS, arg, args, headerArg } from './render';
+import { MONTHS, MONTHS_DE, arg, args, headerArg, templateFormat } from './render';
 import {
   BulletSchema,
   CompileSummarySchema,
   LintReportSchema,
   ResumeMetaSchema,
   TruthReportSchema,
+  type DocLanguage,
   type LintIssue,
   type LintReport,
 } from './schemas';
@@ -74,14 +75,36 @@ const oneLine = (s: string): string => s.replace(/\s+/g, ' ').trim();
 export const keptParagraphs = (c: CoverContent): number[] =>
   c.paragraphs.flatMap((p, i) => (oneLine(p.text) === '' ? [] : [i]));
 
-/** "19 November 2026". */
-export const letterDate = (d: Date): string =>
-  `${String(d.getDate())} ${MONTHS[d.getMonth()] ?? ''} ${String(d.getFullYear())}`;
+/** "19 November 2026" ("19. November 2026" in German). */
+export const letterDate = (d: Date, lang: DocLanguage = 'en'): string =>
+  lang === 'de'
+    ? `${String(d.getDate())}. ${MONTHS_DE[d.getMonth()] ?? ''} ${String(d.getFullYear())}`
+    : `${String(d.getDate())} ${MONTHS[d.getMonth()] ?? ''} ${String(d.getFullYear())}`;
+
+/** "26.11.2026". */
+export const numericDate = (d: Date): string =>
+  `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getFullYear())}`;
+
+/** "10115 Berlin-Mitte, Germany" → "Berlin-Mitte": the first part without a postcode. */
+export const cityOf = (location: string): string =>
+  (location.split(',')[0] ?? '').replace(/^\s*[A-Z]{0,2}-?\d[\d\s-]*\s+/, '').trim();
+
+/** Fixed letter wording per language; English salutation, closing and subject come from the rules. */
+const LETTER_DE = {
+  salutation: 'Sehr geehrte Damen und Herren,',
+  closing: 'Mit freundlichen Grüßen',
+  subject: 'Bewerbung für die Position als {role}',
+  role: 'ausgeschriebene Stelle',
+  phone: 'Telefon',
+  email: 'E-Mail',
+};
+const LETTER_EN = { role: 'the advertised position', phone: 'Telephone', email: 'E-Mail' };
 
 /**
  * Builds the cover letter .tex from structured content. Pure. The header, recipient and date come from the
  * profile and the job, every model string is escaped, and a lone word that spells a pre-check primitive is
- * protected by the same `arg` helper the resume uses.
+ * protected by the same `arg` helper the resume uses. A format 2 template (D25) gets the sender block with the
+ * postal address, "Place, date" and a subject line.
  */
 export function renderCover(
   content: CoverContent,
@@ -90,10 +113,40 @@ export function renderCover(
   template: string,
   rules: CoverLetterRules,
   today = new Date(),
+  lang: DocLanguage = 'en',
 ): string {
   const f = profile.frontMatter;
   const esc = escapeLatex;
+  const de = lang === 'de';
   const slots: Record<string, string> = {};
+  const salutation =
+    oneLine(content.salutation ?? '').slice(0, 80) || (de ? LETTER_DE.salutation : rules.salutation_fallback);
+  const paragraphs = content.paragraphs.map((p) => oneLine(p.text)).filter((t) => t !== '');
+  slots.body = [salutation, ...paragraphs].map(esc).join('\n\n');
+  const closing = oneLine(content.closing ?? '').slice(0, 80) || (de ? LETTER_DE.closing : rules.closing);
+
+  if (templateFormat(template) === 2) {
+    slots.header = `\\letterSender${args(
+      esc(f.name),
+      esc(oneLine(f.address) || f.location),
+      de ? LETTER_DE.phone : LETTER_EN.phone,
+      esc(f.phone),
+      de ? LETTER_DE.email : LETTER_EN.email,
+      headerArg(f.email, 'email'),
+    )}`;
+    const place = rules.place.trim() || cityOf(f.location);
+    const date = rules.date_format === 'DD.MM.YYYY' ? numericDate(today) : letterDate(today, lang);
+    const role = oneLine(job.title) || (de ? LETTER_DE.role : LETTER_EN.role);
+    const subject = (de ? LETTER_DE.subject : rules.subject).replaceAll('{role}', role);
+    slots.recipient = [
+      `\\letterTo${args(esc(oneLine(job.company)), esc(oneLine(job.location)))}`,
+      `\\letterDateLine${arg(esc(place ? `${place}, ${date}` : date))}`,
+      `\\letterSubject${arg(esc(oneLine(subject)))}`,
+    ].join('\n');
+    slots.closing = `\\letterClosing${args(esc(closing), esc(f.name))}`;
+    return fillTemplate(template, slots);
+  }
+
   slots.header = `\\letterHeader${args(
     esc(f.name),
     esc(f.location),
@@ -102,13 +155,9 @@ export function renderCover(
     headerArg(f.links.linkedin, 'url'),
   )}`;
   const role = job.title.trim() === '' ? 'Hiring Team' : `Hiring Team, ${job.title.trim()}`;
-  slots.recipient = `\\letterRecipient${args(esc(letterDate(today)), esc(oneLine(job.company)), esc(oneLine(role)))}${
+  slots.recipient = `\\letterRecipient${args(esc(letterDate(today, lang)), esc(oneLine(job.company)), esc(oneLine(role)))}${
     job.location.trim() === '' ? '{~}' : arg(esc(oneLine(job.location)))
   }`;
-  const salutation = oneLine(content.salutation ?? '').slice(0, 80) || rules.salutation_fallback;
-  const paragraphs = content.paragraphs.map((p) => oneLine(p.text)).filter((t) => t !== '');
-  slots.body = [salutation, ...paragraphs].map(esc).join('\n\n');
-  const closing = oneLine(content.closing ?? '').slice(0, 80) || rules.closing;
   slots.closing = `${esc(closing)}\\\\[14pt]\n${esc(f.name)}`;
   return fillTemplate(template, slots);
 }

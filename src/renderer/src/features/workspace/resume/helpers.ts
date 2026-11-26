@@ -25,10 +25,12 @@ export function stageLabel(p: Pick<ResumeProgress, 'stage' | 'issues'> | null): 
   }
 }
 
-/** "v2", "v3 · Final", "v4 · edited". */
+/** "v2", "v3 · Final", "v4 · edited", "v5 · German". */
 export function versionLabel(s: Pick<DocSummary, 'meta'>): string {
-  const { version, isFinal, userEdited } = s.meta;
-  return [`v${String(version)}`, isFinal && 'Final', userEdited && 'edited'].filter(Boolean).join(' · ');
+  const { version, isFinal, userEdited, language } = s.meta;
+  return [`v${String(version)}`, language === 'de' && 'German', isFinal && 'Final', userEdited && 'edited']
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /** The version shown: the picked one while it still exists, else the newest; null when there is none. */
@@ -55,6 +57,7 @@ export const TRUTH_KIND_LABEL: Record<TruthViolation['kind'], string> = {
   unknown_organisation: 'Organisation not in your profile',
   label_not_allowed: 'Skill category not allowed',
   name_not_in_source: 'Name not in the posting',
+  term_not_in_source: 'Term not in the English version',
 };
 
 export const FINAL_NOTE_MANUAL = 'Manually edited — truth check not applied.';
@@ -65,10 +68,21 @@ export function reviseBlocker(opts: {
   manual: boolean;
   dirty: boolean;
   running: boolean;
+  german?: boolean;
 }): string | null {
   if (!opts.hasVersion || opts.running) return null;
   if (opts.dirty) return 'Save your edits as a new version before revising.';
   if (opts.manual) return 'This version was edited by hand. Revise works on drafted versions.';
+  if (opts.german)
+    return 'This is the German version. Revise the English version, then make a German version of it.';
+  return null;
+}
+
+/** Why "German version" cannot run now, or null. */
+export function translateBlocker(opts: { manual: boolean; dirty: boolean; german: boolean }): string | null {
+  if (opts.german) return 'This version is already German.';
+  if (opts.dirty) return 'Save your edits as a new version first.';
+  if (opts.manual) return 'A German version is made from a drafted version, not a hand-edited one.';
   return null;
 }
 
@@ -91,6 +105,7 @@ export const DOC_COPY: Record<
     latex: string;
     failDraft: string;
     failRevise: string;
+    failTranslate: string;
   }
 > = {
   resume: {
@@ -103,6 +118,7 @@ export const DOC_COPY: Record<
     latex: 'Resume LaTeX',
     failDraft: 'Could not draft the resume',
     failRevise: 'Could not revise the resume',
+    failTranslate: 'Could not make the German resume',
   },
   cover: {
     draft: 'Draft cover letter',
@@ -115,5 +131,6 @@ export const DOC_COPY: Record<
     latex: 'Cover letter LaTeX',
     failDraft: 'Could not draft the cover letter',
     failRevise: 'Could not revise the cover letter',
+    failTranslate: 'Could not make the German cover letter',
   },
 };

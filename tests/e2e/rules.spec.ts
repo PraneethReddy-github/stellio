@@ -52,7 +52,7 @@ test('get, save (line-numbered lint), history, changes, revert, resetPreview, re
 
   const saved = (await invoke(l.page, 'rules:save', {
     path: RESUME,
-    content: first.data.content.replace('page_limit: 1', 'page_limit: 9'),
+    content: first.data.content.replace('page_limit: 2', 'page_limit: 9'),
     expectedHash: first.data.hash,
     message: 'rules: break it',
   })) as Ok<Snap>;
@@ -89,7 +89,7 @@ test('get, save (line-numbered lint), history, changes, revert, resetPreview, re
 
   const edited = (await invoke(l.page, 'rules:save', {
     path: RESUME,
-    content: first.data.content.replace('page_limit: 1', 'page_limit: 2'),
+    content: first.data.content.replace('page_limit: 2', 'page_limit: 1'),
     expectedHash: reverted.data.hash,
   })) as Ok<Snap>;
   const reset = (await invoke(l.page, 'rules:reset', {

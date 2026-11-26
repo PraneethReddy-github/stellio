@@ -35,6 +35,7 @@ import {
   useMarkFinal,
   useReviseDoc,
   useSaveManualDoc,
+  useTranslateDoc,
   type DocKind,
   type DocView,
 } from '../../../lib/resume';
@@ -51,13 +52,14 @@ import {
   pagesText,
   reviseBlocker,
   stageLabel,
+  translateBlocker,
   versionLabel,
 } from './helpers';
 import s from './resume.module.css';
 
 /** What Copy, Download and Open in Overleaf can do with a version. */
 type Action = 'copy' | 'tex' | 'pdf' | 'overleaf';
-type Run = { kind: 'draft' } | { kind: 'revise'; instruction: string };
+type Run = { kind: 'draft' } | { kind: 'revise'; instruction: string } | { kind: 'translate' };
 
 const SETTINGS: string = '/settings';
 const errorText = (e: unknown): string => (e instanceof Error ? e.message : String(e));
@@ -94,7 +96,8 @@ export function ResumeTab({
   const revise = useReviseDoc(kind, jobId);
   const saveManual = useSaveManualDoc(kind, jobId);
   const markFinal = useMarkFinal(kind, jobId);
-  const running = generate.isPending || revise.isPending;
+  const translate = useTranslateDoc(kind, jobId);
+  const running = generate.isPending || revise.isPending || translate.isPending;
   const [requestId, setRequestId] = useState<string | null>(null);
   const progress = useDocProgress(kind, requestId);
   const secs = useElapsedSeconds(running);
@@ -115,10 +118,16 @@ export function ResumeTab({
   const truth = doc?.checks.truth ?? null;
   const blocked = truth !== null && !truth.ok;
   const manual = doc !== undefined && doc.content === null;
-  const blocker = reviseBlocker({ hasVersion: doc !== undefined, manual, dirty, running });
+  const german = doc?.meta.language === 'de';
+  const blocker = reviseBlocker({ hasVersion: doc !== undefined, manual, dirty, running, german });
+  const noGerman = translateBlocker({ manual, dirty, german });
 
   const start = (run: Run): void => {
     if (running) return;
+    if (run.kind === 'translate' && noGerman) {
+      toast({ title: noGerman });
+      return;
+    }
     const id = crypto.randomUUID();
     setLastRun(run);
     setRequestId(id);
@@ -136,7 +145,9 @@ export function ResumeTab({
       },
     };
     if (run.kind === 'draft') generate.mutate({ requestId: id }, opts);
-    else if (version !== null)
+    else if (run.kind === 'translate') {
+      if (version !== null) translate.mutate({ requestId: id, fromVersion: version }, opts);
+    } else if (version !== null)
       revise.mutate({ requestId: id, fromVersion: version, instruction: run.instruction }, opts);
   };
 
@@ -215,6 +226,12 @@ export function ResumeTab({
         group: kind === 'cover' ? 'Cover letter' : 'Resume',
         run: () => act.current.focusRevise(),
       },
+      {
+        id: `${kind}.translate`,
+        label: kind === 'cover' ? 'German version of this cover letter' : 'German version of this resume',
+        group: kind === 'cover' ? 'Cover letter' : 'Resume',
+        run: () => act.current.start({ kind: 'translate' }),
+      },
       // One Copy / Overleaf command, for the resume; the cover letter has the buttons.
       ...(kind === 'cover'
         ? []
@@ -247,7 +264,13 @@ export function ResumeTab({
   );
   const failure = runError && (
     <ErrorState
-      title={lastRun.kind === 'draft' ? copy.failDraft : copy.failRevise}
+      title={
+        lastRun.kind === 'draft'
+          ? copy.failDraft
+          : lastRun.kind === 'translate'
+            ? copy.failTranslate
+            : copy.failRevise
+      }
       message={runError}
       action={<Button onClick={() => start(lastRun)}>Try again</Button>}
     />
@@ -321,6 +344,7 @@ export function ResumeTab({
         <>
           <div className={s.head}>
             <span className={s.version}>v{version}</span>
+            {german && <Tag>German</Tag>}
             {doc.meta.isFinal && <Tag tone="ok">Final</Tag>}
             <span className={s.meta}>
               {doc.meta.createdAt.slice(0, 10)} ·{' '}
@@ -467,6 +491,14 @@ export function ResumeTab({
                   }))}
                 />
               </div>
+              <Button
+                busy={translate.isPending}
+                disabled={running || noGerman !== null}
+                title={noGerman ?? undefined}
+                onClick={() => start({ kind: 'translate' })}
+              >
+                {translate.isPending ? 'Translating…' : 'German version'}
+              </Button>
               <span className={s.spacer} />
               <Button onClick={() => request('copy')}>Copy LaTeX</Button>
               <Button disabled={dirty} onClick={() => request('overleaf')}>
