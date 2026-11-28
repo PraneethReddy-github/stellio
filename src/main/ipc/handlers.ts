@@ -326,6 +326,13 @@ export function createHandlers(
           onProgress: (p) => emit('discovery:progress', { requestId, ...p }),
         }),
       ),
+    'jobs:rescoreCounts': ({ sideJob }) => ctx.discovery.rescoreCounts(sideJob),
+    'jobs:rescore': ({ scope, jobId, sideJob, requestId }) =>
+      ctx.tasks.run(requestId, (signal) =>
+        ctx.discovery.rescore({ scope, jobId, sideJob }, signal, (done, total) =>
+          emit('jobs:rescoreProgress', { requestId, done, total }),
+        ),
+      ),
     'discovery:scanRuns': ({ limit }) => ctx.discovery.scanRuns(limit ?? 20),
     'discovery:schedule': () => ctx.discovery.schedule(),
     'discovery:setSchedule': (v) => ctx.discovery.setSchedule(v),

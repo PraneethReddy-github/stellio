@@ -216,6 +216,39 @@ export interface Triaged {
   jobId: string;
   score: number;
 }
+export type RescoreScope = 'unscored' | 'all' | 'stale';
+
+/**
+ * Open inbox jobs Re-score may triage, newest first. A job with a full analysis is never one: the Inbox shows its
+ * fit, so a new triage score would not be seen. `stale`: the latest triage used another profile version.
+ * `sideJob` limits to side jobs (true) or career jobs (false).
+ */
+export function rescoreCandidates(
+  db: Db,
+  scope: RescoreScope,
+  profileHash: string,
+  sideJob: boolean | undefined,
+  limit = 1000,
+): string[] {
+  const latest = `(select a.profile_hash from analyses a where a.job_id = j.id and a.triage = 1
+                   order by a.created_at desc, a.id desc limit 1)`;
+  const scoped = {
+    unscored: 'not exists (select 1 from analyses a where a.job_id = j.id and a.triage = 1)',
+    all: '1 = 1',
+    stale: `${latest} is not null and ${latest} != @hash`,
+  }[scope];
+  return db.sqlite
+    .prepare(
+      `select j.id from jobs j
+       where j.state = 'new' and j.closed_at is null
+         and not exists (select 1 from analyses f where f.job_id = j.id and f.triage = 0)
+         and (@side is null or j.side_job = @side) and ${scoped}
+       order by j.first_seen_at desc, j.id limit @limit`,
+    )
+    .all({ hash: profileHash, side: sideJob === undefined ? null : Number(sideJob), limit })
+    .map((r) => (r as { id: string }).id);
+}
+
 /** Triaged career jobs in the inbox at or above `threshold` with no full analysis yet, best first. */
 export function analysisCandidates(db: Db, threshold: number, limit: number): Triaged[] {
   return db.sqlite

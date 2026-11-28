@@ -365,6 +365,68 @@ describe('full scan over local fixture servers', () => {
   });
 });
 
+describe('re-score from the Inbox', () => {
+  it('counts and triages unscored, all, stale and one job; never beside a scan', async () => {
+    const t = setup({ env: { ...scoreEnv, FAKE_CLAUDE_MODE_JOB_TRIAGE: 'auth' } });
+    const { run } = await t.discovery.runScan({ trigger: 'manual' });
+    expect(await t.discovery.rescoreCounts()).toEqual({ unscored: run.newJobs, all: run.newJobs, stale: 0 });
+    t.env.FAKE_CLAUDE_MODE_JOB_TRIAGE = 'ok';
+
+    const progress: [number, number][] = [];
+    const unscored = await t.discovery.rescore({ scope: 'unscored' }, undefined, (d, n) =>
+      progress.push([d, n]),
+    );
+    expect(unscored).toEqual({ total: run.newJobs, scored: run.newJobs, error: null });
+    expect(progress[0]).toEqual([0, Math.ceil(run.newJobs / 10)]);
+    expect(progress.at(-1)).toEqual([Math.ceil(run.newJobs / 10), Math.ceil(run.newJobs / 10)]);
+    expect(await t.discovery.rescoreCounts()).toMatchObject({ unscored: 0, all: run.newJobs, stale: 0 });
+    expect(await t.discovery.rescoreCounts(true)).toEqual({ unscored: 0, all: 0, stale: 0 }); // no side jobs
+
+    // a full analysis takes the job out of every choice: the Inbox shows its fit, not triage
+    const [first] = t.discovery.inbox({ filters: {}, sort: 'rank', limit: 1 });
+    await t.jobs.analyze(first?.jobId ?? '');
+    expect((await t.discovery.rescoreCounts()).all).toBe(run.newJobs - 1);
+
+    // editing the profile makes every triage score stale
+    const file = join(t.dir, 'profile/praneethreddy.md');
+    writeFileSync(file, `${readFileSync(file, 'utf8')}\n`);
+    expect((await t.discovery.rescoreCounts()).stale).toBe(run.newJobs - 1);
+    const before = t.task('triage').length;
+    const stale = await t.discovery.rescore({ scope: 'stale' });
+    expect(stale.scored).toBe(run.newJobs - 1);
+    expect(t.task('triage').length - before).toBe(Math.ceil((run.newJobs - 1) / 10));
+    expect((await t.discovery.rescoreCounts()).stale).toBe(0);
+
+    // one job: one call with that job only
+    const [, second] = t.discovery.inbox({ filters: {}, sort: 'rank', limit: 2 });
+    const one = await t.discovery.rescore({ scope: 'job', jobId: second?.jobId });
+    expect(one).toEqual({ total: 1, scored: 1, error: null });
+    expect(
+      t
+        .task('triage')
+        .at(-1)
+        ?.stdin.match(/<job id=/g),
+    ).toHaveLength(1);
+    await expect(t.discovery.rescore({ scope: 'job', jobId: 'nope' })).rejects.toThrow('no longer exists');
+
+    // a failing CLI: nothing scored, the reason comes back
+    t.env.FAKE_CLAUDE_MODE_JOB_TRIAGE = 'auth';
+    const failed = await t.discovery.rescore({ scope: 'all' });
+    expect(failed.scored).toBe(0);
+    expect(failed.error).toMatch(/\S/);
+
+    // never beside a scan, either way round
+    const lock = acquireScanLock(t.db, 'manual', new Date(), 60_000);
+    await expect(t.discovery.rescore({ scope: 'all' })).rejects.toThrow('A scan is running');
+    t.db.sqlite.prepare("update scan_runs set status = 'error' where id = ?").run(lock?.id);
+    t.env.FAKE_CLAUDE_MODE_JOB_TRIAGE = 'ok';
+    const pending = t.discovery.rescore({ scope: 'all' });
+    await expect(t.discovery.runScan({ trigger: 'manual' })).rejects.toThrow('Re-scoring is running');
+    await expect(t.discovery.rescore({ scope: 'all' })).rejects.toThrow('already running');
+    await pending;
+  });
+});
+
 describe('side-job search profiles', () => {
   it('asks the job boards for part-time work, tags the jobs, triages them as side jobs and never auto-analyzes', async () => {
     const t = setup({ env: scoreEnv, seed: true });

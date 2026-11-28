@@ -1,11 +1,13 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { useMemo, useState, type KeyboardEvent } from 'react';
+import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
+import { ChevronDown } from 'lucide-react';
 import type { InboxItem } from '@shared/discovery/schemas';
 import { Page } from '../../app/Page';
 import { useRegisterCommands, type Command } from '../../app/commands';
 import { isTypingTarget } from '../../app/shortcuts';
 import {
   Button,
+  DropdownMenu,
   EmptyState,
   ErrorState,
   Field,
@@ -28,8 +30,13 @@ import {
 } from '../../ui';
 import { useElapsedSeconds } from '../../lib/hooks';
 import {
+  cancelRescore,
   cancelScan,
+  startRescore,
   startScan,
+  useRescoreCounts,
+  useRescoreState,
+  type RescoreInput,
   useDismiss,
   useInbox,
   useLastRun,
@@ -116,6 +123,41 @@ export default function InboxScreen(): React.JSX.Element {
   const hasSide = (profiles.data ?? []).some((p) => p.kind === 'side');
   const kind: InboxKind = hasSide ? list : 'all';
   const q = useInbox(inboxQuery(filters, kind));
+  const rescore = useRescoreState();
+  const sideJob = kind === 'all' ? undefined : kind === 'side';
+  const counts = useRescoreCounts(sideJob, !scan.running && !rescore.running);
+  const busy = scan.running || rescore.running;
+
+  const runRescore = useCallback(
+    async (input: RescoreInput): Promise<void> => {
+      try {
+        const out = await startRescore(input);
+        if (!out) return;
+        if (out.error && out.scored === 0)
+          toast({ title: 'Could not re-score', description: out.error, tone: 'bad' });
+        else
+          toast({
+            title: `Re-scored ${String(out.scored)} ${out.scored === 1 ? 'job' : 'jobs'}`,
+            description:
+              out.error ??
+              (out.scored < out.total ? `${String(out.total - out.scored)} not scored.` : undefined),
+            tone: out.error || out.scored < out.total ? 'warn' : 'ok',
+          });
+      } catch (e) {
+        toast({
+          title: 'Could not re-score',
+          description: e instanceof Error ? e.message : String(e),
+          tone: 'bad',
+        });
+      }
+    },
+    [toast],
+  );
+  const rescoreList = useCallback(
+    (scope: 'unscored' | 'all' | 'stale'): void =>
+      void runRescore({ scope, ...(sideJob === undefined ? {} : { sideJob }) }),
+    [runRescore, sideJob],
+  );
   const shortlist = useShortlist();
   const dismiss = useDismiss();
 
@@ -179,16 +221,40 @@ export default function InboxScreen(): React.JSX.Element {
   const commands = useMemo<Command[]>(
     () => [
       { id: 'inbox.scan', label: 'Scan now', group: 'Inbox', run: () => void startScan() },
+      ...(busy
+        ? []
+        : [
+            {
+              id: 'inbox.rescoreUnscored',
+              label: 'Re-score unscored jobs',
+              group: 'Inbox',
+              run: () => rescoreList('unscored'),
+            },
+            {
+              id: 'inbox.rescoreAll',
+              label: 'Re-score all jobs',
+              group: 'Inbox',
+              run: () => rescoreList('all'),
+            },
+          ]),
       ...(scan.running
         ? [{ id: 'inbox.cancel', label: 'Cancel scan', group: 'Inbox', run: () => void cancelScan() }]
         : []),
     ],
-    [scan.running],
+    [scan.running, busy, rescoreList],
   );
   useRegisterCommands('inbox', commands);
 
   const noProfile = profiles.isSuccess && profiles.data.length === 0;
   const errors = sourceErrors(run.data ?? null);
+
+  const scanButton = scan.running ? (
+    <Button onClick={() => void cancelScan()}>Cancel scan</Button>
+  ) : (
+    <Button variant="primary" disabled={rescore.running} onClick={() => void startScan()}>
+      Scan now
+    </Button>
+  );
 
   const listBody = (
     <>
@@ -277,6 +343,11 @@ export default function InboxScreen(): React.JSX.Element {
                   onDismiss={() => setDismissing(selected)}
                   onOpenPosting={() => openPosting(selected)}
                   onOpenWorkspace={() => openWorkspace(selected)}
+                  rescore={{
+                    run: () => void runRescore({ scope: 'job', jobId: selected.jobId }),
+                    busy: rescore.running && rescore.jobId === selected.jobId,
+                    disabled: busy,
+                  }}
                 />
               </Inspector>
             )
@@ -319,15 +390,49 @@ export default function InboxScreen(): React.JSX.Element {
       subtitle={<span className={s.mono}>{lastScanLine(run.data ?? null, formatWhen)}</span>}
       fill
       actions={
-        noProfile ? undefined : scan.running ? (
-          <Button onClick={() => void cancelScan()}>Cancel scan</Button>
-        ) : (
-          <Button variant="primary" onClick={() => void startScan()}>
-            Scan now
-          </Button>
+        noProfile ? undefined : (
+          <>
+            <DropdownMenu
+              align="end"
+              trigger={
+                <Button icon={<ChevronDown aria-hidden="true" />} disabled={busy}>
+                  Re-score
+                </Button>
+              }
+              items={[
+                {
+                  label: `Unscored jobs · ${String(counts.data?.unscored ?? 0)}`,
+                  disabled: !counts.data?.unscored,
+                  onSelect: () => rescoreList('unscored'),
+                },
+                {
+                  label: `All jobs in this list · ${String(counts.data?.all ?? 0)}`,
+                  disabled: !counts.data?.all,
+                  onSelect: () => rescoreList('all'),
+                },
+                {
+                  label: `Scored before your profile changed · ${String(counts.data?.stale ?? 0)}`,
+                  disabled: !counts.data?.stale,
+                  onSelect: () => rescoreList('stale'),
+                },
+              ]}
+            />
+            {scanButton}
+          </>
         )
       }
     >
+      {rescore.running && rescore.jobId === null && (
+        <section className={s.scan} aria-label="Re-score progress">
+          <ProgressLine label="Re-scoring jobs" />
+          <p className={s.mono} role="status">
+            re-scoring · batch {rescore.done} of {rescore.total}
+          </p>
+          <Button size="sm" onClick={() => void cancelRescore()}>
+            Cancel re-score
+          </Button>
+        </section>
+      )}
       {scan.running && (
         <section className={s.scan} aria-label="Scan progress">
           <ProgressLine label="Scanning job sources" />

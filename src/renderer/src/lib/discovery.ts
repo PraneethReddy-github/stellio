@@ -154,3 +154,48 @@ export const cancelScan = (): Promise<unknown> => {
   const id = useScanState.getState().requestId;
   return id ? call('tasks:cancel', { requestId: id }).catch(() => undefined) : Promise.resolve();
 };
+
+// ---- re-score: triage again, also outside React ----
+
+export type RescoreInput = Omit<IpcInput<'jobs:rescore'>, 'requestId'>;
+export type RescoreOutcome = IpcOutput<'jobs:rescore'>;
+export interface RescoreState {
+  running: boolean;
+  requestId: string | null;
+  /** The one job being re-scored, or null for a list. */
+  jobId: string | null;
+  done: number;
+  total: number;
+}
+const RESCORE_IDLE: RescoreState = { running: false, requestId: null, jobId: null, done: 0, total: 0 };
+export const useRescoreState = create<RescoreState>(() => RESCORE_IDLE);
+
+export const useRescoreCounts = (sideJob: boolean | undefined, enabled: boolean) =>
+  useQuery({
+    queryKey: [...ROOT, 'rescoreCounts', sideJob ?? 'all'],
+    queryFn: () => call('jobs:rescoreCounts', sideJob === undefined ? {} : { sideJob }),
+    enabled,
+    refetchOnMount: 'always',
+  });
+
+/** Runs one re-score; throws the IPC error (a scan running, a missing job) for the caller to show. */
+export async function startRescore(input: RescoreInput): Promise<RescoreOutcome | null> {
+  if (useRescoreState.getState().running) return null;
+  const requestId = crypto.randomUUID();
+  useRescoreState.setState({ ...RESCORE_IDLE, running: true, requestId, jobId: input.jobId ?? null });
+  const off = window.stellio.on('jobs:rescoreProgress', (p) => {
+    if (p.requestId === requestId) useRescoreState.setState({ done: p.done, total: p.total });
+  });
+  try {
+    return await call('jobs:rescore', { ...input, requestId });
+  } finally {
+    off();
+    useRescoreState.setState(RESCORE_IDLE);
+    void refreshAll(queryClient);
+  }
+}
+
+export const cancelRescore = (): Promise<unknown> => {
+  const id = useRescoreState.getState().requestId;
+  return id ? call('tasks:cancel', { requestId: id }).catch(() => undefined) : Promise.resolve();
+};

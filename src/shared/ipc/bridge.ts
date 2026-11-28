@@ -14,6 +14,7 @@ export const ipcEventNames: readonly IpcEventName[] = [
   'resume:progress',
   'cover:progress',
   'discovery:progress',
+  'jobs:rescoreProgress',
   'referrals:progress',
 ];
 

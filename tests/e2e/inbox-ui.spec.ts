@@ -337,6 +337,42 @@ test('a second scan with nothing new: "No job matches" under "new since last sca
   await expect(page.getByRole('button', { name: 'Scan now' })).toBeVisible();
 });
 
+test('Re-score: the menu counts each choice and re-scores the list; one job from the inspector', async () => {
+  // a pasted job lands in the Inbox unscored (every scanned job here already has a fit analysis);
+  // the fake parse names it "Data Engineer" at "Nimbus Analytics GmbH" (the scanned one is "Nimbus Analytics")
+  const text = `Werkstudent Data (m/w/d) at Elbe Werk GmbH in Hamburg. ${'Python and SQL for reports. '.repeat(8)}`;
+  const added = await ok<{ jobId: string }>('jobs:intakeText', { text, requestId: crypto.randomUUID() });
+  await go('/inbox');
+  await page.reload();
+  await go('/inbox');
+  await expect(page.getByRole('button', { name: 'Re-score' })).toBeEnabled();
+  await axe(); // before the menu opens: an open Radix menu hides the page behind it from assistive tech
+  await page.getByRole('button', { name: 'Re-score' }).click();
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem', { name: 'Unscored jobs · 1' })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'All jobs in this list · 1' })).toBeVisible();
+  await expect(
+    menu.getByRole('menuitem', { name: /^Scored before your profile changed · 0/ }),
+  ).toHaveAttribute('aria-disabled', 'true');
+  await menu.getByRole('menuitem', { name: /^Unscored jobs/ }).click();
+  await expect(page.getByText('Re-scored 1 job').first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('region', { name: 'Re-score progress' })).toBeHidden();
+
+  // one job: the button sits in the Score section; a job with a fit analysis has none
+  const row = dataRows()
+    .filter({ has: page.getByRole('gridcell', { name: 'Nimbus Analytics GmbH', exact: true }) })
+    .first();
+  await row.click();
+  const score = page.getByRole('complementary', { name: 'Job' }).getByRole('region', { name: 'Score' });
+  await expect(score).toContainText('triage score');
+  await score.getByRole('button', { name: 'Re-score' }).click();
+  await expect(page.getByText('Re-scored 1 job').nth(1)).toBeVisible({ timeout: 30_000 });
+  await dataRows().filter({ hasText: 'Orbit Labs' }).first().click();
+  await expect(score).toContainText('fit score');
+  await expect(score.getByRole('button', { name: 'Re-score' })).toHaveCount(0);
+  await ok('jobs:delete', { id: added.jobId });
+});
+
 test('a side-job profile adds the Career | Side jobs switch; career jobs stay under Career', async () => {
   const before = await ok<Inbox[]>('jobs:inbox', { filters: {}, sort: 'rank', limit: 50 });
   await go('/inbox');

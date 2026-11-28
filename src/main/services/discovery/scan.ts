@@ -1,5 +1,5 @@
 import { dedupeKey, normalizeCompany } from '@shared/jobs/dedupe';
-import { FrontMatterSchema, profileForPrompt, type Profile } from '@shared/profile';
+import { FrontMatterSchema } from '@shared/profile';
 import { fold, hardFilter, matchesQuery } from '@shared/discovery/filters';
 import type {
   NormalizedJob,
@@ -10,10 +10,9 @@ import type {
 import { isNearDuplicate, simhash } from '@shared/discovery/simhash';
 import { seedSearchProfile } from '@shared/discovery/seed';
 import { aiFailureMessage } from '../../ai/failure';
-import { loadPrompt } from '../../ai/prompts';
 import type { ClaudeRunner } from '../../ai/runner';
 import { parseJd } from '../../ai/tasks/jdParse';
-import { searchTheWeb, TRIAGE_BATCH, triageJobs, type TriageJob } from '../../ai/tasks/discoveryTasks';
+import { searchTheWeb } from '../../ai/tasks/discoveryTasks';
 import type { Db } from '../../db/database';
 import { setAiRunRelated } from '../../db/repos/aiRuns';
 import {
@@ -25,7 +24,9 @@ import {
   finishScanRun,
   findJobBySource,
   insertSearchProfile,
-  insertTriage,
+  rescoreCandidates,
+  scanIsRunning,
+  type RescoreScope,
   jobsOfCompanies,
   listSearchProfiles,
   markClosed,
@@ -36,14 +37,7 @@ import {
   type ScanRunRow,
   type SearchProfileRow,
 } from '../../db/repos/discovery';
-import {
-  createJob,
-  findJobByDedupeKey,
-  findJobByHash,
-  getJob,
-  getJobSummary,
-  type NewJobSource,
-} from '../../db/repos/jobs';
+import { createJob, findJobByDedupeKey, findJobByHash, getJob, type NewJobSource } from '../../db/repos/jobs';
 import { recomputeSkillDemand } from '../../db/repos/skills';
 import { UserError } from '../../ipc/dispatch';
 import type { Logger } from '../../platform/logger';
@@ -54,6 +48,7 @@ import { FetchError, guardedFetch, httpUrlOrNull, type Fetcher } from '../jobs/n
 import type { JobsService } from '../jobs/service';
 import { adzuna } from './sources/adzuna';
 import { ba } from './sources/ba';
+import { triageByIds } from './triage';
 import { himalayas, arbeitnow, remoteok, remotive } from './sources/boards';
 import {
   createGetJson,
@@ -140,16 +135,6 @@ export function postingIsClosed(original: string, res: { status: number; finalUr
   }
 }
 
-const salaryLabel = (j: {
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string | null;
-  salaryPeriod: string | null;
-}): string | null =>
-  j.salaryMin === null && j.salaryMax === null
-    ? null
-    : `${[j.salaryMin, j.salaryMax].filter((x) => x !== null).join('-')} ${j.salaryCurrency ?? ''}${j.salaryPeriod ? `/${j.salaryPeriod}` : ''}`.trim();
-
 export function describeSearchProfile(p: SearchProfile): string {
   const line = (k: string, v: string[]): string | null => (v.length > 0 ? `${k}: ${v.join(', ')}` : null);
   return [
@@ -160,25 +145,6 @@ export function describeSearchProfile(p: SearchProfile): string {
     line('seniority', p.seniority),
     line('excluded companies', p.excludedCompanies),
     line('excluded keywords', p.excludeKeywords),
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
-/** What the side-job profiles ask for, for the side-job triage; the strictest limit wins when there are several. */
-export function sideJobBrief(profiles: SearchProfile[]): string {
-  const side = profiles.filter((p) => p.kind === 'side');
-  const nums = (v: (number | null)[]): number[] => v.filter((x): x is number => x !== null);
-  const hours = nums(side.map((p) => p.maxHoursPerWeek));
-  const pay = nums(side.map((p) => p.minHourlyPay));
-  const places = [...new Set(side.flatMap((p) => [...p.locations, ...p.countries]))];
-  const langs = [...new Set(side.flatMap((p) => p.languages))];
-  return [
-    hours.length > 0 ? `max hours per week: ${String(Math.min(...hours))}` : null,
-    pay.length > 0 ? `min hourly pay: ${String(Math.max(...pay))} ${side[0]?.currency ?? 'EUR'}` : null,
-    places.length > 0 ? `places: ${places.join(', ')}` : null,
-    `remote: ${side.some((p) => p.remoteOk) ? 'welcome' : 'not wanted'}`,
-    langs.length > 0 ? `languages spoken: ${langs.join(', ')}` : null,
   ]
     .filter(Boolean)
     .join('\n');
@@ -214,7 +180,50 @@ export function createScanService(deps: ScanDeps) {
     return rows.map(toProfile).filter((p) => p.enabled);
   }
 
+  let rescoring = false;
+
+  /**
+   * Re-score from the Inbox: triages the open jobs of `scope` again (or one job), without fetching anything.
+   * Never beside a scan: a running scan refuses it, and a scan started meanwhile waits its turn (refused).
+   */
+  async function rescore(
+    req: { scope: RescoreScope | 'job'; jobId?: string; sideJob?: boolean },
+    signal?: AbortSignal,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ total: number; scored: number; error: string | null }> {
+    if (rescoring) throw new UserError('Re-scoring is already running.');
+    if (scanIsRunning(db, clock())) throw new UserError('A scan is running. Re-score when it has finished.');
+    rescoring = true;
+    try {
+      const profiles = await ensureProfiles();
+      const hash = (await deps.profile.get()).hash;
+      const ids =
+        req.scope === 'job'
+          ? req.jobId && getJob(db, req.jobId)
+            ? [req.jobId]
+            : []
+          : rescoreCandidates(db, req.scope, hash, req.sideJob);
+      if (req.scope === 'job' && ids.length === 0) throw new UserError('That job no longer exists.');
+      const r = await triageByIds(deps, ids, profiles, signal, onProgress);
+      return {
+        total: ids.length,
+        scored: r.scores.size,
+        error: r.errors[0]?.replace(/^triage: /, '') ?? null,
+      };
+    } finally {
+      rescoring = false;
+    }
+  }
+
+  /** How many jobs each Re-score choice would score, for the menu. */
+  async function rescoreCounts(sideJob?: boolean): Promise<Record<RescoreScope, number>> {
+    const hash = (await deps.profile.get()).hash;
+    const n = (s: RescoreScope): number => rescoreCandidates(db, s, hash, sideJob).length;
+    return { unscored: n('unscored'), all: n('all'), stale: n('stale') };
+  }
+
   async function run(opts: ScanOptions): Promise<ScanOutcome> {
+    if (rescoring) throw new UserError('Re-scoring is running. Scan when it has finished.');
     const started = clock();
     const lock = acquireScanLock(db, opts.trigger, started, STALE_LOCK_MS);
     if (!lock) throw new UserError('A scan is already running.');
@@ -516,89 +525,15 @@ export function createScanService(deps: ScanDeps) {
         );
     }
 
-    // ---- triage ---------------------------------------------------------------------------------------
+    // ---- triage: new jobs plus open jobs an earlier scan could not score ------------------------------
     async function triage(profiles: SearchProfile[]): Promise<void> {
+      if (blocked()) return;
       const since = new Date(started.getTime() - cfg.maxAgeDays * 86_400_000);
       const ids = [...new Set([...newIds, ...untriagedInboxIds(db, since, 60)])];
-      if (ids.length === 0 || blocked()) return;
-      let snap: { model: Profile; hash: string };
-      try {
-        snap = await deps.profile.get();
-      } catch {
-        pipelineError('triage: your profile could not be read.');
-        return;
-      }
-      const profileText = profileForPrompt(snap.model);
-      const side = sideJobBrief(profiles);
-      const rows: (TriageJob & { side: boolean })[] = ids.flatMap((id) => {
-        const j = getJob(db, id);
-        const s = getJobSummary(db, id);
-        return j && s
-          ? [
-              {
-                side: j.sideJob,
-                id,
-                title: j.title,
-                company: s.company,
-                location: j.locationText,
-                remote: j.remote,
-                salary: salaryLabel(j),
-                excerpt: j.descriptionMd,
-              },
-            ]
-          : [];
-      });
-      // Career and side jobs are judged on different things, so a batch holds only one kind.
-      const batches: { side: boolean; jobs: TriageJob[] }[] = [];
-      for (const kind of [false, true]) {
-        const list = rows
-          .filter((r) => r.side === kind)
-          .map((r): TriageJob => ({
-            id: r.id,
-            title: r.title,
-            company: r.company,
-            location: r.location,
-            remote: r.remote,
-            salary: r.salary,
-            excerpt: r.excerpt,
-          }));
-        for (let i = 0; i < list.length; i += TRIAGE_BATCH)
-          batches.push({ side: kind, jobs: list.slice(i, i + TRIAGE_BATCH) });
-      }
-      const width = settings.get().concurrency;
-      const config = settings.forTask('job.triage');
-      const version = `v${String(loadPrompt('job.triage').version)}`;
-      for (let i = 0; i < batches.length && !aborted() && !blocked(); i += width)
-        await Promise.all(
-          batches.slice(i, i + width).map(async ({ side: isSide, jobs: batch }) => {
-            const res = await triageJobs(runner, {
-              profileText,
-              jobs: batch,
-              config,
-              signal,
-              ...(isSide ? { sideJob: side } : {}),
-            });
-            if (!res.ok) {
-              if (res.status === 'usage_limit') ai.blocked = true;
-              pipelineError(`triage: ${aiFailureMessage(res.status, res.error)}`);
-              return;
-            }
-            const inBatch = new Set(batch.map((b) => b.id));
-            for (const r of res.data.scores) {
-              if (!inBatch.has(r.id) || scores.has(r.id)) continue;
-              scores.set(r.id, r.score);
-              insertTriage(db, {
-                jobId: r.id,
-                score: r.score,
-                reason: r.reason.replace(/\s+/g, ' ').trim().slice(0, 200),
-                model: res.model ?? config.model,
-                promptVersion: version,
-                profileHash: snap.hash,
-              });
-              setAiRunRelated(db, res.runId, 'job', r.id);
-            }
-          }),
-        );
+      const r = await triageByIds(deps, ids, profiles, signal);
+      for (const [id, score] of r.scores) if (!scores.has(id)) scores.set(id, score);
+      for (const m of r.errors) pipelineError(m);
+      if (r.blocked) ai.blocked = true;
     }
 
     // ---- full analysis for strong matches (daily cap) ------------------------------------------------
@@ -704,6 +639,6 @@ export function createScanService(deps: ScanDeps) {
     };
   }
 
-  return { run, ensureProfiles };
+  return { run, ensureProfiles, rescore, rescoreCounts };
 }
 export type ScanService = ReturnType<typeof createScanService>;

@@ -696,6 +696,23 @@ export const ipcContract = {
   'discovery:timerStatus': { input: z.undefined(), output: TimerStatusSchema },
   /** New jobs, ranked (docs/05 §2), with triage score and reason. */
   'jobs:inbox': { input: InboxInputSchema, output: z.array(InboxItemSchema) },
+  /** How many open jobs each Re-score choice covers; `sideJob` picks the Career or Side jobs list. */
+  'jobs:rescoreCounts': {
+    input: z.object({ sideJob: z.boolean().optional() }),
+    output: z.object({ unscored: z.number(), all: z.number(), stale: z.number() }),
+  },
+  /** Triages again: the open jobs of `scope`, or the one job. Progress arrives as `jobs:rescoreProgress`. */
+  'jobs:rescore': {
+    input: z
+      .object({
+        scope: z.enum(['unscored', 'all', 'stale', 'job']),
+        jobId: JobId.optional(),
+        sideJob: z.boolean().optional(),
+        requestId: RequestId,
+      })
+      .refine((v) => v.scope !== 'job' || v.jobId !== undefined, { message: 'jobId is required' }),
+    output: z.object({ total: z.number(), scored: z.number(), error: z.string().nullable() }),
+  },
   'jobs:dismiss': {
     input: z.object({ id: JobId, reason: z.string().trim().max(200).default('') }),
     output: z.object({ dismissed: z.boolean() }),
@@ -802,6 +819,8 @@ export interface IpcEvents {
   // --- D1 discovery
   /** A running scan: how far one source got (`new` = jobs added so far). */
   'discovery:progress': { requestId: string; source: string; fetched: number; new: number };
+  /** A running `jobs:rescore`: triage batches done of all. */
+  'jobs:rescoreProgress': { requestId: string; done: number; total: number };
   // --- end D1
   // --- R1 referrals
   /** Stage of a running `referrals:search`. */

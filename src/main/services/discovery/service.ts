@@ -104,6 +104,8 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
     scheduler,
     timer,
     runScan: (o: ScanOptions) => scan.run(o),
+    rescore: scan.rescore,
+    rescoreCounts: scan.rescoreCounts,
 
     sources(): SourceStatus[] {
       return DISCOVERY_SOURCES.map((id) => {

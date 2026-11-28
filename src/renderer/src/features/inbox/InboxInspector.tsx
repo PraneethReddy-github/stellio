@@ -28,8 +28,11 @@ export function InboxInspector({
   onDismiss,
   onOpenPosting,
   onOpenWorkspace,
+  rescore,
 }: {
   item: InboxItem;
+  /** Re-score this job; `busy` while it runs, `disabled` while a scan or another re-score runs. */
+  rescore: { run: () => void; busy: boolean; disabled: boolean };
   onShortlist: () => void;
   onDismiss: () => void;
   onOpenPosting: () => void;
@@ -73,9 +76,23 @@ export function InboxInspector({
         <SectionHeader
           title={item.scoreKind === 'fit' ? 'Fit analysis' : item.sideJob ? 'Side job' : 'Triage'}
           level={3}
+          actions={
+            // A fit analysis wins over triage in the Inbox, so re-triaging it would change nothing you see.
+            item.scoreKind !== 'fit' && (
+              <Button
+                size="sm"
+                variant="ghost"
+                busy={rescore.busy}
+                disabled={rescore.disabled}
+                onClick={rescore.run}
+              >
+                {item.score === null ? 'Score now' : 'Re-score'}
+              </Button>
+            )
+          }
         />
         {item.score === null ? (
-          <p className={s.dim}>Not scored yet. The next scan triages new jobs.</p>
+          <p className={s.dim}>Not scored yet. The next scan scores it, or use Score now.</p>
         ) : (
           <>
             <StatusDot tone={scoreTone(item.score)}>
