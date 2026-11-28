@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.6 — 2026-11-28
+
+- LaTeX: Download missing files works on a resume with a photo (it failed with "File `photo' not found"), and its error only mentions internet access when the connection is the problem.
+
 ## 1.2.5 — 2026-11-28
 
 - Resume and cover letter revisions use less of your Claude usage: your profile and rules now go where Claude can reuse them from its cache, so a second revise within a few minutes does not send them in full again. Job postings stay apart from your rules.

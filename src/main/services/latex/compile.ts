@@ -56,8 +56,20 @@ export function missingCachedFile(log: string, stderr: string): string | null {
   const font = /Font [^=\s]+=(\S+) at [\d.]+pt not loadable: Metric \(TFM\) file/.exec(text);
   if (font?.[1]) return font[1];
   const file = /LaTeX Error: File `([^']+)' not found/.exec(text);
-  return file?.[1] ?? null;
+  // The resume photo comes from Profile, never from the internet: no download can bring it.
+  return file?.[1] && !/^photo(\.\w+)?$/.test(file[1]) ? file[1] : null;
 }
+
+/** Puts `\resumephotofalse` in place of `\resumephototrue`: the tex compiles without the photo file. */
+export const withoutPhoto = (tex: string): string =>
+  tex.replace(/^\\resumephototrue$/gm, '\\resumephotofalse');
+
+/** Failures a missing or broken connection causes (as opposed to TeX errors in the document). */
+const NETWORK = /network|resolve|dns|connect|timed? ?out|tls|certificate|download|http|unreachable/i;
+/** True when a failed warm-up looks like a connection problem; a TeX error in the document is not one. */
+export const isNetworkError = (message: string, log: string): boolean =>
+  !/^LaTeX Error|^Undefined control sequence|not loadable/.test(message) &&
+  NETWORK.test(`${message}\n${log}`);
 
 /** What the user reads when an edit needs a file the offline cache does not have. */
 export const missingFileMessage = (file: string): string =>
@@ -283,10 +295,19 @@ export async function warmUp(
   engine: Engine,
   texes: string[] = [],
   signal?: AbortSignal,
+  /** The resume photo: a resume that shows it reads photo.jpg, as in a normal compile. */
+  photo?: Uint8Array,
 ): Promise<CompileResult> {
   let last: CompileResult | undefined;
   for (const tex of [PROBE, ...texes]) {
-    last = await compileTex({ engine, tex, onlyCached: false, timeoutMs: 5 * 60_000, signal });
+    last = await compileTex({
+      engine,
+      tex,
+      onlyCached: false,
+      timeoutMs: 5 * 60_000,
+      signal,
+      ...(photo ? { photo } : {}),
+    });
     if (!last.ok) return last;
   }
   warmEngines.add(engine.path);

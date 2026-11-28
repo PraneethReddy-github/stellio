@@ -2,7 +2,15 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { TEMPLATE_FILES, type TemplateFile } from '@shared/rules/files';
 import { UserError } from '../../ipc/dispatch';
-import { compileTex, fontSampleTex, isCacheWarm, warmUp, type CompileResult } from './compile';
+import {
+  compileTex,
+  fontSampleTex,
+  isCacheWarm,
+  isNetworkError,
+  warmUp,
+  withoutPhoto,
+  type CompileResult,
+} from './compile';
 import { detectEngine, type Engine } from './engine';
 import { installSupported, installTectonic, type InstallProgress } from './install';
 import { probeSandbox } from './sandbox';
@@ -88,11 +96,18 @@ export function createLatexService(deps: LatexServiceDeps) {
     if (warming && extra.length > 0) await warming.catch(() => undefined); // then fetch what this one needs
     warming ??= (async () => {
       const engine = await requireEngine();
-      const res = await warmUp(engine, [...(await warmSet()), ...extra], signal);
-      if (!res.ok)
+      // An extra is a document (Download missing files): it gets the photo a normal compile gets, or none.
+      const photo = extra.length > 0 ? await deps.photo?.() : null;
+      const docs = photo ? extra : extra.map(withoutPhoto);
+      const res = await warmUp(engine, [...(await warmSet()), ...docs], signal, photo ?? undefined);
+      if (!res.ok) {
+        const why = res.errors[0]?.message ?? 'unknown error';
         throw new UserError(
-          `Warm-up failed: ${res.errors[0]?.message ?? 'unknown error'}. It needs internet access once.`,
+          isNetworkError(why, res.log)
+            ? `Warm-up failed: ${why}. It needs internet access once.`
+            : `Warm-up failed: ${why}.`,
         );
+      }
       return status();
     })().finally(() => {
       warming = undefined;

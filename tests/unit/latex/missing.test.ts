@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fontSampleTex, missingCachedFile } from '../../../src/main/services/latex/compile';
+import { fontSampleTex, isNetworkError, missingCachedFile } from '../../../src/main/services/latex/compile';
 
 describe('missingCachedFile', () => {
   it('names a font size the offline cache does not have', () => {
@@ -17,6 +17,10 @@ describe('missingCachedFile', () => {
     expect(missingCachedFile("! LaTeX Error: File `fontawesome5.sty' not found.", '')).toBe(
       'fontawesome5.sty',
     );
+  });
+  it('never takes the resume photo for a downloadable file: it comes from Profile, not from the internet', () => {
+    expect(missingCachedFile("! LaTeX Error: File `photo' not found.", '')).toBeNull();
+    expect(missingCachedFile("! LaTeX Error: File `photo.jpg' not found.", '')).toBeNull();
   });
   it('is null for ordinary TeX errors', () => {
     expect(missingCachedFile('! Undefined control sequence.\nl.12 \\foo', '')).toBeNull();
@@ -38,5 +42,16 @@ describe('fontSampleTex', () => {
     expect(out.match(/Aa1/g)).toHaveLength(180);
     expect(out.trimEnd().endsWith(String.raw`\end{document}`)).toBe(true);
     expect(fontSampleTex('no document here')).toBeNull();
+  });
+});
+
+describe('isNetworkError', () => {
+  it('blames the connection only for connection failures, never for a TeX error in the document', () => {
+    expect(isNetworkError("LaTeX Error: File `photo' not found", 'download of bundle ok')).toBe(false);
+    expect(isNetworkError('Undefined control sequence', '')).toBe(false);
+    expect(
+      isNetworkError('LaTeX compile failed', 'error: failed to resolve host relay.fullyjustified.net'),
+    ).toBe(true);
+    expect(isNetworkError('LaTeX compile timed out after 300 s', '')).toBe(true);
   });
 });

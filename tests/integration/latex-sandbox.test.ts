@@ -1,10 +1,16 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { compileTex, pdfText, warmUp, type CompileResult } from '../../src/main/services/latex/compile';
+import {
+  compileTex,
+  pdfText,
+  warmUp,
+  withoutPhoto,
+  type CompileResult,
+} from '../../src/main/services/latex/compile';
 import { detectEngine, type Engine } from '../../src/main/services/latex/engine';
 import { probeSandbox, SANDBOX_MISSING_MESSAGE } from '../../src/main/services/latex/sandbox';
 
@@ -104,6 +110,35 @@ describe.skipIf(!!skipReason)('LaTeX sandbox (tectonic + bwrap)', { timeout: 60_
       reason: SANDBOX_MISSING_MESSAGE,
     });
   });
+
+  it.skipIf(process.env.STELLIO_NET_TESTS !== '1')(
+    'warm-up with a resume that shows the photo: works with the photo given, and with the photo switched off (STELLIO_NET_TESTS=1)',
+    { timeout: 6 * 60_000 },
+    async () => {
+      const cache = await mkdtemp(join(tmpdir(), 'stellio-warmcache-'));
+      const prev = process.env.XDG_CACHE_HOME;
+      process.env.XDG_CACHE_HOME = cache;
+      try {
+        // as render.ts writes it when a photo is set
+        const withPhoto = seed('resume.tex').replace(
+          '%% STELLIO:SLOT header\n',
+          '%% STELLIO:SLOT header\n\\resumephototrue\n',
+        );
+        expect(withPhoto).toMatch(/^\\resumephototrue$/m);
+        const photo = new Uint8Array(await readFile('tests/fixtures/latex/photo.jpg'));
+        const given = await warmUp(e, [withPhoto], undefined, photo);
+        expect(given.errors).toEqual([]);
+        expect(given.ok).toBe(true);
+        const off = await warmUp(e, [withoutPhoto(withPhoto)]);
+        expect(off.errors).toEqual([]);
+        expect(off.ok).toBe(true);
+      } finally {
+        if (prev === undefined) delete process.env.XDG_CACHE_HOME;
+        else process.env.XDG_CACHE_HOME = prev;
+        await rm(cache, { recursive: true, force: true });
+      }
+    },
+  );
 
   it.skipIf(process.env.STELLIO_NET_TESTS !== '1')(
     'warm-up downloads the packages inside the sandbox (STELLIO_NET_TESTS=1)',

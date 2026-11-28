@@ -58,6 +58,7 @@ import type { ProfileService } from '../profile/service';
 import type { RulesService } from '../rules/service';
 import type { AiSettingsService } from '../settings/ai';
 import { lastPageNearlyFull } from './pagefill';
+import { withoutPhoto } from '../latex/compile';
 
 /** What the `*_report_json` columns hold (plan B1 §7: content JSON plus reports, no new columns). */
 const StoredTruth = z.object({
@@ -115,9 +116,8 @@ interface Evaluated {
   language: DocLanguage;
 }
 
-/** Puts `\resumephotofalse` in place of `\resumephototrue`: Overleaf gets the tex without the photo file. */
-export const withoutPhoto = (tex: string): string =>
-  tex.replace(/^\\resumephototrue$/gm, '\\resumephotofalse');
+// Lives in the LaTeX service (warm-up needs it too); re-exported for the callers of this module.
+export { withoutPhoto };
 
 export function createDocumentsService(deps: DocumentsServiceDeps) {
   const { db, runner, settings } = deps;
