@@ -165,8 +165,12 @@ test('inspector, keys J/K, filters and "new since last scan"', async () => {
   await go('/inbox');
   await expect(dataRows()).toHaveCount(inbox.length);
 
-  await dataRows().first().click();
   const inspector = page.getByRole('complementary', { name: 'Job' });
+  // A first click on a lower row opens that row, not row 1 (mouse focus must not pre-select row 1).
+  await dataRows().last().click();
+  await expect(dataRows().last()).toHaveAttribute('aria-selected', 'true');
+  await expect(inspector.getByRole('heading', { name: inbox.at(-1)?.title ?? '', level: 3 })).toBeVisible();
+  await dataRows().first().click();
   await expect(inspector.getByRole('heading', { name: inbox[0]?.title ?? '', level: 3 })).toBeVisible();
   await expect(inspector.getByRole('region', { name: 'Score' })).toContainText(/\d+ (fit|triage) score/);
   await expect(inspector.getByRole('region', { name: 'Red flags' })).toBeVisible();

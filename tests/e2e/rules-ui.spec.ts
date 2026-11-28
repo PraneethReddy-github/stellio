@@ -218,6 +218,18 @@ test('template test compile shows one page and draws the PDF without CSP errors'
   expect(box && pane && box.width <= pane.width).toBe(true);
 });
 
+test('a two-page compile draws both pages', async () => {
+  await fileButton('resume.tex').click();
+  await editor('resume.tex').click();
+  await page.keyboard.press('Control+End'); // the seed ends with "\\end{document}\n"
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Home');
+  await page.keyboard.type('\\newpage Second page.\n');
+  await page.getByRole('button', { name: 'Test compile' }).click(); // compiles the unsaved draft
+  await expect(page.getByText('2 pages', { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('img', { name: 'PDF preview, page 2' })).toBeVisible();
+});
+
 test('a broken template shows a line-numbered compile error that jumps to the line', async () => {
   await fileButton('resume.tex').click();
   const seed = seedOf(TEMPLATE);

@@ -108,7 +108,7 @@ export function CompilePanel({
         </ul>
       )}
       {bytes ? (
-        <PdfCanvas bytes={bytes} label="PDF preview, page 1" />
+        <PdfCanvas bytes={bytes} label="PDF preview" />
       ) : (
         r.ok && <p className={s.quiet}>The PDF is over 5 MB, so no preview is shown.</p>
       )}

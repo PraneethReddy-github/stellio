@@ -240,6 +240,9 @@ button.row:hover {
   display: block;
   max-width: 100%;
 }
+.pdfCanvas + .pdfCanvas {
+  border-top: 1px solid var(--line);
+}
 
 /* History + default */
 .history {

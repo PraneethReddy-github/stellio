@@ -19,10 +19,10 @@ function loadPdfjs(): Promise<Pdfjs> {
   return pdfjs;
 }
 
-/** Page 1 of a PDF, scaled to the width of its container. */
+/** Every page of a PDF, stacked, each scaled to the width of its container. */
 export function PdfCanvas({ bytes, label }: { bytes: Uint8Array; label: string }): React.JSX.Element {
   const box = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const canvases = useRef<(HTMLCanvasElement | null)[]>([]);
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [width, setWidth] = useState(0);
   // Tied to the bytes it is about, so a new PDF starts without the old error.
@@ -61,30 +61,30 @@ export function PdfCanvas({ bytes, label }: { bytes: Uint8Array; label: string }
   }, []);
 
   useEffect(() => {
-    const el = canvas.current;
-    if (!doc || !el || width < 40) return;
-    let task: { cancel: () => void; promise: Promise<unknown> } | undefined;
+    if (!doc || width < 40) return;
+    const tasks: { cancel: () => void }[] = [];
     let dead = false;
-    void doc
-      .getPage(1)
-      .then((page) => {
-        if (dead) return;
-        const base = page.getViewport({ scale: 1 });
-        const dpr = window.devicePixelRatio || 1;
-        const viewport = page.getViewport({ scale: (width / base.width) * dpr });
-        el.width = Math.floor(viewport.width);
-        el.height = Math.floor(viewport.height);
-        el.style.width = `${String(width)}px`;
-        task = page.render({ canvas: el, viewport });
-        return task.promise;
-      })
-      .catch((e: unknown) => {
-        // A superseded render rejects with RenderingCancelledException; only real failures matter.
-        if (!dead) setFailure({ of: bytes, message: e instanceof Error ? e.message : String(e) });
-      });
+    const draw = async (n: number): Promise<void> => {
+      const page = await doc.getPage(n);
+      const el = canvases.current[n - 1];
+      if (dead || !el) return;
+      const base = page.getViewport({ scale: 1 });
+      const dpr = window.devicePixelRatio || 1;
+      const viewport = page.getViewport({ scale: (width / base.width) * dpr });
+      el.width = Math.floor(viewport.width);
+      el.height = Math.floor(viewport.height);
+      el.style.width = `${String(width)}px`;
+      const task = page.render({ canvas: el, viewport });
+      tasks.push(task);
+      await task.promise;
+    };
+    Promise.all(Array.from({ length: doc.numPages }, (_, i) => draw(i + 1))).catch((e: unknown) => {
+      // A superseded render rejects with RenderingCancelledException; only real failures matter.
+      if (!dead) setFailure({ of: bytes, message: e instanceof Error ? e.message : String(e) });
+    });
     return () => {
       dead = true;
-      task?.cancel();
+      tasks.forEach((t) => t.cancel());
     };
   }, [doc, width, bytes]);
 
@@ -96,7 +96,17 @@ export function PdfCanvas({ bytes, label }: { bytes: Uint8Array; label: string }
           Could not draw the preview: {error}
         </p>
       ) : (
-        <canvas ref={canvas} className={s.pdfCanvas} role="img" aria-label={label} />
+        Array.from({ length: doc?.numPages ?? 1 }, (_, i) => (
+          <canvas
+            key={i}
+            ref={(el) => {
+              canvases.current[i] = el;
+            }}
+            className={s.pdfCanvas}
+            role="img"
+            aria-label={`${label}, page ${String(i + 1)}`}
+          />
+        ))
       )}
     </div>
   );

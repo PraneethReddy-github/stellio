@@ -570,7 +570,7 @@ function gateText(action: Action | null, violations: number): string {
 function Preview({ doc }: { doc: DocView }): React.JSX.Element {
   const bytes = useMemo(() => (doc.pdfBase64 ? base64ToBytes(doc.pdfBase64) : null), [doc.pdfBase64]);
   const c = doc.checks.compile;
-  if (bytes) return <PdfCanvas bytes={bytes} label="PDF preview, page 1" />;
+  if (bytes) return <PdfCanvas bytes={bytes} label="PDF preview" />;
   if (c === null)
     return (
       <EmptyState

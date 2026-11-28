@@ -71,6 +71,7 @@ export function Table<T>({
 }: TableProps<T>): React.JSX.Element {
   const uid = useId();
   const scroller = useRef<HTMLDivElement>(null);
+  const pointer = useRef(false); // a press is under way: the focus it causes is not keyboard focus
   const [internal, setInternal] = useState<string>();
   const [view, setView] = useState({ top: 0, height: 600, row: FALLBACK_ROW });
   const active = selectedId ?? internal;
@@ -159,8 +160,18 @@ export function Table<T>({
       tabIndex={0}
       onKeyDown={onKeyDown}
       // Keyboard focus with nothing active starts on the first row, so Enter always has a target.
+      // Not on mouse focus: selecting row 0 there scrolls to the top and swallows the click on a lower row.
       onFocus={(e) => {
-        if (e.target === e.currentTarget && activeIndex < 0 && rows.length > 0) select(0);
+        if (e.target === e.currentTarget && !pointer.current && activeIndex < 0 && rows.length > 0) select(0);
+      }}
+      onPointerDown={() => {
+        pointer.current = true;
+      }}
+      onPointerUp={() => {
+        pointer.current = false;
+      }}
+      onBlur={() => {
+        pointer.current = false;
       }}
       onScroll={
         virtual

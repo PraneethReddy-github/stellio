@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.1.1 — 2026-11-28
+
+- The PDF preview shows every page. A two-page resume used to preview as page 1 only.
+- Lists open the row you click. In a long list (Inbox, Workspace, Applications and others), the first click on a lower row used to open the first job instead.
+
 ## 1.1.0 — 2026-11-26
 
 - New default resume template: photo and contact block, Summary, Education as a table, Experience, Projects with a link symbol, Publications, Patents, Technical Skills, Certifications, Miscellaneous (positions, achievements, languages) and "Last updated". Resumes may run to two pages.
