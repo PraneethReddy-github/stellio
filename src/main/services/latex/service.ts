@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { TEMPLATE_FILES, type TemplateFile } from '@shared/rules/files';
 import { UserError } from '../../ipc/dispatch';
-import { compileTex, isCacheWarm, warmUp, type CompileResult } from './compile';
+import { compileTex, fontSampleTex, isCacheWarm, warmUp, type CompileResult } from './compile';
 import { detectEngine, type Engine } from './engine';
 import { installSupported, installTectonic, type InstallProgress } from './install';
 import { probeSandbox } from './sandbox';
@@ -51,6 +51,14 @@ export function createLatexService(deps: LatexServiceDeps) {
 
   const seeds = (): Promise<string[]> =>
     Promise.all(TEMPLATE_FILES.map((t) => readFile(join(deps.seedDir, t), 'utf8')));
+  /**
+   * What a warm-up downloads for: the seeds plus a font-size sample of each, so ordinary edits never need a file
+   * the cache lacks. The warm check stays on the seeds alone: a sample costs 2-3 s offline, on every status read.
+   */
+  const warmSet = async (): Promise<string[]> => {
+    const texes = await seeds();
+    return [...texes, ...texes.flatMap((t) => fontSampleTex(t) ?? [])];
+  };
 
   async function status(): Promise<LatexStatus> {
     const engine = await detect();
@@ -75,10 +83,12 @@ export function createLatexService(deps: LatexServiceDeps) {
   }
 
   let warming: Promise<LatexStatus> | undefined;
-  function warm(signal?: AbortSignal): Promise<LatexStatus> {
+  /** `extra`: a document that stopped on a missing file (Download missing files); compiled online too. */
+  async function warm(signal?: AbortSignal, extra: string[] = []): Promise<LatexStatus> {
+    if (warming && extra.length > 0) await warming.catch(() => undefined); // then fetch what this one needs
     warming ??= (async () => {
       const engine = await requireEngine();
-      const res = await warmUp(engine, await seeds(), signal);
+      const res = await warmUp(engine, [...(await warmSet()), ...extra], signal);
       if (!res.ok)
         throw new UserError(
           `Warm-up failed: ${res.errors[0]?.message ?? 'unknown error'}. It needs internet access once.`,

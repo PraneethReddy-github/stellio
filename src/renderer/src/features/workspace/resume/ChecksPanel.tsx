@@ -1,5 +1,5 @@
 import type { KeywordHit, TruthWarning } from '@shared/documents';
-import { ScoreMeter, SectionHeader, StatusDot, Tag } from '../../../ui';
+import { Button, ScoreMeter, SectionHeader, StatusDot, Tag } from '../../../ui';
 import type { DocView } from '../../../lib/resume';
 import {
   ATS_THRESHOLDS,
@@ -15,7 +15,19 @@ import s from './resume.module.css';
 const KEYWORD_TONE = { found: 'ok', youHave: 'warn', missing: 'neutral' } as const;
 
 /** Truth, ATS and lint results of one version, as reported by main. */
-export function ChecksPanel({ doc }: { doc: DocView }): React.JSX.Element {
+/** Fetches the LaTeX files this version needs and compiles it again (compile.cacheMissing). */
+export interface FetchMissing {
+  run: () => void;
+  busy: boolean;
+}
+
+export function ChecksPanel({
+  doc,
+  fetchMissing,
+}: {
+  doc: DocView;
+  fetchMissing?: FetchMissing;
+}): React.JSX.Element {
   const { truth, lint, compile } = doc.checks;
   const ats = 'ats' in doc.checks ? doc.checks.ats : null; // the cover letter has no ATS check
   const errors = lint.issues.filter((i) => i.severity === 'error').length;
@@ -126,6 +138,11 @@ export function ChecksPanel({ doc }: { doc: DocView }): React.JSX.Element {
                   </li>
                 ))}
               </ul>
+            )}
+            {compile.cacheMissing && fetchMissing && (
+              <Button size="sm" busy={fetchMissing.busy} onClick={fetchMissing.run}>
+                {fetchMissing.busy ? 'Downloading…' : 'Download missing files'}
+              </Button>
             )}
           </>
         )}

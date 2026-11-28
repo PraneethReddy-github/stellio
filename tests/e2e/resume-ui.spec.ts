@@ -191,6 +191,29 @@ test('manual edit: Ctrl+S saves v3 with the not-applied note and no truth check'
   });
 });
 
+test('an edit that needs a LaTeX file the offline cache lacks offers Download missing files', async () => {
+  test.skip(!existsSync(TECTONIC), 'needs the LaTeX engine');
+  await withApp({}, async ({ page }) => {
+    await draft(page);
+    await onVersion(page, 'v1');
+    await page.getByRole('textbox', { name: 'Resume LaTeX' }).click();
+    await page.keyboard.press('Control+Home');
+    await page.keyboard.press('End'); // after \documentclass, where a package may go
+    await page.keyboard.type('\n\\usepackage{stellio-not-cached}');
+    await page.keyboard.press('Control+s');
+    await onVersion(page, 'v2');
+    const preview = page.getByRole('region', { name: 'PDF preview' });
+    // the app under test has an empty LaTeX cache, so this is the general "not downloaded" case; the named-file
+    // message is covered by the latex-compile and documents-service integration tests
+    await expect(preview.getByText(/not downloaded yet|stellio-not-cached\.sty/)).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'Download missing files' })).toBeVisible();
+    await page.getByRole('tab', { name: 'Checks' }).click();
+    const compile = page.getByRole('region', { name: 'Compile' });
+    await expect(compile.getByRole('button', { name: 'Download missing files' })).toBeVisible();
+    // not clicked: it goes online, and tests never touch the network
+  });
+});
+
 test('truth violation: blocking error, and Use anyway gates the copy', async () => {
   const bad = JSON.stringify(badContent);
   await withApp(

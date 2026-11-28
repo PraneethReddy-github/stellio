@@ -34,6 +34,7 @@ import {
   useGenerateDoc,
   useMarkFinal,
   useReviseDoc,
+  useFetchMissingFiles,
   useSaveManualDoc,
   useTranslateDoc,
   type DocKind,
@@ -43,7 +44,7 @@ import { useAiSettings } from '../../../lib/settings';
 import { PdfCanvas } from '../../rules/PdfCanvas';
 import { SkillsPanel } from '../../skills/SkillsPanel';
 import { ChangesPanel } from './ChangesPanel';
-import { ChecksPanel } from './ChecksPanel';
+import { ChecksPanel, type FetchMissing } from './ChecksPanel';
 import {
   DOC_COPY,
   FINAL_NOTE_MANUAL,
@@ -95,6 +96,28 @@ export function ResumeTab({
   const generate = useGenerateDoc(kind, jobId);
   const revise = useReviseDoc(kind, jobId);
   const saveManual = useSaveManualDoc(kind, jobId);
+  const missing = useFetchMissingFiles(kind, jobId);
+  const fetchMissing = (d: DocView): FetchMissing => ({
+    busy: missing.isPending,
+    run: () =>
+      missing.mutate(
+        { version: d.meta.version, tex: d.tex },
+        {
+          onSuccess: (v) =>
+            toast(
+              v.checks.compile?.ok
+                ? { title: 'Downloaded. It compiles now.', tone: 'ok' }
+                : {
+                    title: 'Downloaded, but it still does not compile',
+                    description: v.checks.compile?.errors[0]?.message,
+                    tone: 'warn',
+                  },
+            ),
+          onError: (e) =>
+            toast({ title: 'Could not download the LaTeX files', description: e.message, tone: 'bad' }),
+        },
+      ),
+  });
   const markFinal = useMarkFinal(kind, jobId);
   const translate = useTranslateDoc(kind, jobId);
   const running = generate.isPending || revise.isPending || translate.isPending;
@@ -373,7 +396,7 @@ export function ResumeTab({
                         {kind === 'resume' && <TabsTrigger value="skills">Skills</TabsTrigger>}
                       </TabsList>
                       <TabsContent value="checks">
-                        <ChecksPanel doc={doc} />
+                        <ChecksPanel doc={doc} fetchMissing={fetchMissing(doc)} />
                       </TabsContent>
                       <TabsContent value="changes">
                         <ChangesPanel kind={kind} jobId={jobId} doc={doc} />
@@ -438,7 +461,7 @@ export function ResumeTab({
                     )}
                   </div>
                   <div className={s.previewBox}>
-                    <Preview doc={doc} />
+                    <Preview doc={doc} fetchMissing={fetchMissing(doc)} />
                   </div>
                 </section>
               </div>
@@ -567,7 +590,7 @@ function gateText(action: Action | null, violations: number): string {
 }
 
 /** Page 1 of the compiled PDF, or why there is none. */
-function Preview({ doc }: { doc: DocView }): React.JSX.Element {
+function Preview({ doc, fetchMissing }: { doc: DocView; fetchMissing: FetchMissing }): React.JSX.Element {
   const bytes = useMemo(() => (doc.pdfBase64 ? base64ToBytes(doc.pdfBase64) : null), [doc.pdfBase64]);
   const c = doc.checks.compile;
   if (bytes) return <PdfCanvas bytes={bytes} label="PDF preview" />;
@@ -586,6 +609,13 @@ function Preview({ doc }: { doc: DocView }): React.JSX.Element {
     );
   return (
     <ErrorState
+      action={
+        c.cacheMissing ? (
+          <Button busy={fetchMissing.busy} onClick={fetchMissing.run}>
+            {fetchMissing.busy ? 'Downloading…' : 'Download missing files'}
+          </Button>
+        ) : undefined
+      }
       title="No preview"
       message={
         c.errors

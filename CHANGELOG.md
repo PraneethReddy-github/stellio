@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.4 — 2026-11-28
+
+- LaTeX: an edit that uses a font size or package Stellio had not downloaded (such as "Font … clmr2j8t12 … not loadable") now says so and offers Download missing files in the Preview and Checks; Rules, Test compile fetches what an edited template needs. Warm-up also fetches every standard font size and style the templates' fonts have, so most edits never need it; an existing cache gets those the first time you press Download missing files.
+
 ## 1.2.3 — 2026-11-28
 
 - Side-job check: a side job's Fit tab checks pay, hours, place, language and what the job asks for against your side-job limits, each with the posting's own words, and gives Take it / Maybe / Skip. Its score shows in the Inbox.

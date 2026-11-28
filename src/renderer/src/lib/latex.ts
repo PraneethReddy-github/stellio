@@ -34,7 +34,8 @@ export function useInstallLatex() {
 export function useWarmUp() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () => call('latex:warmUp', undefined),
+    // `tex`: also fetch what this (edited) template needs, beyond the seed templates
+    mutationFn: (tex?: string) => call('latex:warmUp', tex === undefined ? undefined : { tex }),
     onSuccess: (st) => qc.setQueryData(STATUS, st),
   });
 }

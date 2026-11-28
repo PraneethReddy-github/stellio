@@ -407,7 +407,7 @@ export function createHandlers(
 
     'latex:status': () => ctx.latex.status(),
     'latex:install': () => ctx.latex.install((p) => emit('latex:installProgress', p)),
-    'latex:warmUp': () => ctx.latex.warm(),
+    'latex:warmUp': (input) => ctx.latex.warm(undefined, input?.tex ? [input.tex] : []),
     'latex:compileTemplate': ({ path, content }) => ctx.latex.compileTemplate(path, content),
 
     // ---- skills engine (phase 6 S1) ----

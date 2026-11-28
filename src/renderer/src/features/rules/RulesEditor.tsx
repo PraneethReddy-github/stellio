@@ -159,7 +159,7 @@ function Loaded({
     );
   };
   const warmUp = (): void =>
-    warmM.mutate(undefined, {
+    warmM.mutate(isTemplateFile(path) ? text : undefined, {
       onSuccess: () => {
         toast({ title: 'LaTeX packages downloaded', tone: 'ok' });
         runCompile();

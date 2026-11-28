@@ -228,7 +228,11 @@ export const ipcContract = {
   /** Downloads the pinned Tectonic build; progress arrives as `latex:installProgress` events. */
   'latex:install': { input: z.undefined(), output: LatexStatus },
   /** First compile downloads about 43 MB of TeX packages; can take about 2 minutes. */
-  'latex:warmUp': { input: z.undefined(), output: LatexStatus },
+  /** Downloads the LaTeX files the templates need (online, sandboxed); `tex` adds a document that stopped on one. */
+  'latex:warmUp': {
+    input: z.object({ tex: z.string().max(2_000_000) }).optional(),
+    output: LatexStatus,
+  },
   /** Compiles a template as-is with its sample content. `content` overrides the saved file (unsaved editor text). */
   'latex:compileTemplate': {
     input: z.object({ path: z.enum(TEMPLATE_FILES), content: z.string().max(2_000_000).optional() }),

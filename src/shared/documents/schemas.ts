@@ -131,6 +131,8 @@ export const CompileSummarySchema = z.object({
   pages: z.number().nullable(),
   errors: z.array(z.object({ line: z.number().optional(), message: z.string() })),
   overfull: z.number(),
+  /** It stopped on a font or package the offline LaTeX cache does not have: Download missing files fixes it. */
+  cacheMissing: z.boolean().optional(),
 });
 export type CompileSummary = z.infer<typeof CompileSummarySchema>;
 

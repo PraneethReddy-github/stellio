@@ -111,6 +111,7 @@ export function createDocFiles(deps: DocFilesDeps) {
         pages: r.pages,
         errors: r.errors,
         overfull: r.warnings.filter((w) => w.kind === 'overfull').length,
+        ...(r.cacheMissing ? { cacheMissing: true } : {}),
       },
       pdf: r.pdfBase64 === undefined ? null : Buffer.from(r.pdfBase64, 'base64'),
     };

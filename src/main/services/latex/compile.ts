@@ -46,6 +46,23 @@ export interface CompileOptions {
 
 export const CACHE_MISSING_MESSAGE = 'LaTeX packages not downloaded yet — run warm-up';
 
+/**
+ * The file an offline compile stopped on because the cache never got it: a font size (`clmr2j8t12`) or a package
+ * (`fontawesome5.sty`). The warm-up only fetches what the seed templates use, so an edit that asks for another
+ * size or package ends here. Null for any other error.
+ */
+export function missingCachedFile(log: string, stderr: string): string | null {
+  const text = `${log}\n${stderr}`;
+  const font = /Font [^=\s]+=(\S+) at [\d.]+pt not loadable: Metric \(TFM\) file/.exec(text);
+  if (font?.[1]) return font[1];
+  const file = /LaTeX Error: File `([^']+)' not found/.exec(text);
+  return file?.[1] ?? null;
+}
+
+/** What the user reads when an edit needs a file the offline cache does not have. */
+export const missingFileMessage = (file: string): string =>
+  `LaTeX needs a file Stellio has not downloaded yet (${file}). Download missing files, then it compiles.`;
+
 /** `! message` followed (within a few lines) by `l.<n> ...` is a TeX error with its source line. */
 export function parseLog(log: string): { errors: CompileError[]; warnings: CompileWarning[] } {
   const lines = log.split(/\r?\n/);
@@ -161,6 +178,18 @@ export async function compileTex(o: CompileOptions): Promise<CompileResult> {
       return done({ ok: true, pdf, pages: await pdfPageCount(pdf), log, warnings: parsed.warnings });
     }
 
+    // A named file first: the message can say what is missing.
+    const file = onlyCached ? missingCachedFile(log, r.stderr) : null;
+    if (file) {
+      const line = parsed.errors[0]?.line;
+      return done({
+        ok: false,
+        log: log || r.stderr,
+        errors: [{ ...(line === undefined ? {} : { line }), message: missingFileMessage(file) }],
+        warnings: parsed.warnings,
+        cacheMissing: true,
+      });
+    }
     // No TeX run at all, or a TeX run that stopped on a file the cache does not have.
     const missing =
       onlyCached &&
@@ -196,6 +225,40 @@ const PROBE = String.raw`\documentclass{article}
 \usepackage{xcolor,titlesec,enumitem,tabularx}
 \begin{document}ok\end{document}
 `;
+
+const SIZES =
+  String.raw`\tiny \scriptsize \footnotesize \small \normalsize \large \Large \LARGE \huge \Huge`.split(' ');
+const STYLES = [
+  '',
+  String.raw`\bfseries`,
+  String.raw`\itshape`,
+  String.raw`\scshape`,
+  String.raw`\bfseries\itshape`,
+  String.raw`\slshape`,
+  String.raw`\ttfamily`,
+  String.raw`\sffamily`,
+  String.raw`\sffamily\bfseries`,
+];
+
+/**
+ * A page with the template's preamble and every standard size in every common style, for each font family the
+ * template selects (`\fontfamily{..}`): compiling it once online puts all those font files in the cache, so an
+ * edit to another size or weight still compiles offline. Null when the text has no document body.
+ */
+export function fontSampleTex(tex: string): string | null {
+  const at = tex.indexOf(String.raw`\begin{document}`);
+  if (at < 0) return null;
+  const families = [
+    '',
+    ...[...new Set([...tex.matchAll(/\\fontfamily\{(\w+)\}/g)].map((m) => m[1]))].map(
+      (f) => String.raw`\fontfamily{${f ?? ''}}\selectfont`,
+    ),
+  ];
+  const lines = families.flatMap((f) =>
+    SIZES.flatMap((size) => STYLES.map((st) => `{${f}${size}${st} Aa1}`)),
+  );
+  return `${tex.slice(0, at)}\\begin{document}\n${lines.join('\n')}\n\\end{document}\n`;
+}
 
 /** Engine paths whose offline compile worked: a different engine has to prove it again. */
 const warmEngines = new Set<string>();

@@ -277,6 +277,14 @@ describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
       );
       expect(evil.checks.compile?.ok).toBe(false);
       expect(evil.checks.compile?.errors[0]?.message).toMatch(/can't read or write files/);
+      // an edit that needs a file the offline cache lacks says so, so the Resume tab can offer the download
+      const needs = await docs.saveManual(
+        jobId,
+        3,
+        manual.replace('\\begin{document}', '\\usepackage{stellio-not-cached}\n\\begin{document}'),
+      );
+      expect(needs.checks.compile).toMatchObject({ ok: false, cacheMissing: true });
+      expect(needs.checks.compile?.errors[0]?.message).toContain('stellio-not-cached.sty');
     }
 
     await docs.markFinal(jobId, 2);

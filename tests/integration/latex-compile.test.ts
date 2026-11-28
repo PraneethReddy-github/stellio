@@ -46,6 +46,18 @@ describe.skipIf(!engine)('compileTex (tectonic)', { timeout: 60_000 }, () => {
     expect(r.warnings.filter((w) => w.kind !== 'other')).toEqual([]);
   });
 
+  it('a file the offline cache does not have is "cache missing", naming the file, not a plain TeX error', async () => {
+    const tex = seed('resume.tex').replace(
+      '\\begin{document}',
+      '\\usepackage{stellio-not-cached}\n\\begin{document}',
+    );
+    const r = await compileTex({ engine: e, tex });
+    expect(r.ok).toBe(false);
+    expect(r.cacheMissing).toBe(true);
+    expect(r.errors[0]?.message).toContain('stellio-not-cached.sty');
+    expect(r.errors[0]?.message).toContain('Download missing files');
+  });
+
   it('a broken macro gives a line-numbered error', async () => {
     const tex = seed('resume.tex').replace('\\resumeSummary{Data', '\\resumeSummry{Data');
     const r = await compileTex({ engine: e, tex });

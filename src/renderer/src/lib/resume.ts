@@ -71,6 +71,21 @@ export const refreshDocs = (qc: QueryClient, kind: DocKind, jobId: string): Prom
 
 const settle = (qc: QueryClient) => () => qc.invalidateQueries({ queryKey: ['ai', 'runs'] });
 
+/** The compile stopped on a file the offline cache lacks: fetch what this version needs, then compile it again. */
+export function useFetchMissingFiles(kind: DocKind, jobId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (doc: { version: number; tex: string }) => {
+      await call('latex:warmUp', { tex: doc.tex });
+      return kind === 'cover'
+        ? call('cover:compile', { jobId, version: doc.version })
+        : call('resume:compile', { jobId, version: doc.version });
+    },
+    onSuccess: () =>
+      Promise.all([refreshDocs(qc, kind, jobId), qc.invalidateQueries({ queryKey: ['latex'] })]),
+  });
+}
+
 export function useGenerateDoc(kind: DocKind, jobId: string) {
   const qc = useQueryClient();
   return useMutation({
