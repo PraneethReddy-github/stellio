@@ -303,6 +303,20 @@ export const ipcContract = {
     output: z.object({ analysis: AnalysisRecordSchema }),
   },
   'jobs:delete': { input: z.object({ id: JobId }), output: z.object({ deleted: z.boolean() }) },
+  /** Replaces the posting text with the full text the user pasted; an Inbox job is re-scored after. */
+  'jobs:replaceText': {
+    input: z.object({ id: JobId, text: z.string().max(200_000), requestId: RequestId }),
+    output: z.object({ rescored: z.boolean() }),
+  },
+  /** Reads the posting page again for its full text; `unchanged`/`needs_text` carry the reason. */
+  'jobs:fetchFullText': {
+    input: z.object({ id: JobId, requestId: RequestId }),
+    output: z.object({
+      status: z.enum(['replaced', 'unchanged', 'needs_text']),
+      reason: z.string().nullable(),
+      rescored: z.boolean(),
+    }),
+  },
   'jobs:deleteMany': {
     input: z.object({ ids: z.array(JobId).min(1).max(10_000) }),
     output: z.object({ deleted: z.number().int() }),

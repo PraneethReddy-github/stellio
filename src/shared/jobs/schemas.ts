@@ -133,6 +133,8 @@ export const AnalysisRecordSchema = z.object({
   result: AnalysisResultSchema,
   /** The profile changed since this analysis ran. */
   profileStale: z.boolean(),
+  /** The posting text was replaced (Fetch / Paste full text) after this analysis ran. */
+  postingStale: z.boolean(),
 });
 export type AnalysisRecord = z.infer<typeof AnalysisRecordSchema>;
 

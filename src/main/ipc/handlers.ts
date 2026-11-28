@@ -33,6 +33,17 @@ export function createHandlers(
     return aiStatus.result;
   };
 
+  /** After new posting text: an Inbox job without a fit analysis gets a fresh triage score. Best effort. */
+  const rescoreInbox = async (id: string, signal: AbortSignal): Promise<boolean> => {
+    const { job, analysis } = await ctx.jobs.get(id);
+    if (job.state !== 'new' || analysis) return false;
+    try {
+      return (await ctx.discovery.rescore({ scope: 'job', jobId: id }, signal)).scored === 1;
+    } catch {
+      return false; // a scan or another re-score is running: the job keeps its old score until the next one
+    }
+  };
+
   return {
     'app:getInfo': () => ({
       name: app.getName(),
@@ -145,6 +156,18 @@ export function createHandlers(
       analysis: await ctx.tasks.run(requestId, (signal) => ctx.jobs.analyze(id, signal)),
     }),
     'jobs:delete': ({ id }) => ({ deleted: ctx.jobs.delete(id) }),
+    'jobs:replaceText': ({ id, text, requestId }) =>
+      ctx.tasks.run(requestId, async (signal) => {
+        await ctx.jobs.replaceText(id, text, signal);
+        return { rescored: await rescoreInbox(id, signal) };
+      }),
+    'jobs:fetchFullText': ({ id, requestId }) =>
+      ctx.tasks.run(requestId, async (signal) => {
+        const r = await ctx.jobs.fetchFullText(id, signal);
+        return r.status === 'replaced'
+          ? { status: r.status, reason: null, rescored: await rescoreInbox(id, signal) }
+          : { ...r, rescored: false };
+      }),
     'jobs:deleteMany': ({ ids }) => ({ deleted: ctx.jobs.deleteMany(ids) }),
     'jobs:setState': ({ id, state }) => ctx.jobs.setState(id, state),
     'ai:runs': ({ limit }) => ctx.runs.list(limit),

@@ -143,3 +143,10 @@
 .kindPanel[hidden] {
   display: none;
 }
+
+/* The whole posting text, as saved: line breaks kept, long enough to scroll inside the inspector. */
+.fullText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}

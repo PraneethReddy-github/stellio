@@ -169,6 +169,10 @@
 .banner p {
   flex: 1;
 }
+.bannerActions {
+  display: flex;
+  gap: var(--s-2);
+}
 .emptyFit {
   display: flex;
   flex-direction: column;

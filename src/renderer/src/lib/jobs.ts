@@ -89,3 +89,20 @@ export function useSetJobState() {
 /** Asks main to abort the task started with this requestId. Resolves quietly: the task's own promise reports the outcome. */
 export const cancelTask = (requestId: string): Promise<unknown> =>
   call('tasks:cancel', { requestId }).catch(() => undefined);
+
+/** Fetch or paste the full posting text; the job, the Inbox and its score all change. */
+export function useFullText(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { kind: 'fetch' } | { kind: 'paste'; text: string }) =>
+      input.kind === 'fetch'
+        ? call('jobs:fetchFullText', { id, requestId: crypto.randomUUID() })
+        : call('jobs:replaceText', { id, text: input.text, requestId: crypto.randomUUID() }).then((r) => ({
+            status: 'replaced' as const,
+            reason: null,
+            rescored: r.rescored,
+          })),
+    onSuccess: () =>
+      Promise.all(['jobs', 'discovery', 'tracker'].map((k) => qc.invalidateQueries({ queryKey: [k] }))),
+  });
+}

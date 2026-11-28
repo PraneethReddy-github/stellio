@@ -128,6 +128,8 @@ export const jobs = sqliteTable(
     deadlineAt: text('deadline_at'),
     descriptionMd: text('description_md').notNull().default(''),
     descriptionHash: text('description_hash'),
+    /** Set when Fetch / Paste full text replaced the posting text. */
+    descriptionUpdatedAt: text('description_updated_at'),
     structuredJson: json<unknown>('structured_json'),
     firstSeenAt: text('first_seen_at').notNull().$defaultFn(now),
     lastSeenAt: text('last_seen_at').notNull().$defaultFn(now),

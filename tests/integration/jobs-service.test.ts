@@ -3,6 +3,8 @@ import { join, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { createClaudeRunner } from '../../src/main/ai/runner';
 import { getAiRun } from '../../src/main/db/repos/aiRuns';
+import { createJob } from '../../src/main/db/repos/jobs';
+import { looksCutOff } from '../../src/shared/jobs/text';
 import { createDbRecorder } from '../../src/main/services/ai/recorder';
 import { createRunsService, readRunLog } from '../../src/main/services/ai/runs';
 import { createJobsService } from '../../src/main/services/jobs/service';
@@ -373,6 +375,102 @@ describe('intake URL', () => {
       'needs_text',
     );
     expect((await setup({ fetcher: reply(200, 'not json') }).jobs.intakeUrl(url)).status).toBe('needs_text');
+  });
+});
+
+describe('full text: fetch or paste when the source sent a snippet', () => {
+  const PAGE = 'evals/jds/20-senior-data-engineer-remote-us.html';
+  const page: Fetcher = (url) =>
+    Promise.resolve({ status: 200, finalUrl: url, contentType: 'text/html', body: read(PAGE) });
+
+  /** A job holding only the first part of the page's posting text, as Adzuna would send it. */
+  async function snippetJob(t: ReturnType<typeof setup>, cut = 300, url = 'https://jobs.example.test/ad/7') {
+    const probe = setup({ fetcher: page });
+    const res = await probe.jobs.intakeUrl('https://careers.example.test/jobs/42');
+    if (res.status !== 'ok') throw new Error('probe intake failed');
+    const full = (await probe.jobs.get(res.jobId)).job.descriptionMd;
+    const job = createJob(
+      t.db,
+      'Orbit Labs',
+      {
+        title: 'Senior Data Engineer',
+        descriptionMd: `${full.slice(0, cut)}…`,
+        url,
+        dedupeKey: `snippet|${url}`,
+      },
+      { source: 'adzuna', externalId: url, url, rawJson: null },
+    );
+    return { id: job.id, full };
+  }
+
+  it('fetch: keeps the page text when it is longer and holds the snippet; parses it again; a fit becomes stale', async () => {
+    const t = setup({ fetcher: page });
+    const { id, full } = await snippetJob(t);
+    expect(looksCutOff((await t.jobs.get(id)).job.descriptionMd)).toBe(true);
+    const before = await t.jobs.analyze(id);
+    expect(before.postingStale).toBe(false);
+    await new Promise((r) => setTimeout(r, 5)); // the replace must be later than the analysis
+
+    expect(await t.jobs.fetchFullText(id)).toEqual({ status: 'replaced' });
+    const { job, analysis } = await t.jobs.get(id);
+    expect(job.descriptionMd).toBe(full);
+    expect(looksCutOff(job.descriptionMd)).toBe(false);
+    expect(job.title).toBe('Senior Data Engineer'); // title and company stay as they were
+    expect(job.company).toBe('Orbit Labs');
+    expect(job.structured).not.toBeNull();
+    expect(t.calls().at(-1)?.stdin).toContain('$140,000 - $165,000 USD'); // jd.parse saw the full text
+    expect(analysis?.postingStale).toBe(true);
+    // a new analysis is current again
+    expect((await t.jobs.analyze(id)).postingStale).toBe(false);
+  });
+
+  it('fetch: refuses a page that is not this posting, one with no more text, a blocked page and a job without a link', async () => {
+    const other: Fetcher = (url) =>
+      Promise.resolve({
+        status: 200,
+        finalUrl: url,
+        contentType: 'text/html',
+        body: read('fixtures/pages/hostile.html'),
+      });
+    const t = setup({ fetcher: other });
+    const { id } = await snippetJob(t);
+    const notIt = await t.jobs.fetchFullText(id);
+    expect(notIt.status).toBe('unchanged');
+    expect(notIt.status !== 'replaced' && notIt.reason).toMatch(/not this posting|no more text/);
+
+    const t2 = setup({ fetcher: page });
+    const long = await snippetJob(t2, 100_000);
+    const same = await t2.jobs.fetchFullText(long.id);
+    expect(same.status).toBe('unchanged');
+    expect(same.status !== 'replaced' && same.reason).toMatch(/no more text/);
+
+    const blocked: Fetcher = (url) =>
+      Promise.resolve({ status: 403, finalUrl: url, contentType: 'text/html', body: '' });
+    const t3 = setup({ fetcher: blocked });
+    const b = await snippetJob(t3);
+    expect(await t3.jobs.fetchFullText(b.id)).toMatchObject({ status: 'needs_text' });
+
+    const noLink = createJob(t3.db, 'Acme', {
+      title: 'X',
+      descriptionMd: 'short…',
+      url: null,
+      dedupeKey: 'nolink',
+    });
+    await expect(t3.jobs.fetchFullText(noLink.id)).rejects.toThrow('no posting link');
+  });
+
+  it('paste: replaces the text; too short or a failed parse keeps the old text', async () => {
+    const t = setup({ fetcher: page });
+    const { id, full } = await snippetJob(t);
+    await expect(t.jobs.replaceText(id, 'too short')).rejects.toThrow('too short');
+    await t.jobs.replaceText(id, `  ${full}\r\n`);
+    expect((await t.jobs.get(id)).job.descriptionMd).toBe(full);
+
+    const failing = setup({ fetcher: page, env: { FAKE_CLAUDE_MODE: 'auth' } });
+    const s = await snippetJob(failing);
+    const before = (await failing.jobs.get(s.id)).job.descriptionMd;
+    await expect(failing.jobs.replaceText(s.id, full)).rejects.toThrow();
+    expect((await failing.jobs.get(s.id)).job.descriptionMd).toBe(before);
   });
 });
 

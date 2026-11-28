@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.2 — 2026-11-28
+
+- Full posting text: when a job board sent only part of a posting (it ends in "…"), Fetch full text reads the posting page again, or Paste full text takes the text you copy from it. Stellio reads it again and re-scores the job; a fit analysis made before says the posting changed. The Inbox panel can show the whole saved text, not only the summary.
+
 ## 1.2.1 — 2026-11-28
 
 - Re-score in the Inbox: score again the unscored jobs, every job in the list, or those scored before you changed your profile, with progress and Cancel. One job: Re-score (or Score now) in its Score section.

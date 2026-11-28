@@ -365,6 +365,15 @@ test('Re-score: the menu counts each choice and re-scores the list; one job from
   await row.click();
   const score = page.getByRole('complementary', { name: 'Job' }).getByRole('region', { name: 'Score' });
   await expect(score).toContainText('triage score');
+  // the panel shows a summary; the whole saved text is one click away, and a short text offers the full one
+  const desc = page
+    .getByRole('complementary', { name: 'Job' })
+    .getByRole('region', { name: 'Job description' });
+  await expect(desc.getByText('The source sent only part of this posting.')).toBeVisible();
+  await expect(desc.getByRole('button', { name: 'Paste full text' })).toBeVisible();
+  await expect(desc).toContainText('Python and SQL for reports.');
+  // the summary already is the whole (short) text, so there is nothing more to show
+  await expect(desc.getByRole('button', { name: 'Show full text' })).toHaveCount(0);
   await score.getByRole('button', { name: 'Re-score' }).click();
   await expect(page.getByText('Re-scored 1 job').nth(1)).toBeVisible({ timeout: 30_000 });
   await dataRows().filter({ hasText: 'Orbit Labs' }).first().click();

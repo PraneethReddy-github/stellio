@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { InboxItem } from '@shared/discovery/schemas';
 import { Button, ErrorState, Kbd, Loading, SectionHeader, StatusDot, Tag } from '../../ui';
 import { useJob, type JobGet } from '../../lib/jobs';
@@ -9,6 +10,7 @@ import {
   isWebUrl,
   isoDay,
 } from '../workspace/helpers';
+import { FullText } from '../workspace/FullText';
 import { scoreTone, sourceLabel } from './helpers';
 import s from './inbox.module.css';
 
@@ -39,6 +41,7 @@ export function InboxInspector({
   onOpenWorkspace: () => void;
 }): React.JSX.Element {
   const q = useJob(item.jobId);
+  const [fullText, setFullText] = useState(false);
   const job = q.data?.job;
   const analysis = q.data?.analysis ?? null;
   const required = job?.structured?.requirements.filter((r) => r.kind === 'required').slice(0, 6) ?? [];
@@ -139,8 +142,27 @@ export function InboxInspector({
             )}
           </section>
           <section className={s.block} aria-label="Job description">
-            <SectionHeader title="Job description" level={3} />
-            <p className={s.prose}>{job ? jdSummary(job) : ''}</p>
+            <SectionHeader
+              title="Job description"
+              level={3}
+              actions={
+                job &&
+                jdSummary(job) !== job.descriptionMd.trim() && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-pressed={fullText}
+                    onClick={() => setFullText(!fullText)}
+                  >
+                    {fullText ? 'Show summary' : 'Show full text'}
+                  </Button>
+                )
+              }
+            />
+            {job && <FullText job={job} mode="note" />}
+            <p className={fullText ? s.fullText : s.prose}>
+              {job ? (fullText ? job.descriptionMd : jdSummary(job)) : ''}
+            </p>
             {required.length > 0 && (
               <ul className={s.reqs} aria-label="Required">
                 {required.map((r, i) => (

@@ -18,6 +18,7 @@ describe('migrate', () => {
       '0002_referrals.sql',
       '0003_analyses_job_idx.sql',
       '0004_side_jobs.sql',
+      '0005_description_updated_at.sql',
     ]);
   });
 

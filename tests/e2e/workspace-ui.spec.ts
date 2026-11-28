@@ -120,6 +120,55 @@ test('fetch from a link: opens the job, and the posting link goes to the OS brow
   });
 });
 
+test('cut-off text: Paste full text replaces it; Fetch full text reads the posting page again', async () => {
+  await withApp({}, async ({ page }) => {
+    // pasted without a link: only Paste is offered
+    const id = await addJob(page);
+    const note = page.getByRole('status').filter({ hasText: 'The source sent only part of this posting' });
+    await expect(note).toBeVisible();
+    await expect(note.getByRole('button', { name: 'Fetch full text' })).toHaveCount(0);
+    await note.getByRole('button', { name: 'Paste full text' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Paste full text' });
+    await dialog.getByLabel('Posting text').fill('too short');
+    await dialog.getByRole('button', { name: 'Save text' }).click();
+    await expect(dialog.getByText('That text is too short to be the full posting.')).toBeVisible();
+    await dialog
+      .getByLabel('Posting text')
+      .fill(`${POSTING}\n\n${'We offer flexible hours and a learning budget. '.repeat(12)}`);
+    await dialog.getByRole('button', { name: 'Save text' }).click();
+    await expect(dialog).toBeHidden({ timeout: 30_000 });
+    await expect(page.getByText('Full text saved').first()).toBeVisible();
+    await expect(note).toHaveCount(0);
+    await page.getByRole('button', { name: 'Raw text' }).click();
+    await expect(page.getByRole('textbox', { name: 'Job description text' })).toContainText(
+      'learning budget',
+    );
+    await invoke(page, 'jobs:delete', { id });
+
+    // a snippet with a link: Fetch reads the page and keeps its longer text
+    await go(page, '/workspace');
+    await page.getByLabel('Posting URL').fill(`${base}/job`);
+    await page.getByRole('button', { name: 'Fetch job' }).click();
+    await expect(page.getByRole('heading', { name: 'Data Engineer', level: 2 })).toBeVisible();
+    const fetched = page.url().split('/').pop() ?? '';
+    const got = (await invoke(page, 'jobs:get', { id: fetched })) as {
+      ok: true;
+      data: { job: { descriptionMd: string } };
+    };
+    const full = got.data.job.descriptionMd;
+    await invoke(page, 'jobs:delete', { id: fetched });
+    const snippet = (await invoke(page, 'jobs:intakeText', {
+      text: `${full.slice(0, 300)}…`,
+      url: `${base}/job`,
+      requestId: randomUUID(),
+    })) as { ok: true; data: { jobId: string } };
+    await go(page, `/workspace/${snippet.data.jobId}`);
+    await note.getByRole('button', { name: 'Fetch full text' }).click();
+    await expect(page.getByText('Full text saved').first()).toBeVisible({ timeout: 30_000 });
+    await expect(note).toHaveCount(0);
+  });
+});
+
 test('needs text: the paste tab opens with the reason and the link prefilled', async () => {
   await withApp({}, async ({ page }) => {
     await go(page, '/workspace');

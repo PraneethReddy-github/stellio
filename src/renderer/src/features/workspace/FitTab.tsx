@@ -79,9 +79,15 @@ function Result({
   const removed = removedCitationsNote(r.warnings);
   return (
     <>
-      {analysis.profileStale && (
+      {(analysis.profileStale || analysis.postingStale) && (
         <div className={s.banner} role="status">
-          <p>Profile changed since this analysis.</p>
+          <p>
+            {analysis.postingStale && analysis.profileStale
+              ? 'Profile and posting text changed since this analysis.'
+              : analysis.postingStale
+                ? 'Posting text changed since this analysis.'
+                : 'Profile changed since this analysis.'}
+          </p>
           <Button size="sm" busy={busy} onClick={onAnalyze}>
             Re-analyze
           </Button>

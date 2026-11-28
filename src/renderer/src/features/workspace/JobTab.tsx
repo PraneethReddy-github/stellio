@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, CodeEditor, KeyValue, SectionHeader, Tag, type KeyValueItem } from '../../ui';
 import type { JobGet } from '../../lib/jobs';
+import { FullText } from './FullText';
 import { formatSalary, humanize, isoDay } from './helpers';
 import s from './workspace.module.css';
 
@@ -23,7 +24,9 @@ export function JobTab({ job }: { job: Job }): React.JSX.Element {
 
   return (
     <div className={s.jobTab}>
+      <FullText job={job} mode="note" />
       <div className={s.toggleRow}>
+        <FullText job={job} mode="button" />
         <Button size="sm" variant="ghost" aria-pressed={raw} onClick={() => setRaw(!raw)}>
           {raw ? 'Structured view' : 'Raw text'}
         </Button>
