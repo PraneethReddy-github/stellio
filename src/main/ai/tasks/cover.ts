@@ -32,14 +32,21 @@ export interface CoverTaskRequest {
   signal?: AbortSignal;
 }
 
-export function buildCoverInput(req: CoverTaskRequest): string {
-  const blocks = [
+/** The user's own, unchanging material, for the system prompt (cached across revises); see `buildResumeContext`. */
+export function buildCoverContext(req: CoverTaskRequest): string {
+  return [
     'USER RULES — follow exactly; they override style defaults, never override truth rules.',
     wrapData('cover_rules', req.coverRules),
     wrapData('skills_policy', req.skillsPolicy),
     wrapData('allowed_skills', req.allowedSkills.join('\n') || '(none)'),
     wrapData('profile', profileForPrompt({ ...req.profile, notes: '' })),
     wrapData('notes', req.profile.notes.trim() || '(none)'),
+  ].join('\n\n');
+}
+
+/** What changes between runs: the job and where it was found, the analysis, the previous draft, the instruction. */
+export function buildCoverInput(req: CoverTaskRequest): string {
+  const blocks = [
     wrapData('job_structured', JSON.stringify(req.jd)),
     wrapData('job_description', req.descriptionMd.slice(0, MAX_JD_CHARS)),
     wrapData('fit_analysis', JSON.stringify(req.analysis)),
@@ -59,7 +66,7 @@ export function runCoverTask(runner: ClaudeRunner, req: CoverTaskRequest): Promi
     task: req.task,
     model: req.config.model,
     effort: req.config.effort,
-    systemPrompt: prompt.system,
+    systemPrompt: `${prompt.system}\n\n${buildCoverContext(req)}`,
     input: buildCoverInput(req),
     schema: CoverContentSchema,
     jsonSchema: prompt.jsonSchema,

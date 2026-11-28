@@ -97,17 +97,17 @@ async function setup(env: Record<string, string> = {}) {
   const intake = await jobs.intakeText(coverPosting);
   if (intake.status !== 'ok') throw new Error('intake failed');
   await jobs.analyze(intake.jobId);
-  const calls = (): { argv: string[]; stdin: string }[] =>
+  const calls = (): { argv: string[]; system: string; stdin: string }[] =>
     readFileSync(cap, 'utf8')
       .split('\n')
       .filter(Boolean)
-      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
-      .filter((r) => r.kind === 'call' && r.stdin.includes('<cover_rules>'));
+      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; system: string; stdin: string })
+      .filter((r) => r.kind === 'call' && r.system.includes('<cover_rules>'));
   const translateCalls = () =>
     readFileSync(cap, 'utf8')
       .split('\n')
       .filter(Boolean)
-      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
+      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; system: string; stdin: string })
       .filter((r) => r.kind === 'call' && r.stdin.includes('<texts>'));
   return { db, dir, cover, jobId: intake.jobId, calls, translateCalls };
 }
@@ -178,11 +178,14 @@ describe('cover letter pipeline (fake CLI)', { timeout: 60_000 }, () => {
     // one call; the prompt embeds the rules files verbatim, the profile notes and the posting
     const [call] = calls();
     expect(calls()).toHaveLength(1);
-    expect(call?.stdin).toContain(readFileSync('seed/rules/cover-letter.md', 'utf8'));
-    expect(call?.stdin).toContain(readFileSync('seed/rules/skills-policy.md', 'utf8'));
-    expect(call?.stdin).toContain('<notes>\nDo not mention the 2019 internship.');
-    expect(call?.stdin).toContain('[exp-globex]');
+    expect(call?.system).toContain(readFileSync('seed/rules/cover-letter.md', 'utf8'));
+    expect(call?.system).toContain(readFileSync('seed/rules/skills-policy.md', 'utf8'));
+    expect(call?.system).toContain('<notes>\nDo not mention the 2019 internship.');
+    expect(call?.system).toContain('[exp-globex]');
     expect(call?.stdin).toContain('<job_description>');
+    expect(call?.system).not.toContain('</job_description>');
+    expect(call?.system).not.toContain('</job_source>');
+    expect(call?.stdin).not.toContain('<profile>');
     const argv = call?.argv ?? [];
     expect(argv[argv.indexOf('--model') + 1]).toBe('claude-sonnet-5-5');
     expect(argv[argv.indexOf('--effort') + 1]).toBe('high');

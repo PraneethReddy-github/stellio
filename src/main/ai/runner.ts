@@ -1,11 +1,14 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { ulid } from 'ulid';
 import { z, type ZodType } from 'zod';
 import type { Logger } from '../platform/logger';
+
+/** Above this many bytes the system prompt goes in a file (`--system-prompt-file`): argv strings max out at 128 KiB. */
+export const SYSTEM_PROMPT_ARG_MAX = 100_000;
 
 export type RunStatus =
   'ok' | 'auth' | 'usage_limit' | 'bad_model' | 'timeout' | 'cancelled' | 'invalid_output' | 'error';
@@ -39,7 +42,8 @@ interface RunMeta {
   /** Number of CLI processes spawned (retries and repair included). */
   attempts: number;
   costUsd?: number;
-  tokens?: { input: number; output: number };
+  /** `input` excludes cached tokens: `cacheRead` came from Claude's prompt cache, `cacheWrite` was stored in it. */
+  tokens?: { input: number; output: number; cacheRead: number; cacheWrite: number };
   /** Model the CLI reports it actually used. */
   model?: string;
 }
@@ -106,7 +110,12 @@ const Envelope = z.looseObject({
   structured_output: z.unknown().optional(),
   total_cost_usd: z.number().optional(),
   usage: z
-    .looseObject({ input_tokens: z.number().optional(), output_tokens: z.number().optional() })
+    .looseObject({
+      input_tokens: z.number().optional(),
+      output_tokens: z.number().optional(),
+      cache_read_input_tokens: z.number().optional(),
+      cache_creation_input_tokens: z.number().optional(),
+    })
     .optional(),
   modelUsage: z.record(z.string(), z.unknown()).optional(),
 });
@@ -371,7 +380,8 @@ export function createClaudeRunner(opts: ClaudeRunnerOptions): ClaudeRunner {
       );
     });
 
-  function buildArgv(req: RunRequest<unknown>): string[] {
+  /** `promptFile`: the system prompt is in this file (it is too long for one argv string). */
+  function buildArgv(req: RunRequest<unknown>, promptFile?: string): string[] {
     // z.toJSONSchema adds "$schema" (draft 2020-12); the CLI cannot resolve it and rejects the schema.
     const jsonSchema = { ...req.jsonSchema } as Record<string, unknown>;
     delete jsonSchema.$schema;
@@ -383,8 +393,7 @@ export function createClaudeRunner(opts: ClaudeRunnerOptions): ClaudeRunner {
       req.streaming ? 'stream-json' : 'json',
       '--json-schema',
       JSON.stringify(jsonSchema),
-      '--system-prompt',
-      req.systemPrompt,
+      ...(promptFile ? ['--system-prompt-file', promptFile] : ['--system-prompt', req.systemPrompt]),
       '--tools',
       req.tools ?? '',
       '--no-session-persistence',
@@ -419,11 +428,17 @@ export function createClaudeRunner(opts: ClaudeRunnerOptions): ClaudeRunner {
     const attempts: Attempt[] = [];
     let outcome: Outcome = { status: 'cancelled', error: 'cancelled' };
     let retries = 0;
+    let promptFile: string | undefined;
 
     if (release) {
       try {
         mkdirSync(opts.cwd, { recursive: true });
-        const argv = buildArgv(req);
+        // Linux caps one argv string at 128 KiB; a system prompt carrying the profile can outgrow it.
+        if (Buffer.byteLength(req.systemPrompt) > SYSTEM_PROMPT_ARG_MAX) {
+          promptFile = join(opts.cwd, `system-${runId}.txt`);
+          writeFileSync(promptFile, req.systemPrompt, { mode: 0o600 });
+        }
+        const argv = buildArgv(req, promptFile);
         let input = req.input;
         let repaired = false;
         for (;;) {
@@ -458,6 +473,7 @@ export function createClaudeRunner(opts: ClaudeRunnerOptions): ClaudeRunner {
           error: `failed to run claude: ${e instanceof Error ? e.message : String(e)}`,
         };
       } finally {
+        if (promptFile) rmSync(promptFile, { force: true });
         release();
       }
     }
@@ -469,7 +485,12 @@ export function createClaudeRunner(opts: ClaudeRunnerOptions): ClaudeRunner {
       attempts: attempts.length,
       costUsd: env?.total_cost_usd,
       tokens: env?.usage
-        ? { input: env.usage.input_tokens ?? 0, output: env.usage.output_tokens ?? 0 }
+        ? {
+            input: env.usage.input_tokens ?? 0,
+            output: env.usage.output_tokens ?? 0,
+            cacheRead: env.usage.cache_read_input_tokens ?? 0,
+            cacheWrite: env.usage.cache_creation_input_tokens ?? 0,
+          }
         : undefined,
       model: env?.modelUsage ? Object.keys(env.modelUsage)[0] : undefined,
     };

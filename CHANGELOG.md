@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.5 — 2026-11-28
+
+- Resume and cover letter revisions use less of your Claude usage: your profile and rules now go where Claude can reuse them from its cache, so a second revise within a few minutes does not send them in full again. Job postings stay apart from your rules.
+
 ## 1.2.4 — 2026-11-28
 
 - LaTeX: an edit that uses a font size or package Stellio had not downloaded (such as "Font … clmr2j8t12 … not loadable") now says so and offers Download missing files in the Preview and Checks; Rules, Test compile fetches what an edited template needs. Warm-up also fetches every standard font size and style the templates' fonts have, so most edits never need it; an existing cache gets those the first time you press Download missing files.

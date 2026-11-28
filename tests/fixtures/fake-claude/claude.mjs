@@ -15,6 +15,18 @@ import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs
 const out = (line) => process.stdout.write(line + '\n');
 const env = process.env;
 const argv = process.argv.slice(2);
+// The system prompt comes inline (--system-prompt) or, when long, from a file (--system-prompt-file).
+const systemPrompt = (() => {
+  const i = argv.indexOf('--system-prompt-file');
+  if (i >= 0) {
+    try {
+      return readFileSync(argv[i + 1], 'utf8');
+    } catch {
+      return '';
+    }
+  }
+  return argv[argv.indexOf('--system-prompt') + 1] ?? '';
+})();
 const taskOf = () => {
   try {
     const keys = Object.keys(JSON.parse(argv[argv.indexOf('--json-schema') + 1]).properties ?? {});
@@ -30,7 +42,7 @@ const taskOf = () => {
     if (keys.includes('numbers_used')) return 'INSIGHTS_ASK';
     if (keys.includes('resources')) return 'LEARNING_RESOURCES';
     if (keys.includes('skill_updates')) return 'PROFILE_SUGGEST';
-    const system = argv[argv.indexOf('--system-prompt') + 1] ?? '';
+    const system = systemPrompt;
     if (keys.length === 1 && keys[0] === 'items')
       return /cover letter/.test(system.split('\n')[0] ?? '') ? 'COVER_TRANSLATE' : 'RESUME_TRANSLATE';
     const revise = /^You revise/.test(system);
@@ -61,6 +73,7 @@ const capture = (rec) => {
 capture({
   kind: 'call',
   argv,
+  system: systemPrompt,
   stdin,
   cwd: process.cwd(),
   env: {

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { extractResumeText } from '../../../src/main/ai/extract';
 import { createClaudeRunner, type ClaudeRunner } from '../../../src/main/ai/runner';
 import { importProfile } from '../../../src/main/ai/tasks/profileImport';
+import { runResumeTask } from '../../../src/main/ai/tasks/resume';
+import { sampleJd } from '../../fixtures/jobs';
+import { fullProfile, goodContent } from '../../fixtures/resume';
 
 // Opt-in: uses the real `claude` CLI and the logged-in subscription. Run with STELLIO_LIVE_AI=1.
 describe.skipIf(process.env.STELLIO_LIVE_AI !== '1')('live claude', () => {
@@ -21,6 +24,31 @@ describe.skipIf(process.env.STELLIO_LIVE_AI !== '1')('live claude', () => {
   afterAll(() => {
     rmSync(dir, { recursive: true, force: true });
   });
+
+  it('two revises in a row: the second reads the rules and profile from the prompt cache', async () => {
+    const revise = (instruction: string) =>
+      runResumeTask(runner, {
+        task: 'resume.revise',
+        profile: fullProfile,
+        jd: sampleJd,
+        descriptionMd: 'Data Engineer at Nimbus Analytics GmbH in Berlin. Build pipelines in Python and SQL.',
+        analysis: null,
+        resumeRules: readFileSync(resolve('seed/rules/resume.md'), 'utf8'),
+        skillsPolicy: readFileSync(resolve('seed/rules/skills-policy.md'), 'utf8'),
+        allowedSkills: ['Python (aliases: py)', 'SQL', 'Airflow'],
+        previous: goodContent,
+        instruction,
+        config: { model: 'haiku', effort: 'low', timeoutMs: 180_000 },
+      });
+    const first = await revise('shorten the summary');
+    const second = await revise('lead with Airflow');
+    console.warn(
+      `[live] revise tokens: first ${JSON.stringify(first.tokens)}, second ${JSON.stringify(second.tokens)}`,
+    );
+    expect(first.tokens?.cacheWrite).toBeGreaterThan(0);
+    // the second run reuses at least what the first stored: the prompt, rules and profile
+    expect(second.tokens?.cacheRead ?? 0).toBeGreaterThanOrEqual(first.tokens?.cacheWrite ?? Infinity);
+  }, 400_000);
 
   it('haiku: tiny schema, ok and isolated from user hooks/plugins/memory', async () => {
     const schema = z.object({ answer: z.string() });

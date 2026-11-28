@@ -30,13 +30,24 @@ export interface ResumeTaskRequest {
   signal?: AbortSignal;
 }
 
-export function buildResumeInput(req: ResumeTaskRequest): string {
-  const blocks = [
+/**
+ * The user's own, unchanging material: rules, skills policy, allowed skills and profile. It goes after the prompt in
+ * the system prompt, so a second revise or the repair round reuses it from Claude's prompt cache. Web text (the job
+ * posting) never goes there: it stays in the message, below the rules it must not override.
+ */
+export function buildResumeContext(req: ResumeTaskRequest): string {
+  return [
     'USER RULES — follow exactly; they override style defaults, never override truth rules.',
     wrapData('resume_rules', req.resumeRules),
     wrapData('skills_policy', req.skillsPolicy),
     wrapData('allowed_skills', req.allowedSkills.join('\n') || '(none)'),
     wrapData('profile', profileForPrompt(req.profile)),
+  ].join('\n\n');
+}
+
+/** What changes between runs: the job, the fit analysis, the previous draft, the instruction, the repair list. */
+export function buildResumeInput(req: ResumeTaskRequest): string {
+  const blocks = [
     wrapData('job_structured', JSON.stringify(req.jd)),
     wrapData('job_description', req.descriptionMd.slice(0, MAX_JD_CHARS)),
     wrapData('fit_analysis', JSON.stringify(req.analysis)),
@@ -58,7 +69,7 @@ export function runResumeTask(
     task: req.task,
     model: req.config.model,
     effort: req.config.effort,
-    systemPrompt: prompt.system,
+    systemPrompt: `${prompt.system}\n\n${buildResumeContext(req)}`,
     input: buildResumeInput(req),
     schema: ResumeContentSchema,
     jsonSchema: prompt.jsonSchema,

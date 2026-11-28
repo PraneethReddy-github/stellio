@@ -135,13 +135,13 @@ async function setup(env: Record<string, string> = {}, opts: { photo?: boolean }
   const intake = await jobs.intakeText(POSTING);
   if (intake.status !== 'ok') throw new Error('intake failed');
   await jobs.analyze(intake.jobId);
-  const calls = (): { argv: string[]; stdin: string }[] =>
+  const calls = (): { argv: string[]; system: string; stdin: string }[] =>
     readFileSync(cap, 'utf8')
       .split('\n')
       .filter(Boolean)
-      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; stdin: string })
+      .map((l) => JSON.parse(l) as { kind: string; argv: string[]; system: string; stdin: string })
       .filter((r) => r.kind === 'call');
-  const resumeCalls = () => calls().filter((c) => c.stdin.includes('<resume_rules>'));
+  const resumeCalls = () => calls().filter((c) => c.system.includes('<resume_rules>'));
   const translateCalls = () => calls().filter((c) => c.stdin.includes('<texts>'));
   return { db, dir, docs, jobId: intake.jobId, calls: resumeCalls, translateCalls };
 }
@@ -179,12 +179,18 @@ describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
     // one call; the prompt embeds the rules files verbatim and the data blocks
     const [call] = calls();
     expect(calls()).toHaveLength(1);
-    expect(call?.stdin).toContain(readFileSync('seed/rules/resume.md', 'utf8'));
-    expect(call?.stdin).toContain('USER RULES — follow exactly');
-    expect(call?.stdin).toMatch(/<allowed_skills>\nPython \(aliases: py, python3\)/);
-    expect(call?.stdin).not.toMatch(/<allowed_skills>[\s\S]*Kubernetes[\s\S]*<\/allowed_skills>/);
+    expect(call?.system).toContain(readFileSync('seed/rules/resume.md', 'utf8'));
+    expect(call?.system).toContain('USER RULES — follow exactly');
+    expect(call?.system).toMatch(/<allowed_skills>\nPython \(aliases: py, python3\)/);
+    expect(call?.system).not.toMatch(/<allowed_skills>[\s\S]*Kubernetes[\s\S]*<\/allowed_skills>/);
     expect(call?.stdin).toContain('<fit_analysis>');
-    expect(call?.stdin).toContain('[exp-globex]');
+    // the user's own material sits in the system prompt (cached across revises); web text never does
+    expect(call?.system).toContain('<profile>');
+    expect(call?.stdin).not.toContain('<profile>');
+    expect(call?.stdin).toContain('<job_description>');
+    expect(call?.system).not.toContain('</job_description>');
+    expect(call?.system).not.toContain('</job_structured>');
+    expect(call?.system).toContain('[exp-globex]');
     const argv = call?.argv ?? [];
     expect(argv[argv.indexOf('--model') + 1]).toBe('claude-sonnet-5-5');
     expect(argv[argv.indexOf('--effort') + 1]).toBe('high');

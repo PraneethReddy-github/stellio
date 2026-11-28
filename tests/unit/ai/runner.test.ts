@@ -3,7 +3,12 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { createClaudeRunner, type AiRunRecorder, type RunRequest } from '../../../src/main/ai/runner';
+import {
+  createClaudeRunner,
+  SYSTEM_PROMPT_ARG_MAX,
+  type AiRunRecorder,
+  type RunRequest,
+} from '../../../src/main/ai/runner';
 import type { Logger } from '../../../src/main/platform/logger';
 
 const FAKE = resolve('tests/fixtures/fake-claude/claude.mjs');
@@ -21,6 +26,7 @@ afterEach(() => {
 interface Call {
   kind: 'call' | 'end';
   argv: string[];
+  system: string;
   stdin: string;
   cwd: string;
   env: Record<string, string | null>;
@@ -113,6 +119,26 @@ describe('argv / env / cwd', () => {
     expect(c?.env).toEqual({ CLAUDE_CODE_DISABLE_AUTO_MEMORY: '1', CLAUDE_CODE_SIMPLE: null });
   });
 
+  it('a system prompt too long for one argv string goes in a file, which is removed after the run', async () => {
+    const { runner } = make('ok');
+    const long = `be brief\n${'profile line\n'.repeat(10_000)}`; // over 100 KB
+    expect(Buffer.byteLength(long)).toBeGreaterThan(SYSTEM_PROMPT_ARG_MAX);
+    const res = await runner.run(req({ systemPrompt: long }));
+    expect(res.ok).toBe(true);
+    const runs = (): Call[] => calls().filter((x) => x.kind === 'call');
+    const c = runs()[0];
+    expect(c?.argv).not.toContain('--system-prompt');
+    const at = c?.argv.indexOf('--system-prompt-file') ?? -1;
+    expect(at).toBeGreaterThan(0);
+    const file = c?.argv[at + 1] ?? '';
+    expect(file.startsWith(join(dir, 'ai-cwd'))).toBe(true);
+    expect(c?.system).toBe(long); // the CLI read the whole prompt from the file
+    expect(existsSync(file)).toBe(false);
+    // a short prompt stays inline
+    await runner.run(req());
+    expect(runs()[1]?.argv).toContain('--system-prompt');
+  });
+
   it('strips $schema from the JSON schema (the CLI rejects the draft-2020-12 ref)', async () => {
     const { runner } = make('ok');
     await runner.run(
@@ -157,8 +183,8 @@ describe('result handling', () => {
     expect(await runner.run(req())).toMatchObject({
       ok: true,
       costUsd: 0.0012,
-      tokens: { input: 100, output: 20 },
     });
+    expect((await runner.run(req())).tokens).toEqual({ input: 100, output: 20, cacheRead: 0, cacheWrite: 0 });
   });
 });
 
