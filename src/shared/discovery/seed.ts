@@ -29,5 +29,8 @@ export function seedSearchProfile(front: FrontMatter): SearchProfileInput {
       .filter((l): l is string => !!l),
     excludedCompanies: p.companies_avoid,
     enabled: true,
+    kind: 'career',
+    maxHoursPerWeek: null,
+    minHourlyPay: null,
   };
 }

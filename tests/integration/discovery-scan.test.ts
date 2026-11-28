@@ -56,6 +56,9 @@ const PROFILE: SearchProfileInput = {
   languages: [],
   excludedCompanies: [],
   enabled: true,
+  kind: 'career',
+  maxHoursPerWeek: null,
+  minHourlyPay: null,
 };
 
 interface Opts {
@@ -359,6 +362,77 @@ describe('full scan over local fixture servers', () => {
     expect(t.discovery.inbox({ filters: { minScore: 0 }, sort: 'rank', limit: 100 })).toHaveLength(
       first.run.newJobs,
     );
+  });
+});
+
+describe('side-job search profiles', () => {
+  it('asks the job boards for part-time work, tags the jobs, triages them as side jobs and never auto-analyzes', async () => {
+    const t = setup({ env: scoreEnv, seed: true });
+    t.discovery.saveProfile(undefined, {
+      ...PROFILE,
+      name: 'Side money',
+      kind: 'side',
+      maxHoursPerWeek: 20,
+      minHourlyPay: 13.9,
+    });
+    const asked: string[] = [];
+    const ba = routes['/pc/v6/jobs'];
+    const az = routes['/v1/api/jobs/de/search/1'];
+    if (!ba || !az || typeof ba === 'function' || typeof az === 'function') throw new Error('fixture routes');
+    const keep = { ba, az };
+    routes['/pc/v6/jobs'] = (u: URL) => (asked.push(u.search), ba);
+    routes['/v1/api/jobs/de/search/1'] = (u: URL) => (asked.push(u.search), az);
+    try {
+      const { run } = await t.discovery.runScan({ trigger: 'manual' });
+      expect(run.newJobs).toBeGreaterThan(0);
+      const ba = asked.filter((q) => q.includes('angebotsart'));
+      expect(ba.length).toBeGreaterThan(0);
+      expect(ba.every((q) => new URLSearchParams(q).get('arbeitszeit') === 'tz;mj')).toBe(true);
+      expect(asked.some((q) => new URLSearchParams(q).get('part_time') === '1')).toBe(true);
+
+      const inbox = t.discovery.inbox({ filters: {}, sort: 'rank', limit: 100 });
+      expect(inbox.length).toBe(run.newJobs);
+      expect(inbox.every((i) => i.sideJob)).toBe(true);
+      expect(t.discovery.inbox({ filters: { sideJob: false }, sort: 'rank', limit: 100 })).toEqual([]);
+      expect(t.discovery.inbox({ filters: { sideJob: true }, sort: 'rank', limit: 100 })).toHaveLength(
+        run.newJobs,
+      );
+      // every triage call carries the side-job limits; strong scores never start a full analysis
+      const triage = t.task('triage');
+      expect(triage.length).toBeGreaterThan(0);
+      for (const c of triage) {
+        expect(c.stdin).toContain('<side_job>');
+        expect(c.stdin).toContain('max hours per week: 20');
+        expect(c.stdin).toContain('min hourly pay: 13.9 EUR');
+      }
+      expect(inbox.some((i) => (i.score ?? 0) >= 70)).toBe(true);
+      expect(t.task('analyze')).toHaveLength(0);
+    } finally {
+      routes['/pc/v6/jobs'] = keep.ba;
+      routes['/v1/api/jobs/de/search/1'] = keep.az;
+    }
+  });
+
+  it('a job a career profile also wants stays a career job, triaged without the side-job block', async () => {
+    const t = setup({ env: scoreEnv });
+    t.discovery.saveProfile(undefined, {
+      ...PROFILE,
+      name: 'Side money',
+      kind: 'side',
+      maxHoursPerWeek: 20,
+      minHourlyPay: null,
+    });
+    const { run } = await t.discovery.runScan({ trigger: 'manual' });
+    const inbox = t.discovery.inbox({ filters: {}, sort: 'rank', limit: 100 });
+    expect(inbox.length).toBe(run.newJobs);
+    // the query-less sources check every profile at once: what the career profile wants is a career job
+    const shared = inbox.filter((i) =>
+      i.sources.some((s) => ['arbeitnow', 'remotive', 'remoteok'].includes(s)),
+    );
+    expect(shared.length).toBeGreaterThan(0);
+    expect(shared.every((i) => !i.sideJob)).toBe(true);
+    const careerCalls = t.task('triage').filter((c) => !c.stdin.includes('<side_job>'));
+    expect(careerCalls.length).toBeGreaterThan(0);
   });
 });
 

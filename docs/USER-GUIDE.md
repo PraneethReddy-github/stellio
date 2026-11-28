@@ -65,6 +65,7 @@ Inbox (`G I`) shows new jobs ranked for you, each with a one-line reason. `S` sh
 
 - **In the app.** Settings, Schedule: turn on the daily scan and set the time. It is off by default because a scan uses Claude usage. If the app was closed at that time it scans at the next start when the last scan is over a day old.
 - **While the app is closed.** Settings, Schedule, Run when the app is closed: Install shows the exact two systemd user unit files (`stellio-scan.service` and `.timer` under `~/.config/systemd/user`) before anything is written. The timer runs `stellio --scan`, which scans, posts a notification and exits. Remove deletes the unit files.
+- **Side jobs.** For part-time work you want only for the money, add a search profile in Settings, Search profiles, and switch on **Side job**. Set the most hours a week you can work (20 by default) and the least pay an hour you accept (the minimum wage by default); the roles start as Werkstudent, Aushilfe, Minijob, Teilzeit. Those jobs are scored on pay, hours, distance and language rather than your skills, never get the automatic full analysis, and show under **Side jobs** in the Inbox, apart from your career jobs.
 - **Limits.** Settings, Discovery sets how many jobs get a full analysis per day, the score threshold for it, and the source weights. Web search is a separate switch, off by default.
 
 ## 6. Editing the rules

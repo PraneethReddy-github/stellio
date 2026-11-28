@@ -216,13 +216,13 @@ export interface Triaged {
   jobId: string;
   score: number;
 }
-/** Triaged inbox jobs at or above `threshold` with no full analysis yet, best first. */
+/** Triaged career jobs in the inbox at or above `threshold` with no full analysis yet, best first. */
 export function analysisCandidates(db: Db, threshold: number, limit: number): Triaged[] {
   return db.sqlite
     .prepare(
       `select t.job_id as jobId, t.fit_score as score from analyses t
        join jobs j on j.id = t.job_id
-       where t.triage = 1 and t.fit_score >= ? and j.state = 'new' and j.closed_at is null
+       where t.triage = 1 and t.fit_score >= ? and j.state = 'new' and j.closed_at is null and j.side_job = 0
          and not exists (select 1 from analyses f where f.job_id = t.job_id and f.triage = 0)
          and t.id = (select t2.id from analyses t2 where t2.job_id = t.job_id and t2.triage = 1
                      order by t2.created_at desc, t2.id desc limit 1)
@@ -280,6 +280,7 @@ export interface InboxRow {
   fitReason: string | null;
   triage: number | null;
   triageReason: string | null;
+  sideJob: number;
 }
 
 /** Open (`new`, not closed) jobs with their latest full analysis and latest triage. */
@@ -289,7 +290,8 @@ export function inboxRows(db: Db): InboxRow[] {
       `select j.id, c.name as company, j.title, j.location_text as locationText, j.remote,
               j.salary_min as salaryMin, j.salary_max as salaryMax, j.salary_currency as salaryCurrency,
               j.salary_period as salaryPeriod, j.url, j.posted_at as postedAt, j.first_seen_at as firstSeenAt,
-              f.fit_score as fit, f.summary as fitReason, t.fit_score as triage, t.summary as triageReason
+              f.fit_score as fit, f.summary as fitReason, t.fit_score as triage, t.summary as triageReason,
+              j.side_job as sideJob
        from jobs j join companies c on c.id = j.company_id
        left join analyses f on f.id = (select a.id from analyses a where a.job_id = j.id and a.triage = 0
                                        order by a.created_at desc, a.id desc limit 1)

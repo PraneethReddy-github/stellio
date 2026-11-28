@@ -2,6 +2,7 @@
 import {
   DiscoverySettingsSchema,
   SearchProfileInputSchema,
+  SIDE_DEFAULTS,
   type DiscoverySettings,
   type SearchProfile,
   type SearchProfileInput,
@@ -36,6 +37,9 @@ export interface ProfileForm {
   currency: string;
   remoteOk: boolean;
   enabled: boolean;
+  side: boolean;
+  maxHoursPerWeek: string;
+  minHourlyPay: string;
 }
 
 export const EMPTY_PROFILE_FORM: ProfileForm = {
@@ -52,7 +56,13 @@ export const EMPTY_PROFILE_FORM: ProfileForm = {
   currency: '',
   remoteOk: true,
   enabled: true,
+  side: false,
+  maxHoursPerWeek: String(SIDE_DEFAULTS.maxHoursPerWeek),
+  minHourlyPay: String(SIDE_DEFAULTS.minHourlyPay),
 };
+
+/** Starting roles for a new side-job profile (German job titles: student job, helper, minijob, part-time). */
+export const SIDE_ROLES = 'Werkstudent, Aushilfe, Minijob, Teilzeit';
 
 export const profileToForm = (p: SearchProfileInput): ProfileForm => ({
   name: p.name,
@@ -68,7 +78,18 @@ export const profileToForm = (p: SearchProfileInput): ProfileForm => ({
   currency: p.currency ?? '',
   remoteOk: p.remoteOk,
   enabled: p.enabled,
+  side: p.kind === 'side',
+  maxHoursPerWeek: p.maxHoursPerWeek === null ? '' : String(p.maxHoursPerWeek),
+  minHourlyPay: p.minHourlyPay === null ? '' : String(p.minHourlyPay),
 });
+
+/** A number field: null when empty, undefined when it is not a number in [min, max] (whole when `int`). */
+function numberField(text: string, min: number, max: number, int: boolean): number | null | undefined {
+  const s = text.trim().replace(',', '.');
+  if (s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) && n >= min && n <= max && (!int || Number.isInteger(n)) ? n : undefined;
+}
 
 /** The profile to save, or a message for the first thing wrong. */
 export function formToProfile(
@@ -79,6 +100,11 @@ export function formToProfile(
   if (floor !== null && (!Number.isInteger(floor) || floor < 0))
     return { ok: false, error: 'Salary floor is a whole number, or empty.' };
   if (f.name.trim() === '') return { ok: false, error: 'Give the profile a name.' };
+  const hours = f.side ? numberField(f.maxHoursPerWeek, 1, 60, true) : null;
+  if (hours === undefined)
+    return { ok: false, error: 'Max hours a week is a whole number from 1 to 60, or empty.' };
+  const pay = f.side ? numberField(f.minHourlyPay, 0, 1000, false) : null;
+  if (pay === undefined) return { ok: false, error: 'Min pay an hour is a number, or empty.' };
   const r = SearchProfileInputSchema.safeParse({
     name: f.name,
     roles: parseList(f.roles),
@@ -88,11 +114,14 @@ export function formToProfile(
     countries: parseList(f.countries),
     languages: parseList(f.languages),
     excludedCompanies: parseList(f.excludedCompanies),
-    seniority: f.seniority,
-    salaryFloor: floor,
+    seniority: f.side ? [] : f.seniority, // career-only fields are hidden for side jobs
+    salaryFloor: f.side ? null : floor,
     currency: f.currency.trim() || null,
     remoteOk: f.remoteOk,
     enabled: f.enabled,
+    kind: f.side ? 'side' : 'career',
+    maxHoursPerWeek: hours,
+    minHourlyPay: pay,
   });
   return r.success
     ? { ok: true, value: r.data }

@@ -130,6 +130,9 @@ await page.evaluate(() =>
       languages: [],
       excludedCompanies: [],
       enabled: true,
+      kind: 'career',
+      maxHoursPerWeek: null,
+      minHourlyPay: null,
     },
   }),
 );

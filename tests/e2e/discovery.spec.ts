@@ -140,6 +140,9 @@ test.describe('discovery over IPC (fake CLI, local source servers)', () => {
       languages: [],
       excludedCompanies: [],
       enabled: true,
+      kind: 'career',
+      maxHoursPerWeek: null,
+      minHourlyPay: null,
     };
     const created = await ok<{ id: string; name: string }>('discovery:saveProfile', { profile: base });
     const tmp = await ok<{ id: string }>('discovery:saveProfile', { profile: { ...base, name: 'Temp' } });
@@ -334,6 +337,9 @@ test.describe('headless --scan', () => {
               languages: [],
               excludedCompanies: [],
               enabled: true,
+              kind: 'career',
+              maxHoursPerWeek: null,
+              minHourlyPay: null,
             },
           })) as Res<unknown>
         ).ok,

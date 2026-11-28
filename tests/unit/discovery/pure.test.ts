@@ -4,6 +4,7 @@ import {
   detectSeniority,
   hardFilter,
   matchesQuery,
+  statedWeeklyHours,
   wantsGermany,
 } from '../../../src/shared/discovery/filters';
 import { rank, sourceQuality } from '../../../src/shared/discovery/ranking';
@@ -107,6 +108,34 @@ describe('hard filters', () => {
       ),
     ).toBe(true);
     expect(matchesQuery(job({ title: 'Anything' }), profile({ roles: [] }))).toBe(true);
+  });
+});
+
+describe('side-job filters', () => {
+  const side = { kind: 'side' as const, maxHoursPerWeek: 20, minHourlyPay: 13.9 };
+  it('reads the weekly hours a posting states, taking the lower end of a range', () => {
+    expect(statedWeeklyHours('Minijob, 10 Stunden pro Woche')).toBe(10);
+    expect(statedWeeklyHours('15-20 Std./Woche, flexibel')).toBe(15);
+    expect(statedWeeklyHours('Part-time, 25 hours a week')).toBe(25);
+    expect(statedWeeklyHours('20h/Woche')).toBe(20);
+    expect(statedWeeklyHours('Werkstudent (m/w/d) mit 16 Stunden wöchentlich')).toBe(16);
+    expect(statedWeeklyHours('Flexible Arbeitszeiten, 30 Tage Urlaub')).toBeNull();
+  });
+  it('drops full-time roles, too many hours and low hourly pay; a career profile ignores them', () => {
+    expect(f({ title: 'Aushilfe Verkauf' }, side)).toBeNull();
+    expect(f({ title: 'Aushilfe Verkauf', employmentType: 'full_time' }, side)).toBe('full-time role');
+    expect(f({ title: 'Verkäufer (Vollzeit)' }, side)).toBe('full-time role');
+    expect(f({ title: 'Aushilfe', descriptionMd: 'Bis zu 30 Stunden pro Woche.' }, side)).toBe(
+      'too many hours',
+    );
+    expect(f({ title: 'Aushilfe', descriptionMd: '12 Stunden pro Woche.' }, side)).toBeNull();
+    expect(f({ title: 'Aushilfe', salaryMax: 12.5, salaryPeriod: 'hour' }, side)).toBe(
+      'hourly pay below floor',
+    );
+    expect(f({ title: 'Aushilfe', salaryMax: 15, salaryPeriod: 'hour' }, side)).toBeNull();
+    // a monthly figure is not compared with the hourly floor
+    expect(f({ title: 'Aushilfe', salaryMax: 538, salaryPeriod: 'month' }, side)).toBeNull();
+    expect(f({ title: 'Data Engineer', employmentType: 'full_time' })).toBeNull();
   });
 });
 

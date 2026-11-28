@@ -17,6 +17,7 @@ describe('migrate', () => {
       '0001_jobs_fts.sql',
       '0002_referrals.sql',
       '0003_analyses_job_idx.sql',
+      '0004_side_jobs.sql',
     ]);
   });
 

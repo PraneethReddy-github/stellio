@@ -70,14 +70,17 @@ export function InboxInspector({
       </div>
 
       <section className={s.block} aria-label="Score">
-        <SectionHeader title={item.scoreKind === 'fit' ? 'Fit analysis' : 'Triage'} level={3} />
+        <SectionHeader
+          title={item.scoreKind === 'fit' ? 'Fit analysis' : item.sideJob ? 'Side job' : 'Triage'}
+          level={3}
+        />
         {item.score === null ? (
           <p className={s.dim}>Not scored yet. The next scan triages new jobs.</p>
         ) : (
           <>
             <StatusDot tone={scoreTone(item.score)}>
               <span className={s.mono}>{item.score}</span>
-              {item.scoreKind === 'fit' ? ' fit score' : ' triage score'}
+              {item.scoreKind === 'fit' ? ' fit score' : item.sideJob ? ' side-job score' : ' triage score'}
             </StatusDot>
             {item.reason && <p className={s.prose}>{item.reason}</p>}
           </>

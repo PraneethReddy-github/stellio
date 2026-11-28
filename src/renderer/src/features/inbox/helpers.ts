@@ -59,9 +59,21 @@ export const NO_FILTERS: InboxFilters = {
   text: '',
 };
 
+/** Which list the Inbox shows: career jobs or side jobs. `all` when there is no side-job profile. */
+export type InboxKind = 'all' | 'career' | 'side';
+
 /** The filters `jobs:inbox` understands. The rest are applied in `applyLocalFilters`. */
-export function inboxQuery(f: InboxFilters): {
-  filters: { minScore?: number; source?: string; remote?: 'remote' | 'hybrid' | 'onsite'; text?: string };
+export function inboxQuery(
+  f: InboxFilters,
+  kind: InboxKind = 'all',
+): {
+  filters: {
+    minScore?: number;
+    source?: string;
+    remote?: 'remote' | 'hybrid' | 'onsite';
+    text?: string;
+    sideJob?: boolean;
+  };
   sort: 'rank';
   limit: number;
 } {
@@ -74,6 +86,7 @@ export function inboxQuery(f: InboxFilters): {
         ? { remote: f.remote }
         : {}),
       ...(f.text.trim() ? { text: f.text.trim() } : {}),
+      ...(kind !== 'all' ? { sideJob: kind === 'side' } : {}),
     },
     sort: 'rank',
     limit: 500,

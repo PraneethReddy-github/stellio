@@ -81,6 +81,9 @@ const profile = {
   languages: [],
   excludedCompanies: [],
   enabled: true,
+  kind: 'career',
+  maxHoursPerWeek: null,
+  minHourlyPay: null,
 };
 
 test.describe.configure({ mode: 'serial' });
@@ -332,6 +335,27 @@ test('a second scan with nothing new: "No job matches" under "new since last sca
   await page.getByRole('button', { name: 'Cancel scan' }).click();
   await expect(page.getByRole('region', { name: 'Scan progress' })).toBeHidden({ timeout: 60_000 });
   await expect(page.getByRole('button', { name: 'Scan now' })).toBeVisible();
+});
+
+test('a side-job profile adds the Career | Side jobs switch; career jobs stay under Career', async () => {
+  const before = await ok<Inbox[]>('jobs:inbox', { filters: {}, sort: 'rank', limit: 50 });
+  await go('/inbox');
+  await expect(page.getByRole('tablist', { name: 'Which jobs' })).toHaveCount(0);
+  const side = await ok<{ id: string }>('discovery:saveProfile', {
+    profile: { ...profile, name: 'Side money', kind: 'side', maxHoursPerWeek: 20, minHourlyPay: 13.9 },
+  });
+  await page.reload();
+  await go('/inbox');
+  const tabs = page.getByRole('tablist', { name: 'Which jobs' });
+  await expect(tabs.getByRole('tab', { name: 'Career' })).toHaveAttribute('aria-selected', 'true');
+  await expect(dataRows()).toHaveCount(before.length);
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/inbox-career-side.png` });
+  await tabs.getByRole('tab', { name: 'Side jobs' }).click();
+  await expect(page.getByText('No side jobs yet')).toBeVisible();
+  await axe();
+  await tabs.getByRole('tab', { name: 'Career' }).click();
+  await expect(dataRows()).toHaveCount(before.length);
+  await ok('discovery:deleteProfile', { id: side.id });
 });
 
 async function settled(): Promise<void> {

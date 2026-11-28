@@ -119,6 +119,7 @@ export const adzuna: SourceAdapter = {
           sort_by: 'date',
           'content-type': 'application/json',
         });
+        if (ctx.profile.kind === 'side') q.set('part_time', '1');
         if (what) q.set('what', what);
         if (where) q.set('where', where);
         const page = AdzunaPage.safeParse(

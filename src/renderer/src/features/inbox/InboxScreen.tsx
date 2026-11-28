@@ -18,6 +18,10 @@ import {
   StatusDot,
   Switch,
   Table,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   Tag,
   useToast,
   type Column,
@@ -51,6 +55,7 @@ import {
   sourceErrors,
   sourceLabel,
   type InboxFilters,
+  type InboxKind,
 } from './helpers';
 import s from './inbox.module.css';
 
@@ -104,9 +109,13 @@ export default function InboxScreen(): React.JSX.Element {
   const scan = useScanState();
   const secs = useElapsedSeconds(scan.running);
 
+  const [list, setList] = useState<'career' | 'side'>('career');
   const profiles = useProfiles();
   const run = useLastRun();
-  const q = useInbox(inboxQuery(filters));
+  // The Career | Side jobs switch shows only once a side-job search profile exists.
+  const hasSide = (profiles.data ?? []).some((p) => p.kind === 'side');
+  const kind: InboxKind = hasSide ? list : 'all';
+  const q = useInbox(inboxQuery(filters, kind));
   const shortlist = useShortlist();
   const dismiss = useDismiss();
 
@@ -180,6 +189,129 @@ export default function InboxScreen(): React.JSX.Element {
 
   const noProfile = profiles.isSuccess && profiles.data.length === 0;
   const errors = sourceErrors(run.data ?? null);
+
+  const listBody = (
+    <>
+      <div className={s.filters} role="group" aria-label="Filters">
+        <Field label="Search">
+          {(p) => (
+            <Input
+              {...p}
+              size="sm"
+              type="search"
+              value={filters.text}
+              placeholder="Title or company"
+              onChange={(e) => patch({ text: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field label="Search profile">
+          {(p) => (
+            <Select
+              {...p}
+              size="sm"
+              value={filters.profileId}
+              onValueChange={(v) => patch({ profileId: v })}
+              options={[
+                { value: 'any', label: 'All profiles' },
+                ...(profiles.data ?? []).map((x) => ({ value: x.id, label: x.name })),
+              ]}
+            />
+          )}
+        </Field>
+        <Field label="Score">
+          {(p) => (
+            <Select
+              {...p}
+              size="sm"
+              value={filters.band}
+              onValueChange={(v) => patch({ band: v })}
+              options={BANDS.map((b) => ({ value: b.value, label: b.label }))}
+            />
+          )}
+        </Field>
+        <Field label="Remote">
+          {(p) => (
+            <Select
+              {...p}
+              size="sm"
+              value={filters.remote}
+              onValueChange={(v) => patch({ remote: v })}
+              options={REMOTE_FILTERS.map((b) => ({ value: b.value, label: b.label }))}
+            />
+          )}
+        </Field>
+        <Field label="Source">
+          {(p) => (
+            <Select
+              {...p}
+              size="sm"
+              value={filters.source}
+              onValueChange={(v) => patch({ source: v })}
+              options={[
+                { value: 'any', label: 'All sources' },
+                ...sources.map((x) => ({ value: x, label: sourceLabel(x) })),
+              ]}
+            />
+          )}
+        </Field>
+        <Switch
+          className={s.newOnly}
+          label="New since last scan"
+          checked={filters.newOnly}
+          onCheckedChange={(v) => patch({ newOnly: v })}
+        />
+        <p className={s.count} role="status">
+          {rows.length} {rows.length === 1 ? 'job' : 'jobs'}
+        </p>
+      </div>
+      <div className={s.tableWrap} onKeyDown={onKeyDown}>
+        <SplitView
+          inspector={
+            selected && (
+              <Inspector title="Job" onClose={() => setSel(null)}>
+                <InboxInspector
+                  key={selected.jobId}
+                  item={selected}
+                  onShortlist={() => doShortlist(selected)}
+                  onDismiss={() => setDismissing(selected)}
+                  onOpenPosting={() => openPosting(selected)}
+                  onOpenWorkspace={() => openWorkspace(selected)}
+                />
+              </Inspector>
+            )
+          }
+        >
+          <Table
+            ariaLabel="Discovered jobs"
+            columns={columns}
+            rows={rows}
+            getRowId={(r) => r.jobId}
+            selectedId={sel ?? undefined}
+            onSelectedChange={setSel}
+            empty={
+              isFiltered(filters) ? (
+                <EmptyState
+                  title="No job matches these filters"
+                  action={<Button onClick={() => setFilters(NO_FILTERS)}>Clear filters</Button>}
+                />
+              ) : kind === 'side' && !scan.running ? (
+                <EmptyState title="No side jobs yet">
+                  The next scan looks for part-time jobs that fit your side-job search profile.
+                </EmptyState>
+              ) : scan.running ? (
+                <EmptyState title="Scan in progress">Jobs appear here when the scan finishes.</EmptyState>
+              ) : (
+                <EmptyState title="No new jobs">
+                  Nothing is waiting. The next scan adds what the sources list since the last one.
+                </EmptyState>
+              )
+            }
+          />
+        </SplitView>
+      </div>
+    </>
+  );
 
   return (
     <Page
@@ -264,123 +396,24 @@ export default function InboxScreen(): React.JSX.Element {
         >
           A search profile says which roles, places and salary you look for. Add one in Settings, then scan.
         </EmptyState>
+      ) : hasSide ? (
+        <Tabs
+          className={s.kinds}
+          value={list}
+          onValueChange={(v) => setList(v === 'side' ? 'side' : 'career')}
+        >
+          <TabsList aria-label="Which jobs">
+            <TabsTrigger value="career">Career</TabsTrigger>
+            <TabsTrigger value="side">Side jobs</TabsTrigger>
+          </TabsList>
+          {(['career', 'side'] as const).map((v) => (
+            <TabsContent key={v} value={v} className={s.kindPanel}>
+              {v === list && listBody}
+            </TabsContent>
+          ))}
+        </Tabs>
       ) : (
-        <>
-          <div className={s.filters} role="group" aria-label="Filters">
-            <Field label="Search">
-              {(p) => (
-                <Input
-                  {...p}
-                  size="sm"
-                  type="search"
-                  value={filters.text}
-                  placeholder="Title or company"
-                  onChange={(e) => patch({ text: e.target.value })}
-                />
-              )}
-            </Field>
-            <Field label="Search profile">
-              {(p) => (
-                <Select
-                  {...p}
-                  size="sm"
-                  value={filters.profileId}
-                  onValueChange={(v) => patch({ profileId: v })}
-                  options={[
-                    { value: 'any', label: 'All profiles' },
-                    ...(profiles.data ?? []).map((x) => ({ value: x.id, label: x.name })),
-                  ]}
-                />
-              )}
-            </Field>
-            <Field label="Score">
-              {(p) => (
-                <Select
-                  {...p}
-                  size="sm"
-                  value={filters.band}
-                  onValueChange={(v) => patch({ band: v })}
-                  options={BANDS.map((b) => ({ value: b.value, label: b.label }))}
-                />
-              )}
-            </Field>
-            <Field label="Remote">
-              {(p) => (
-                <Select
-                  {...p}
-                  size="sm"
-                  value={filters.remote}
-                  onValueChange={(v) => patch({ remote: v })}
-                  options={REMOTE_FILTERS.map((b) => ({ value: b.value, label: b.label }))}
-                />
-              )}
-            </Field>
-            <Field label="Source">
-              {(p) => (
-                <Select
-                  {...p}
-                  size="sm"
-                  value={filters.source}
-                  onValueChange={(v) => patch({ source: v })}
-                  options={[
-                    { value: 'any', label: 'All sources' },
-                    ...sources.map((x) => ({ value: x, label: sourceLabel(x) })),
-                  ]}
-                />
-              )}
-            </Field>
-            <Switch
-              className={s.newOnly}
-              label="New since last scan"
-              checked={filters.newOnly}
-              onCheckedChange={(v) => patch({ newOnly: v })}
-            />
-            <p className={s.count} role="status">
-              {rows.length} {rows.length === 1 ? 'job' : 'jobs'}
-            </p>
-          </div>
-          <div className={s.tableWrap} onKeyDown={onKeyDown}>
-            <SplitView
-              inspector={
-                selected && (
-                  <Inspector title="Job" onClose={() => setSel(null)}>
-                    <InboxInspector
-                      key={selected.jobId}
-                      item={selected}
-                      onShortlist={() => doShortlist(selected)}
-                      onDismiss={() => setDismissing(selected)}
-                      onOpenPosting={() => openPosting(selected)}
-                      onOpenWorkspace={() => openWorkspace(selected)}
-                    />
-                  </Inspector>
-                )
-              }
-            >
-              <Table
-                ariaLabel="Discovered jobs"
-                columns={columns}
-                rows={rows}
-                getRowId={(r) => r.jobId}
-                selectedId={sel ?? undefined}
-                onSelectedChange={setSel}
-                empty={
-                  isFiltered(filters) ? (
-                    <EmptyState
-                      title="No job matches these filters"
-                      action={<Button onClick={() => setFilters(NO_FILTERS)}>Clear filters</Button>}
-                    />
-                  ) : scan.running ? (
-                    <EmptyState title="Scan in progress">Jobs appear here when the scan finishes.</EmptyState>
-                  ) : (
-                    <EmptyState title="No new jobs">
-                      Nothing is waiting. The next scan adds what the sources list since the last one.
-                    </EmptyState>
-                  )
-                }
-              />
-            </SplitView>
-          </div>
-        </>
+        listBody
       )}
       <DismissDialog
         label={dismissing ? named(dismissing) : null}

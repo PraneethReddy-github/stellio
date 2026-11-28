@@ -23,7 +23,8 @@ export interface TriageJob {
 export const TRIAGE_BATCH = 10;
 const EXCERPT_CHARS = 1200;
 
-export function buildTriageInput(profileText: string, jobs: readonly TriageJob[]): string {
+/** `sideJob` set: the jobs are side jobs, judged on pay, hours, distance and language (see the prompt). */
+export function buildTriageInput(profileText: string, jobs: readonly TriageJob[], sideJob?: string): string {
   const blocks = jobs.map(
     (j) =>
       `<job id="${j.id}">\n${[
@@ -37,12 +38,19 @@ export function buildTriageInput(profileText: string, jobs: readonly TriageJob[]
         .filter(Boolean)
         .join('\n')}\n</job>`,
   );
-  return `<profile>\n${profileText}\n</profile>\n\n${wrapData('jobs', blocks.join('\n'))}`;
+  const mode = sideJob === undefined ? '' : `<side_job>\n${sideJob}\n</side_job>\n\n`;
+  return `${mode}<profile>\n${profileText}\n</profile>\n\n${wrapData('jobs', blocks.join('\n'))}`;
 }
 
 export function triageJobs(
   runner: ClaudeRunner,
-  req: { profileText: string; jobs: readonly TriageJob[]; config: TaskConfig; signal?: AbortSignal },
+  req: {
+    profileText: string;
+    jobs: readonly TriageJob[];
+    config: TaskConfig;
+    signal?: AbortSignal;
+    sideJob?: string;
+  },
 ): Promise<RunResult<TriageOutput>> {
   const prompt = loadPrompt('job.triage');
   return runner.run({
@@ -50,7 +58,7 @@ export function triageJobs(
     model: req.config.model,
     effort: req.config.effort,
     systemPrompt: prompt.system,
-    input: buildTriageInput(req.profileText, req.jobs),
+    input: buildTriageInput(req.profileText, req.jobs, req.sideJob),
     schema: TriageOutputSchema,
     jsonSchema: prompt.jsonSchema,
     timeoutMs: req.config.timeoutMs,

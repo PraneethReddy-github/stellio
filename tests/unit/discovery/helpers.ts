@@ -15,6 +15,9 @@ export const profile = (o: Partial<SearchProfile> = {}): SearchProfile => ({
   languages: [],
   excludedCompanies: [],
   enabled: true,
+  kind: 'career',
+  maxHoursPerWeek: null,
+  minHourlyPay: null,
   ...o,
 });
 export const job = (o: Partial<NormalizedJob> = {}): NormalizedJob => ({

@@ -117,6 +117,9 @@ const toProfile = (r: SearchProfileRow): SearchProfile => ({
   languages: r.languages,
   excludedCompanies: r.excludedCompanies,
   enabled: r.enabled,
+  kind: r.kind,
+  maxHoursPerWeek: r.maxHoursPerWeek,
+  minHourlyPay: r.minHourlyPay,
 });
 
 /** A page that answered 404/410, or sent us to a different page that no longer names the posting. */
@@ -157,6 +160,25 @@ export function describeSearchProfile(p: SearchProfile): string {
     line('seniority', p.seniority),
     line('excluded companies', p.excludedCompanies),
     line('excluded keywords', p.excludeKeywords),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** What the side-job profiles ask for, for the side-job triage; the strictest limit wins when there are several. */
+export function sideJobBrief(profiles: SearchProfile[]): string {
+  const side = profiles.filter((p) => p.kind === 'side');
+  const nums = (v: (number | null)[]): number[] => v.filter((x): x is number => x !== null);
+  const hours = nums(side.map((p) => p.maxHoursPerWeek));
+  const pay = nums(side.map((p) => p.minHourlyPay));
+  const places = [...new Set(side.flatMap((p) => [...p.locations, ...p.countries]))];
+  const langs = [...new Set(side.flatMap((p) => p.languages))];
+  return [
+    hours.length > 0 ? `max hours per week: ${String(Math.min(...hours))}` : null,
+    pay.length > 0 ? `min hourly pay: ${String(Math.max(...pay))} ${side[0]?.currency ?? 'EUR'}` : null,
+    places.length > 0 ? `places: ${places.join(', ')}` : null,
+    `remote: ${side.some((p) => p.remoteOk) ? 'welcome' : 'not wanted'}`,
+    langs.length > 0 ? `languages spoken: ${langs.join(', ')}` : null,
   ]
     .filter(Boolean)
     .join('\n');
@@ -254,12 +276,14 @@ export function createScanService(deps: ScanDeps) {
         touchJob(db, known.id, now);
         return;
       }
-      const fits = against.some(
+      const fitting = against.filter(
         (p) =>
           (!queryless || matchesQuery(n, p)) &&
           hardFilter(n, p, { now, maxAgeDays: cfg.maxAgeDays }) === null,
       );
-      if (!fits) {
+      // A job any career profile wants is a career job; only side-job profiles' finds are side jobs.
+      const sideJob = fitting.every((p) => p.kind === 'side');
+      if (fitting.length === 0) {
         rec.filtered = (rec.filtered ?? 0) + 1;
         return;
       }
@@ -272,6 +296,7 @@ export function createScanService(deps: ScanDeps) {
       if (dup) {
         addJobSource(db, dup.id, src);
         touchJob(db, dup.id, now);
+        if (dup.sideJob && !sideJob) updateJobFields(db, dup.id, { sideJob: false });
         rec.merged = (rec.merged ?? 0) + 1;
         return;
       }
@@ -297,6 +322,7 @@ export function createScanService(deps: ScanDeps) {
           dedupeKey: key,
           firstSeenAt: now.toISOString(),
           lastSeenAt: now.toISOString(),
+          sideJob,
         },
         { ...src, source: n.source as NewJobSource['source'], rawJson: null },
       );
@@ -419,6 +445,7 @@ export function createScanService(deps: ScanDeps) {
             if (out.status === 'needs_text') rec.filtered = (rec.filtered ?? 0) + 1;
             else if (out.duplicate) rec.merged = (rec.merged ?? 0) + 1;
             else {
+              if (p.kind === 'side') updateJobFields(db, out.jobId, { sideJob: true });
               newIds.push(out.jobId);
               rec.new++;
             }
@@ -490,7 +517,7 @@ export function createScanService(deps: ScanDeps) {
     }
 
     // ---- triage ---------------------------------------------------------------------------------------
-    async function triage(): Promise<void> {
+    async function triage(profiles: SearchProfile[]): Promise<void> {
       const since = new Date(started.getTime() - cfg.maxAgeDays * 86_400_000);
       const ids = [...new Set([...newIds, ...untriagedInboxIds(db, since, 60)])];
       if (ids.length === 0 || blocked()) return;
@@ -502,12 +529,14 @@ export function createScanService(deps: ScanDeps) {
         return;
       }
       const profileText = profileForPrompt(snap.model);
-      const rows: TriageJob[] = ids.flatMap((id) => {
+      const side = sideJobBrief(profiles);
+      const rows: (TriageJob & { side: boolean })[] = ids.flatMap((id) => {
         const j = getJob(db, id);
         const s = getJobSummary(db, id);
         return j && s
           ? [
               {
+                side: j.sideJob,
                 id,
                 title: j.title,
                 company: s.company,
@@ -519,15 +548,36 @@ export function createScanService(deps: ScanDeps) {
             ]
           : [];
       });
-      const batches: TriageJob[][] = [];
-      for (let i = 0; i < rows.length; i += TRIAGE_BATCH) batches.push(rows.slice(i, i + TRIAGE_BATCH));
+      // Career and side jobs are judged on different things, so a batch holds only one kind.
+      const batches: { side: boolean; jobs: TriageJob[] }[] = [];
+      for (const kind of [false, true]) {
+        const list = rows
+          .filter((r) => r.side === kind)
+          .map((r): TriageJob => ({
+            id: r.id,
+            title: r.title,
+            company: r.company,
+            location: r.location,
+            remote: r.remote,
+            salary: r.salary,
+            excerpt: r.excerpt,
+          }));
+        for (let i = 0; i < list.length; i += TRIAGE_BATCH)
+          batches.push({ side: kind, jobs: list.slice(i, i + TRIAGE_BATCH) });
+      }
       const width = settings.get().concurrency;
       const config = settings.forTask('job.triage');
       const version = `v${String(loadPrompt('job.triage').version)}`;
       for (let i = 0; i < batches.length && !aborted() && !blocked(); i += width)
         await Promise.all(
-          batches.slice(i, i + width).map(async (batch) => {
-            const res = await triageJobs(runner, { profileText, jobs: batch, config, signal });
+          batches.slice(i, i + width).map(async ({ side: isSide, jobs: batch }) => {
+            const res = await triageJobs(runner, {
+              profileText,
+              jobs: batch,
+              config,
+              signal,
+              ...(isSide ? { sideJob: side } : {}),
+            });
             if (!res.ok) {
               if (res.status === 'usage_limit') ai.blocked = true;
               pipelineError(`triage: ${aiFailureMessage(res.status, res.error)}`);
@@ -599,7 +649,7 @@ export function createScanService(deps: ScanDeps) {
       );
       if (state.enabled('websearch') && !aborted()) await runWebSearch(profiles);
       await parseNew();
-      await triage();
+      await triage(profiles);
       await analyzeStrong();
       try {
         recomputeSkillDemand(db, clock());

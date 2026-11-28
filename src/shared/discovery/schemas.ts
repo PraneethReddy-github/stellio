@@ -17,6 +17,12 @@ export const SourceIdSchema = z.enum(DISCOVERY_SOURCES);
 
 const List = z.array(z.string().trim().min(1).max(100)).max(50);
 
+/** `career`: jobs judged on your skills. `side`: part-time jobs for money, judged on pay, hours and distance. */
+export const PROFILE_KINDS = ['career', 'side'] as const;
+export type ProfileKind = (typeof PROFILE_KINDS)[number];
+/** Defaults for a side-job profile: the usual student limit and the German minimum wage (2026). */
+export const SIDE_DEFAULTS = { maxHoursPerWeek: 20, minHourlyPay: 13.9 } as const;
+
 export const SearchProfileInputSchema = z.object({
   name: z.string().trim().min(1).max(100),
   roles: List,
@@ -31,6 +37,11 @@ export const SearchProfileInputSchema = z.object({
   languages: List,
   excludedCompanies: List,
   enabled: z.boolean(),
+  kind: z.enum(PROFILE_KINDS),
+  /** Side jobs only: postings that state more hours a week are dropped. */
+  maxHoursPerWeek: z.number().int().min(1).max(60).nullable(),
+  /** Side jobs only: postings that state a lower hourly pay are dropped. */
+  minHourlyPay: z.number().min(0).max(1000).nullable(),
 });
 export type SearchProfileInput = z.infer<typeof SearchProfileInputSchema>;
 export const SearchProfileSchema = SearchProfileInputSchema.extend({ id: z.string() });
@@ -151,6 +162,8 @@ export const InboxInputSchema = z.object({
       source: z.string().max(40).optional(),
       remote: z.enum(REMOTE_KINDS).optional(),
       text: z.string().max(100).optional(),
+      /** true: side jobs only; false: career jobs only; absent: both. */
+      sideJob: z.boolean().optional(),
     })
     .default({}),
   sort: z.enum(['rank', 'recent', 'score']).default('rank'),
@@ -174,6 +187,8 @@ export const InboxItemSchema = z.object({
   reason: z.string().nullable(),
   rank: z.number(),
   sources: z.array(z.string()),
+  /** Found only by side-job search profiles. */
+  sideJob: z.boolean(),
 });
 export type InboxItem = z.infer<typeof InboxItemSchema>;
 

@@ -128,3 +128,18 @@
   border-left: 2px solid var(--bad);
   padding-left: var(--s-4);
 }
+
+/* Career | Side jobs: the list fills the panel the same way it fills the page without the switch. */
+.kinds,
+.kindPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.kindPanel {
+  padding-top: var(--s-3);
+}
+.kindPanel[hidden] {
+  display: none;
+}

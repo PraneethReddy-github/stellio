@@ -17,6 +17,7 @@ import {
   formToProfile,
   isCareersUrl,
   parseList,
+  EMPTY_PROFILE_FORM,
   profileToForm,
   toDiscoveryForm,
 } from '../../../src/renderer/src/features/settings/discoveryHelpers';
@@ -37,6 +38,7 @@ const item = (jobId: string, title: string, firstSeenAt = '2026-11-21T08:00:00.0
   reason: null,
   rank: 1,
   sources: ['arbeitnow'],
+  sideJob: false,
 });
 
 describe('inbox helpers', () => {
@@ -45,6 +47,9 @@ describe('inbox helpers', () => {
     expect(
       inboxQuery({ ...NO_FILTERS, band: '75', remote: 'remote', source: 'ba', text: ' dbt ' }).filters,
     ).toEqual({ minScore: 75, remote: 'remote', source: 'ba', text: 'dbt' });
+    expect(inboxQuery(NO_FILTERS, 'side').filters).toEqual({ sideJob: true });
+    expect(inboxQuery(NO_FILTERS, 'career').filters).toEqual({ sideJob: false });
+    expect(inboxQuery(NO_FILTERS, 'all').filters).toEqual({});
     expect(isFiltered(NO_FILTERS)).toBe(false);
     expect(isFiltered({ ...NO_FILTERS, newOnly: true })).toBe(true);
     expect(isFiltered({ ...NO_FILTERS, text: '  ' })).toBe(false);
@@ -110,6 +115,25 @@ describe('inbox helpers', () => {
   });
 });
 
+const seedLike = (): Parameters<typeof profileToForm>[0] => ({
+  name: 'Side',
+  roles: ['Aushilfe'],
+  keywords: [],
+  excludeKeywords: [],
+  locations: ['Berlin'],
+  remoteOk: false,
+  countries: [],
+  seniority: ['senior'],
+  salaryFloor: 60000,
+  currency: 'EUR',
+  languages: [],
+  excludedCompanies: [],
+  enabled: true,
+  kind: 'career',
+  maxHoursPerWeek: null,
+  minHourlyPay: null,
+});
+
 describe('discovery settings helpers', () => {
   it('parses comma and line separated lists without empties or repeats', () => {
     expect(parseList(' Berlin, remote\nberlin,, Munich ')).toEqual(['Berlin', 'remote', 'Munich']);
@@ -132,6 +156,9 @@ describe('discovery settings helpers', () => {
         languages: [],
         excludedCompanies: [],
         enabled: true,
+        kind: 'career',
+        maxHoursPerWeek: null,
+        minHourlyPay: null,
       }),
     };
     const ok = formToProfile({ ...form, roles: 'Data Engineer, Analytics Engineer', salaryFloor: '70000' });
@@ -146,6 +173,27 @@ describe('discovery settings helpers', () => {
     expect(formToProfile({ ...form, salaryFloor: '12.5' })).toMatchObject({ ok: false });
     expect(formToProfile({ ...form, name: '  ' })).toMatchObject({ ok: false });
     expect(formToProfile({ ...form, currency: 'x'.repeat(20) })).toMatchObject({ ok: false });
+  });
+
+  it('a side-job profile keeps hours and hourly pay and drops the career-only fields', () => {
+    const form = { ...profileToForm(seedLike()), side: true, maxHoursPerWeek: '20', minHourlyPay: '13,90' };
+    expect(formToProfile(form)).toMatchObject({
+      ok: true,
+      value: { kind: 'side', maxHoursPerWeek: 20, minHourlyPay: 13.9, salaryFloor: null, seniority: [] },
+    });
+    expect(formToProfile({ ...form, maxHoursPerWeek: '' })).toMatchObject({
+      ok: true,
+      value: { maxHoursPerWeek: null },
+    });
+    expect(formToProfile({ ...form, maxHoursPerWeek: '7.5' })).toMatchObject({ ok: false });
+    expect(formToProfile({ ...form, maxHoursPerWeek: '80' })).toMatchObject({ ok: false });
+    expect(formToProfile({ ...form, minHourlyPay: 'lots' })).toMatchObject({ ok: false });
+    // a career profile never stores side-job limits, even when the hidden fields hold values
+    expect(formToProfile({ ...form, side: false })).toMatchObject({
+      ok: true,
+      value: { kind: 'career', maxHoursPerWeek: null, minHourlyPay: null, salaryFloor: 60000 },
+    });
+    expect(EMPTY_PROFILE_FORM).toMatchObject({ side: false, maxHoursPerWeek: '20', minHourlyPay: '13.9' });
   });
 
   it('builds discovery settings from text, keeping unedited values', () => {

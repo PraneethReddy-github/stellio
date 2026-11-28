@@ -55,6 +55,7 @@ export const ba: SourceAdapter = {
           angebotsart: '1',
           veroeffentlichtseit: String(days(ctx.since)),
         });
+        if (ctx.profile.kind === 'side') q.set('arbeitszeit', 'tz;mj'); // Teilzeit and Minijob only
         if (was) q.set('was', was);
         if (where) {
           q.set('wo', where);

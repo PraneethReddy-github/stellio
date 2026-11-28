@@ -117,6 +117,34 @@ function locationReject(job: NormalizedJob, p: SearchProfile): string | null {
   return matchesWanted || germanWanted ? null : 'location does not match';
 }
 
+const HOURS =
+  /(\d{1,2})(?:[,.]\d)?\s*(?:(?:-|–|bis|to)\s*\d{1,2}(?:[,.]\d)?\s*)?(?:std\.?|stunden|hours|hrs|h)\s*(?:\/|pro|per|a|je|in der|the)?\s*(?:woche|week|wk|wo\.|weekly)/;
+
+/** The lowest weekly hours a posting states ("15-20 Stunden pro Woche" gives 15); null when it names none. */
+export function statedWeeklyHours(text: string): number | null {
+  const m = HOURS.exec(fold(text));
+  return m?.[1] ? Number(m[1]) : null;
+}
+
+const FULL_TIME = /\b(vollzeit|full[- ]time)\b/;
+
+/** Side-job profiles: no full-time roles, no more hours than wanted, no hourly pay below the floor. */
+function sideReject(job: NormalizedJob, p: SearchProfile): string | null {
+  if (job.employmentType === 'full_time' || FULL_TIME.test(fold(job.title))) return 'full-time role';
+  const hours = statedWeeklyHours(`${job.title}\n${job.descriptionMd}`);
+  if (p.maxHoursPerWeek !== null && hours !== null && hours > p.maxHoursPerWeek) return 'too many hours';
+  const top = job.salaryMax ?? job.salaryMin;
+  if (
+    p.minHourlyPay !== null &&
+    job.salaryPeriod === 'hour' &&
+    top !== null &&
+    top > 0 &&
+    top < p.minHourlyPay
+  )
+    return 'hourly pay below floor';
+  return null;
+}
+
 /** Why the job is out for this search profile, or null when it passes. Pure code, no AI. */
 export function hardFilter(
   job: NormalizedJob,
@@ -133,6 +161,10 @@ export function hardFilter(
   }
   const loc = locationReject(job, p);
   if (loc) return loc;
+  if (p.kind === 'side') {
+    const side = sideReject(job, p);
+    if (side) return side;
+  }
   const level = job.seniority ?? detectSeniority(job.title);
   if (p.seniority.length > 0 && level && !p.seniority.includes(level as (typeof p.seniority)[number]))
     return 'seniority does not match';

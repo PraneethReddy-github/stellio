@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.0 — 2026-11-28
+
+- Side jobs: a search profile can be a side job (part-time work for money). Stellio asks the Arbeitsagentur and Adzuna for part-time and minijob listings, drops full-time posts and posts with too many hours or too little pay an hour, and scores them on pay, hours, distance and language instead of your skills. They show under Side jobs in the Inbox and never use up the daily full analyses.
+
 ## 1.1.1 — 2026-11-28
 
 - The PDF preview shows every page. A two-page resume used to preview as page 1 only.

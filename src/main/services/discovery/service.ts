@@ -1,7 +1,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
-import { fold } from '@shared/discovery/filters';
+import { fold, yearlyMax } from '@shared/discovery/filters';
 import { rank } from '@shared/discovery/ranking';
 import {
   DISCOVERY_SOURCES,
@@ -215,13 +215,18 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
 
     inbox(input: InboxInput, now = new Date()): InboxItem[] {
       const cfg = state.settings();
-      const floor = listSearchProfiles(db).find((p) => p.enabled)?.salaryFloor ?? null;
+      const enabled = listSearchProfiles(db).filter((p) => p.enabled);
+      const floor = enabled.find((p) => p.kind === 'career')?.salaryFloor ?? null;
+      // Side jobs are ranked against the hourly floor, as a yearly figure like the salaries it is compared with.
+      const hourly = enabled.find((p) => p.kind === 'side' && p.minHourlyPay !== null)?.minHourlyPay ?? null;
+      const sideFloor =
+        hourly === null ? null : yearlyMax({ salaryMin: hourly, salaryMax: null, salaryPeriod: 'hour' });
       const rows = inboxRows(db);
       const sources = sourcesByJob(
         db,
         rows.map((r) => r.id),
       );
-      const { minScore, source, remote, text } = input.filters;
+      const { minScore, source, remote, text, sideJob } = input.filters;
       const needle = text ? fold(text) : null;
       // Filter and rank the cheap way over every open job; build the full items only for the page returned.
       const scored = rows.flatMap((r) => {
@@ -231,6 +236,7 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
           (minScore !== undefined && (score ?? -1) < minScore) ||
           (source && !srcs.includes(source)) ||
           (remote && r.remote !== remote) ||
+          (sideJob !== undefined && (r.sideJob === 1) !== sideJob) ||
           (needle && !fold(`${r.title} ${r.company}`).includes(needle))
         )
           return [];
@@ -243,7 +249,7 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
             salaryMin: r.salaryMin,
             salaryMax: r.salaryMax,
             salaryPeriod: r.salaryPeriod,
-            salaryFloor: floor,
+            salaryFloor: r.sideJob ? sideFloor : floor,
           },
           now,
           cfg,
@@ -277,6 +283,7 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
           reason: r.fit !== null ? r.fitReason : r.triageReason,
           rank: total,
           sources: srcs,
+          sideJob: r.sideJob === 1,
         }));
     },
 

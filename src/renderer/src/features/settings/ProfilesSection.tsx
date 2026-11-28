@@ -14,6 +14,7 @@ import {
   SectionHeader,
   StatusDot,
   Switch,
+  Tag,
   useToast,
 } from '../../ui';
 import { useDeleteProfile, useProfiles, useSaveProfile } from '../../lib/discovery';
@@ -22,6 +23,7 @@ import {
   formToProfile,
   profileSummary,
   profileToForm,
+  SIDE_ROLES,
   type ProfileForm,
 } from './discoveryHelpers';
 import s from './settings.module.css';
@@ -74,7 +76,15 @@ export function ProfilesSection(): React.JSX.Element {
           <tbody>
             {q.data.map((p) => (
               <tr key={p.id}>
-                <td>{p.name}</td>
+                <td>
+                  {p.name}
+                  {p.kind === 'side' && (
+                    <>
+                      {' '}
+                      <Tag>Side job</Tag>
+                    </>
+                  )}
+                </td>
                 <td className={s.wide}>{profileSummary(p)}</td>
                 <td className={s.wide}>
                   {[...p.locations, p.remoteOk ? 'remote ok' : ''].filter(Boolean).join(', ') || '—'}
@@ -194,28 +204,49 @@ function ProfileDialog({
         }}
       >
         {text('name', 'Name')}
-        {text('roles', 'Roles', undefined, 'Data Engineer, Analytics Engineer')}
+        <Switch
+          label="Side job: part-time work for money, scored on pay, hours and distance instead of skills"
+          checked={f.side}
+          onCheckedChange={(v) =>
+            set({ side: v, ...(v && f.roles.trim() === '' ? { roles: SIDE_ROLES } : {}) })
+          }
+        />
+        {text(
+          'roles',
+          'Roles',
+          undefined,
+          f.side ? 'Werkstudent, Aushilfe, Minijob' : 'Data Engineer, Analytics Engineer',
+        )}
         {text('keywords', 'Keywords')}
         {text('excludeKeywords', 'Exclude keywords')}
         {text('locations', 'Locations', undefined, 'Germany, Berlin')}
         {text('countries', 'Countries')}
         {text('languages', 'Languages', 'Codes the posting may require, e.g. en, de.')}
         {text('excludedCompanies', 'Excluded companies')}
-        {text('salaryFloor', 'Salary floor', 'Per year. Postings that state less are dropped.')}
+        {f.side ? (
+          <>
+            {text('maxHoursPerWeek', 'Max hours a week', 'Postings that state more are dropped.')}
+            {text('minHourlyPay', 'Min pay an hour', 'Postings that state less an hour are dropped.')}
+          </>
+        ) : (
+          text('salaryFloor', 'Salary floor', 'Per year. Postings that state less are dropped.')
+        )}
         {text('currency', 'Currency', undefined, 'EUR')}
-        <fieldset className={s.seniority}>
-          <legend>Seniority</legend>
-          {SENIORITY.map((v) => (
-            <Checkbox
-              key={v}
-              label={v}
-              checked={f.seniority.includes(v)}
-              onCheckedChange={(on) =>
-                set({ seniority: on === true ? [...f.seniority, v] : f.seniority.filter((x) => x !== v) })
-              }
-            />
-          ))}
-        </fieldset>
+        {!f.side && (
+          <fieldset className={s.seniority}>
+            <legend>Seniority</legend>
+            {SENIORITY.map((v) => (
+              <Checkbox
+                key={v}
+                label={v}
+                checked={f.seniority.includes(v)}
+                onCheckedChange={(on) =>
+                  set({ seniority: on === true ? [...f.seniority, v] : f.seniority.filter((x) => x !== v) })
+                }
+              />
+            ))}
+          </fieldset>
+        )}
         <div className={s.switches}>
           <Switch label="Remote is fine" checked={f.remoteOk} onCheckedChange={(v) => set({ remoteOk: v })} />
           <Switch label="Profile enabled" checked={f.enabled} onCheckedChange={(v) => set({ enabled: v })} />

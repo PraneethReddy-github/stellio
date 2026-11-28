@@ -130,6 +130,39 @@ test('search profiles: create, edit, delete', async () => {
   expect(await ok<unknown[]>('discovery:profiles')).toHaveLength(1);
 });
 
+test('a side-job profile: starting roles, hours and hourly pay instead of salary floor and seniority', async () => {
+  const sec = section('Search profiles');
+  await sec.getByRole('button', { name: 'New search profile' }).click();
+  const dialog = page.getByRole('dialog', { name: 'New search profile' });
+  await textbox('Name').fill('Side money');
+  await dialog.getByRole('switch', { name: /^Side job/ }).click();
+  await expect(textbox('Roles')).toHaveValue('Werkstudent, Aushilfe, Minijob, Teilzeit');
+  await expect(textbox('Salary floor')).toHaveCount(0);
+  await expect(dialog.getByRole('group', { name: 'Seniority' })).toHaveCount(0);
+  await expect(textbox('Max hours a week')).toHaveValue('20');
+  await expect(textbox('Min pay an hour')).toHaveValue('13.9');
+  await textbox('Max hours a week').fill('15');
+  await textbox('Locations').fill('Berlin');
+  await dialog.getByRole('button', { name: 'Save profile' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(sec.getByRole('row', { name: /Side money/ })).toContainText('Side job');
+  const saved = (await ok<{ name: string }[]>('discovery:profiles')).find((p) => p.name === 'Side money');
+  expect(saved).toMatchObject({
+    kind: 'side',
+    maxHoursPerWeek: 15,
+    minHourlyPay: 13.9,
+    roles: ['Werkstudent', 'Aushilfe', 'Minijob', 'Teilzeit'],
+    salaryFloor: null,
+    seniority: [],
+  });
+  await sec.getByRole('button', { name: 'Delete Side money' }).click();
+  await page
+    .getByRole('dialog', { name: 'Delete this search profile?' })
+    .getByRole('button', { name: 'Delete profile' })
+    .click();
+  await expect(sec.getByRole('row', { name: /Side money/ })).toHaveCount(0);
+});
+
 test('sources: switch, and an Adzuna key that is never shown back', async () => {
   const sec = section('Sources');
   await expect(sec.getByRole('row')).toHaveCount(8); // header + 7 (the web search agent lives under Discovery)

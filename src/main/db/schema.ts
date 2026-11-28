@@ -135,6 +135,8 @@ export const jobs = sqliteTable(
     dedupeKey: text('dedupe_key').notNull(),
     state: text({ enum: JOB_STATES }).notNull().default('new'),
     dismissReason: text('dismiss_reason'),
+    /** Found only by side-job search profiles: triaged on pay and hours, never auto-analyzed. */
+    sideJob: bool('side_job').notNull().default(false),
   },
   (t) => [uniqueIndex('jobs_dedupe_key_uq').on(t.dedupeKey), index('jobs_state_idx').on(t.state)],
 );
@@ -323,6 +325,11 @@ export const searchProfiles = sqliteTable('search_profiles', {
   languages: json<string[]>('languages').notNull().default([]),
   excludedCompanies: json<string[]>('excluded_companies').notNull().default([]),
   enabled: bool('enabled').notNull().default(true),
+  kind: text({ enum: ['career', 'side'] })
+    .notNull()
+    .default('career'),
+  maxHoursPerWeek: integer('max_hours_per_week'),
+  minHourlyPay: real('min_hourly_pay'),
 });
 
 export const scanRuns = sqliteTable('scan_runs', {
