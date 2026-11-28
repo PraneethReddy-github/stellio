@@ -70,7 +70,7 @@ function setup({ env = {}, fetcher, seed = false }: Opts = {}) {
   const db = freshDb();
   const dir = tempDir();
   mkdirSync(join(dir, 'profile'), { recursive: true });
-  writeFileSync(join(dir, 'profile/praneethreddy.md'), read('fixtures/profiles/full.md'));
+  writeFileSync(join(dir, 'profile/profile.md'), read('fixtures/profiles/full.md'));
   const cap = join(dir, 'capture.ndjson');
   const settings = createAiSettings(db);
   // The runner reads this object at every spawn, so a test can change the fake CLI's behaviour mid-way.
@@ -388,7 +388,7 @@ describe('re-score from the Inbox', () => {
     expect((await t.discovery.rescoreCounts()).all).toBe(run.newJobs - 1);
 
     // editing the profile makes every triage score stale
-    const file = join(t.dir, 'profile/praneethreddy.md');
+    const file = join(t.dir, 'profile/profile.md');
     writeFileSync(file, `${readFileSync(file, 'utf8')}\n`);
     expect((await t.discovery.rescoreCounts()).stale).toBe(run.newJobs - 1);
     const before = t.task('triage').length;

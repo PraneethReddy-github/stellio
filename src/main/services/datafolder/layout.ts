@@ -1,6 +1,8 @@
 import { RULE_FILES, TEMPLATE_FILES } from '@shared/rules/files';
 
-export const PROFILE_FILE = 'profile/praneethreddy.md';
+export const PROFILE_FILE = 'profile/profile.md';
+/** The fixed name used up to 1.2.6 (it carried the author's name); moved to PROFILE_FILE at startup. */
+export const LEGACY_PROFILE_FILE = 'profile/praneethreddy.md';
 export { RULE_FILES, TEMPLATE_FILES };
 /** Files copied from the seed folder when missing. */
 export const SEED_FILES: readonly string[] = [PROFILE_FILE, ...RULE_FILES, ...TEMPLATE_FILES];

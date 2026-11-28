@@ -82,7 +82,7 @@ async function setup(env: Record<string, string> = {}, opts: { photo?: boolean }
   const db = freshDb();
   const dir = tempDir();
   for (const d of ['profile', 'rules', 'templates']) mkdirSync(join(dir, d), { recursive: true });
-  writeFileSync(join(dir, 'profile/praneethreddy.md'), readFileSync('tests/fixtures/profiles/full.md'));
+  writeFileSync(join(dir, 'profile/profile.md'), readFileSync('tests/fixtures/profiles/full.md'));
   for (const f of [
     'rules/resume.md',
     'rules/skills-policy.md',
@@ -149,7 +149,7 @@ async function setup(env: Record<string, string> = {}, opts: { photo?: boolean }
 describe('resume pipeline (fake CLI)', { timeout: 60_000 }, () => {
   it('refuses a profile that still holds the seed example entries', async () => {
     const { docs, jobId, dir, calls } = await setup();
-    const file = join(dir, 'profile/praneethreddy.md');
+    const file = join(dir, 'profile/profile.md');
     const md = readFileSync(file, 'utf8').replace(
       '## Awards',
       '### Project Name {#proj-example}\n- x\n\n## Awards',

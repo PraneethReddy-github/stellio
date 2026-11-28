@@ -39,7 +39,7 @@ test('rules:list returns the six seeded files, unmodified and clean', async () =
 });
 
 test('paths outside the allow-list are rejected by validation', async () => {
-  for (const path of ['profile/praneethreddy.md', '../../etc/passwd', 'rules/x.md']) {
+  for (const path of ['profile/profile.md', '../../etc/passwd', 'rules/x.md']) {
     const res = (await invoke(l.page, 'rules:get', { path })) as Err;
     expect(res.ok).toBe(false);
     expect(res.error.code).toBe('invalid_input');

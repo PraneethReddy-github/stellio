@@ -40,10 +40,7 @@ export function evalServices(env: ResumeEvalEnv, tasks: string[]) {
   const data = join(env.dir, 'data');
   for (const d of ['profile', 'rules', 'templates', '.stellio'])
     mkdirSync(join(data, d), { recursive: true });
-  writeFileSync(
-    join(data, 'profile/praneethreddy.md'),
-    readFileSync(resolve('tests/fixtures/profiles/full.md')),
-  );
+  writeFileSync(join(data, 'profile/profile.md'), readFileSync(resolve('tests/fixtures/profiles/full.md')));
   for (const f of [
     'rules/resume.md',
     'rules/skills-policy.md',

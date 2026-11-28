@@ -30,7 +30,7 @@ function setup({ env = {}, fetcher, profile = read('fixtures/profiles/full.md') 
   const db = freshDb();
   const dir = tempDir();
   mkdirSync(join(dir, 'profile'), { recursive: true });
-  if (profile !== null) writeFileSync(join(dir, 'profile/praneethreddy.md'), profile);
+  if (profile !== null) writeFileSync(join(dir, 'profile/profile.md'), profile);
   const cap = join(dir, 'capture.ndjson');
   const logDir = join(dir, 'logs');
   const onUsageLimit = vi.fn();

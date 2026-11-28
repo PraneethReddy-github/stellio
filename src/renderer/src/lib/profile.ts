@@ -5,7 +5,7 @@ import { call } from './ipc';
 import { cancelTask } from './jobs';
 
 export type ProfileSnapshot = IpcOutput<'profile:get'>;
-export const PROFILE_PATH = 'profile/praneethreddy.md';
+export const PROFILE_PATH = 'profile/profile.md';
 
 const keys = {
   profile: ['profile'] as const,

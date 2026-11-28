@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 1.2.7 — 2026-11-28
+
+- Your profile file is now `profile/profile.md` (it used to carry a fixed personal name). Stellio renames an existing `profile/praneethreddy.md` once at startup and keeps its history.
+
 ## 1.2.6 — 2026-11-28
 
 - LaTeX: Download missing files works on a resume with a photo (it failed with "File `photo' not found"), and its error only mentions internet access when the connection is the problem.

@@ -45,7 +45,7 @@ test('first run: the shell opens on an empty Today and the data folder is seeded
   expect(info).toMatchObject({ ok: true, data: { dataDir: join(home, 'Stellio'), version: pkg.version } });
   const data = join(home, 'Stellio');
   for (const f of [
-    'profile/praneethreddy.md',
+    'profile/profile.md',
     'rules/resume.md',
     'rules/cover-letter.md',
     'templates/resume.tex',

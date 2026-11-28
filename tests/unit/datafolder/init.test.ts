@@ -1,11 +1,12 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { initDataFolder } from '../../../src/main/services/datafolder/init';
 import { hashText } from '../../../src/main/services/datafolder/files';
 import { commitFiles, log } from '../../../src/main/services/datafolder/git';
 import { PREVIOUS_SEEDS } from '../../../src/main/services/datafolder/seedHistory';
-import { SEED_FILES } from '../../../src/main/services/datafolder/layout';
+import { LEGACY_PROFILE_FILE, PROFILE_FILE, SEED_FILES } from '../../../src/main/services/datafolder/layout';
 import { SEED_DIR, isolateGit, useTempDirs } from './helpers';
 
 isolateGit();
@@ -56,7 +57,7 @@ describe('initDataFolder', () => {
     try {
       const r = await initDataFolder(d, SEED_DIR);
       expect(r.gitAvailable).toBe(false);
-      expect((await stat(join(d, 'profile/praneethreddy.md'))).isFile()).toBe(true);
+      expect((await stat(join(d, 'profile/profile.md'))).isFile()).toBe(true);
     } finally {
       process.env.PATH = old;
     }
@@ -76,6 +77,41 @@ describe('initDataFolder', () => {
   });
 });
 
+describe('initDataFolder: the profile file name', () => {
+  it('is the neutral profile/profile.md', () => {
+    expect(PROFILE_FILE).toBe('profile/profile.md');
+  });
+
+  it('moves a profile kept under the old fixed name, keeps its content and history, and seeds no template', async () => {
+    const d = join(await tmp(), 'Stellio');
+    await initDataFolder(d, SEED_DIR);
+    await rename(join(d, PROFILE_FILE), join(d, LEGACY_PROFILE_FILE));
+    await writeFile(join(d, LEGACY_PROFILE_FILE), '---\nname: Mine\n---\n\n# Mine\n');
+    await commitFiles(d, [PROFILE_FILE, LEGACY_PROFILE_FILE], 'test: the old name');
+    const r = await initDataFolder(d, SEED_DIR);
+    expect(r.created).not.toContain(PROFILE_FILE);
+    expect(await readFile(join(d, PROFILE_FILE), 'utf8')).toBe('---\nname: Mine\n---\n\n# Mine\n');
+    expect(existsSync(join(d, LEGACY_PROFILE_FILE))).toBe(false);
+    const [last] = await log(d, { limit: 1 });
+    expect(last?.message).toBe(`rename: ${LEGACY_PROFILE_FILE} to ${PROFILE_FILE}`);
+    // the file's history follows it
+    expect((await log(d, { path: PROFILE_FILE, limit: 10 })).map((e) => e.message)).toContain(
+      'test: the old name',
+    );
+    expect((await initDataFolder(d, SEED_DIR)).created).toEqual([]);
+  });
+
+  it('never touches either file when both names exist', async () => {
+    const d = join(await tmp(), 'Stellio');
+    await initDataFolder(d, SEED_DIR);
+    await writeFile(join(d, LEGACY_PROFILE_FILE), 'old\n');
+    await writeFile(join(d, PROFILE_FILE), 'new\n');
+    await initDataFolder(d, SEED_DIR);
+    expect(await readFile(join(d, LEGACY_PROFILE_FILE), 'utf8')).toBe('old\n');
+    expect(await readFile(join(d, PROFILE_FILE), 'utf8')).toBe('new\n');
+  });
+});
+
 describe('initDataFolder: new defaults for untouched seed files (D28)', () => {
   const OLD: [string, string][] = [
     ['templates/resume.tex', 'tests/fixtures/latex/resume-v1.tex'],
@@ -87,7 +123,7 @@ describe('initDataFolder: new defaults for untouched seed files (D28)', () => {
   it('the recorded hashes are the shipped v1 files', async () => {
     for (const [rel, fixture] of OLD)
       expect(PREVIOUS_SEEDS[rel]).toContain(hashText(await readFile(fixture, 'utf8')));
-    expect(Object.keys(PREVIOUS_SEEDS)).not.toContain('profile/praneethreddy.md');
+    expect(Object.keys(PREVIOUS_SEEDS)).not.toContain('profile/profile.md');
   });
 
   it('replaces a file that is exactly an old default, commits it, and keeps the old one in git', async () => {

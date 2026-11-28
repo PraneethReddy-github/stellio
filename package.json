@@ -1,7 +1,7 @@
 {
   "name": "stellio",
   "productName": "Stellio",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "private": true,
   "description": "Local-first career agent: job discovery, tailored LaTeX resumes, skill audit, application tracker.",
   "main": "out/main/index.js",

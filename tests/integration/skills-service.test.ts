@@ -51,7 +51,7 @@ async function setup(env: Record<string, string> = {}) {
   const db = freshDb();
   const dir = tempDir();
   for (const d of ['profile', 'rules', 'templates']) mkdirSync(join(dir, d), { recursive: true });
-  writeFileSync(join(dir, 'profile/praneethreddy.md'), readFileSync('tests/fixtures/profiles/full.md'));
+  writeFileSync(join(dir, 'profile/profile.md'), readFileSync('tests/fixtures/profiles/full.md'));
   for (const f of ['rules/resume.md', 'rules/skills-policy.md', 'templates/resume.tex'])
     writeFileSync(join(dir, f), readFileSync(join('seed', f)));
   const cap = join(dir, 'capture.ndjson');
@@ -108,7 +108,7 @@ async function setup(env: Record<string, string> = {}) {
     documents,
     skills,
     auditCalls,
-    profileFile: join(dir, 'profile/praneethreddy.md'),
+    profileFile: join(dir, 'profile/profile.md'),
   };
 }
 

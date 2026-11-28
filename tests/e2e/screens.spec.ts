@@ -98,7 +98,7 @@ test.beforeAll(async () => {
     dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [file] });
   }, RESUME_PDF);
   await l.page.setViewportSize({ width: WIDTH, height: HEIGHT });
-  seed = readFileSync(join(l.dataDir, 'profile/praneethreddy.md'), 'utf8');
+  seed = readFileSync(join(l.dataDir, 'profile/profile.md'), 'utf8');
 });
 test.afterAll(async () => {
   await l.close();

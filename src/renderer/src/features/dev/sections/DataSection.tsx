@@ -11,7 +11,7 @@ import { ScoreMeter } from '../../../ui/ScoreMeter';
 import { Stat } from '../../../ui/Stat';
 import { Bars } from '../../../ui/Bars';
 import { KeyValue, SectionHeader } from '../../../ui/Section';
-import profileSeed from '../../../../../../seed/profile/praneethreddy.md?raw';
+import profileSeed from '../../../../../../seed/profile/profile.md?raw';
 import resumeSeed from '../../../../../../seed/templates/resume.tex?raw';
 import s from './DataSection.module.css';
 

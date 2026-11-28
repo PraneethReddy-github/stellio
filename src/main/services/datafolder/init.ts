@@ -1,8 +1,16 @@
 import { constants } from 'node:fs';
-import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { APPLICATIONS_DIR, SEED_FILES, STELLIO_DIRS, VERSIONED_PATHS, WATCHED_DIRS } from './layout';
+import {
+  APPLICATIONS_DIR,
+  LEGACY_PROFILE_FILE,
+  PROFILE_FILE,
+  SEED_FILES,
+  STELLIO_DIRS,
+  VERSIONED_PATHS,
+  WATCHED_DIRS,
+} from './layout';
 import { hashText, writeFileAtomic } from './files';
 import { GitError, commitFiles, gitInit, hasCommits } from './git';
 import { PREVIOUS_SEEDS, SEED_PAIRS } from './seedHistory';
@@ -22,6 +30,14 @@ export async function initDataFolder(
   const updated: string[] = [];
   for (const d of [...WATCHED_DIRS, APPLICATIONS_DIR, ...STELLIO_DIRS]) {
     await mkdir(join(dataDir, d), { recursive: true });
+  }
+
+  // Before seeding: a profile kept under the old fixed name moves to the neutral one (never when both exist).
+  const legacy = join(dataDir, LEGACY_PROFILE_FILE);
+  let moved = false;
+  if (existsSync(legacy) && !existsSync(join(dataDir, PROFILE_FILE))) {
+    await rename(legacy, join(dataDir, PROFILE_FILE));
+    moved = true;
   }
 
   for (const rel of SEED_FILES) {
@@ -65,6 +81,12 @@ export async function initDataFolder(
       if (added.length > 0) await commitFiles(dataDir, added, `seed: add ${added.join(', ')}`);
       if (updated.length > 0)
         await commitFiles(dataDir, updated, `seed: update ${updated.join(', ')} to the new default`);
+      if (moved)
+        await commitFiles(
+          dataDir,
+          [LEGACY_PROFILE_FILE, PROFILE_FILE],
+          `rename: ${LEGACY_PROFILE_FILE} to ${PROFILE_FILE}`,
+        );
     }
     return { created, updated, gitAvailable: true };
   } catch (e) {

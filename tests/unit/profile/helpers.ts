@@ -11,7 +11,7 @@ export const fixtureNames = readdirSync(dir)
 export const fixture = (name: string): string => readFileSync(`${dir}${name}.md`, 'utf8');
 
 export const seedTemplate = (): string =>
-  readFileSync(fileURLToPath(new URL('../../../seed/profile/praneethreddy.md', import.meta.url)), 'utf8');
+  readFileSync(fileURLToPath(new URL('../../../seed/profile/profile.md', import.meta.url)), 'utf8');
 
 /** Lines that differ between two texts once the common prefix and suffix lines are removed. */
 export function changedLines(before: string, after: string): { removed: string[]; added: string[] } {

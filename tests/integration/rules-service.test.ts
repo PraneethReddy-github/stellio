@@ -39,12 +39,7 @@ describe('rules service', () => {
 
   it('rejects paths outside the allow-list', async () => {
     const { service } = await setup();
-    for (const bad of [
-      'profile/praneethreddy.md',
-      '../x.md',
-      'rules/../profile/praneethreddy.md',
-      'rules/new.md',
-    ])
+    for (const bad of ['profile/profile.md', '../x.md', 'rules/../profile/profile.md', 'rules/new.md'])
       await expect(service.get(bad)).rejects.toBeInstanceOf(UserError);
     await expect(service.save('rules/x.md', 'a', null, 'm')).rejects.toBeInstanceOf(UserError);
   });

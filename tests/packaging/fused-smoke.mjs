@@ -63,7 +63,7 @@ const checks = {
   'renderer.loaded logged': loaded,
   'no app.fatal / renderer.gone': !/app\.fatal|renderer\.gone/.test(logText),
   'RunAsNode fuse off (-e script did not run)': !output.includes('RAN_AS_NODE'),
-  'data folder seeded': existsSync(join(home, 'Stellio', 'profile', 'praneethreddy.md')),
+  'data folder seeded': existsSync(join(home, 'Stellio', 'profile', 'profile.md')),
 };
 rmSync(home, { recursive: true, force: true });
 for (const [name, ok] of Object.entries(checks)) console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`);

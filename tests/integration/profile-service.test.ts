@@ -102,7 +102,7 @@ describe('profile service', () => {
 
     const reverted = await service.revert(initial.hash);
     expect(reverted.model.frontMatter.email).toBe('');
-    expect((await service.history(10))[0]?.message).toMatch(/^revert: profile\/praneethreddy\.md to /);
+    expect((await service.history(10))[0]?.message).toMatch(/^revert: profile\/profile\.md to /);
   });
 
   it('refuses to overwrite a file that changed on disk', async () => {

@@ -30,7 +30,7 @@ import { OverviewTab } from '@renderer/features/profile/OverviewTab';
 
 afterEach(cleanup);
 
-const seed = readFileSync('seed/profile/praneethreddy.md', 'utf8');
+const seed = readFileSync('seed/profile/profile.md', 'utf8');
 const diag = (severity: 'error' | 'warning', message: string, line: number | null) => ({
   severity,
   code: message,

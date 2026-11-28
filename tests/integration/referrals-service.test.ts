@@ -52,7 +52,7 @@ async function setup(env: Record<string, string> = {}, opts: { gap?: Partial<Mes
   const db = freshDb();
   const dir = tempDir();
   for (const d of ['profile', 'rules', 'templates']) mkdirSync(join(dir, d), { recursive: true });
-  writeFileSync(join(dir, 'profile/praneethreddy.md'), readFileSync('tests/fixtures/profiles/full.md'));
+  writeFileSync(join(dir, 'profile/profile.md'), readFileSync('tests/fixtures/profiles/full.md'));
   for (const f of ['rules/skills-policy.md', 'rules/referral-message.md'])
     writeFileSync(join(dir, f), readFileSync(join('seed', f)));
   const cap = join(dir, 'capture.ndjson');
@@ -273,7 +273,7 @@ describe('placeholder profile', { timeout: 30_000 }, () => {
   it('search and draft refuse example content and name what to replace', async () => {
     const { referrals, jobId, dir } = await setup();
     const { items } = await referrals.search({ ...SEARCH, jobId });
-    const file = join(dir, 'profile/praneethreddy.md');
+    const file = join(dir, 'profile/profile.md');
     const full = readFileSync(file, 'utf8');
     writeFileSync(
       file,

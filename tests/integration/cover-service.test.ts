@@ -37,7 +37,7 @@ async function setup(env: Record<string, string> = {}) {
   const db = freshDb();
   const dir = tempDir();
   for (const d of ['profile', 'rules', 'templates']) mkdirSync(join(dir, d), { recursive: true });
-  writeFileSync(join(dir, 'profile/praneethreddy.md'), readFileSync('tests/fixtures/profiles/full.md'));
+  writeFileSync(join(dir, 'profile/profile.md'), readFileSync('tests/fixtures/profiles/full.md'));
   for (const f of [
     'rules/resume.md',
     'rules/skills-policy.md',
@@ -315,7 +315,7 @@ describe('cover letter pipeline (fake CLI)', { timeout: 60_000 }, () => {
   it('refuses an empty profile and unknown versions with a readable error', async () => {
     const { cover, jobId, dir } = await setup();
     await expect(cover.get(jobId, 7)).rejects.toThrow(/Cover letter version 7 does not exist/);
-    writeFileSync(join(dir, 'profile/praneethreddy.md'), readFileSync('tests/fixtures/profiles/empty.md'));
+    writeFileSync(join(dir, 'profile/profile.md'), readFileSync('tests/fixtures/profiles/empty.md'));
     await expect(cover.generate(jobId)).rejects.toThrow(/profile has no skills or experience/);
   });
 });

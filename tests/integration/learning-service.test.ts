@@ -46,7 +46,7 @@ function setup(env: Record<string, string> = {}, now = new Date('2027-06-01T12:0
   const db = freshDb();
   const dir = tempDir();
   mkdirSync(join(dir, 'profile'), { recursive: true });
-  const profileFile = join(dir, 'profile/praneethreddy.md');
+  const profileFile = join(dir, 'profile/profile.md');
   writeFileSync(profileFile, readFileSync('tests/fixtures/profiles/full.md'));
   const cap = join(dir, 'capture.ndjson');
   const settings = createAiSettings(db);

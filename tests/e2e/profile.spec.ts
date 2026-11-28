@@ -54,7 +54,7 @@ test.afterAll(async () => {
 
 test('first run creates the data folder, git repo and database', () => {
   for (const rel of [
-    'profile/praneethreddy.md',
+    'profile/profile.md',
     'rules/resume.md',
     'templates/resume.tex',
     '.git',
@@ -76,7 +76,7 @@ test('profile: get, save, history, diff, revert', async () => {
     message: 'profile: set email',
   })) as Ok<Snapshot>;
   expect(saved.data.model.frontMatter.email).toBe('p@example.com');
-  expect(readFileSync(join(l.dataDir, 'profile/praneethreddy.md'), 'utf8')).toContain('p@example.com');
+  expect(readFileSync(join(l.dataDir, 'profile/profile.md'), 'utf8')).toContain('p@example.com');
 
   // Stale hash is refused with a readable message.
   const stale = await invoke(l.page, 'profile:save', { markdown: edited, expectedHash: got.data.hash });
@@ -122,7 +122,7 @@ test('external edits reach the renderer as events', async () => {
 });
 
 test('import: PDF resume → draft via Claude CLI, nothing saved', async () => {
-  const before = readFileSync(join(l.dataDir, 'profile/praneethreddy.md'), 'utf8');
+  const before = readFileSync(join(l.dataDir, 'profile/profile.md'), 'utf8');
   await l.app.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = () => Promise.resolve({ canceled: false, filePaths: [file] });
   }, RESUME_PDF);
@@ -135,7 +135,7 @@ test('import: PDF resume → draft via Claude CLI, nothing saved', async () => {
   expect(res.data).toMatchObject({ status: 'draft', sourceName: 'jordan-vale.pdf' });
   expect(res.data.draft.model.frontMatter.name).toBe('Jordan Vale');
   expect(res.data.draft.markdown).toContain('### Data Engineer — Brightwater {#exp-brightwater}');
-  expect(readFileSync(join(l.dataDir, 'profile/praneethreddy.md'), 'utf8')).toBe(before);
+  expect(readFileSync(join(l.dataDir, 'profile/profile.md'), 'utf8')).toBe(before);
 });
 
 test('import: cancelled file picker', async () => {

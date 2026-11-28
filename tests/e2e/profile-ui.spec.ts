@@ -56,7 +56,7 @@ let l: Launched;
 let page: Page;
 let seed: string;
 let cspErrors: string[];
-const profileFile = (): string => join(l.dataDir, 'profile/praneethreddy.md');
+const profileFile = (): string => join(l.dataDir, 'profile/profile.md');
 const onDisk = (): string => readFileSync(profileFile(), 'utf8');
 const toast = (text: string): Locator => page.getByText(text, { exact: true }).last();
 const saved = (): Promise<void> => expect(toast('Profile saved')).toBeVisible();
@@ -117,7 +117,7 @@ test.afterEach(() => {
 
 test('loads the seed profile with its diagnostics in plain words', async () => {
   await expect(page.getByRole('heading', { name: 'Profile', level: 2 })).toBeVisible();
-  await expect(page.getByText('profile/praneethreddy.md')).toBeVisible();
+  await expect(page.getByText('profile/profile.md')).toBeVisible();
   await expect(page.getByText('last reviewed 2026-11-19')).toBeVisible();
   const panel = page.getByRole('complementary', { name: 'Diagnostics' });
   await expect(panel.getByText(/^\d+ errors? · \d+ warnings?$/)).toBeVisible();

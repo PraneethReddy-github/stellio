@@ -39,7 +39,7 @@ Default `~/Stellio` (shown in Settings, General). You can open every file in any
 
 ```
 ~/Stellio/
-  profile/praneethreddy.md   your master profile
+  profile/profile.md   your master profile
   rules/                     resume.md, cover-letter.md, skills-policy.md, referral-message.md
   templates/                 resume.tex, cover-letter.tex, photo.jpg (your resume photo, if set)
   applications/              one folder per application, with the exact files you used
