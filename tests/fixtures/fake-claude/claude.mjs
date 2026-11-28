@@ -3,7 +3,7 @@
 // Other env: FAKE_CLAUDE_CAPTURE (ndjson file: argv/stdin/cwd/env per call, plus end markers),
 // FAKE_CLAUDE_OUTPUT (JSON for structured_output, default {"answer":"hi"}), FAKE_CLAUDE_DELAY_MS,
 // FAKE_CLAUDE_STATE (counter file for *_then_ok modes), FAKE_CLAUDE_PIDFILE (hang modes write the grandchild pid).
-// Per-task overrides: the task is recognised from the --json-schema keys (JD_PARSE, JOB_ANALYZE, PROFILE_IMPORT, SKILLS_AUDIT,
+// Per-task overrides: the task is recognised from the --json-schema keys (JD_PARSE, JOB_ANALYZE, JOB_SIDE_FIT, PROFILE_IMPORT, SKILLS_AUDIT,
 // JOB_TRIAGE, DISCOVERY_WEBSEARCH, REFERRALS_SEARCH, REFERRALS_MESSAGE, INSIGHTS_ASK, LEARNING_RESOURCES, PROFILE_SUGGEST;
 // RESUME_GENERATE / RESUME_REVISE, COVER_GENERATE / COVER_REVISE and RESUME_TRANSLATE / COVER_TRANSLATE share a schema
 // per pair and are told apart by the system prompt);
@@ -19,6 +19,7 @@ const taskOf = () => {
   try {
     const keys = Object.keys(JSON.parse(argv[argv.indexOf('--json-schema') + 1]).properties ?? {});
     if (keys.includes('fit_score')) return 'JOB_ANALYZE';
+    if (keys.includes('side_score')) return 'JOB_SIDE_FIT';
     if (keys.includes('responsibilities')) return 'JD_PARSE';
     if (keys.includes('front')) return 'PROFILE_IMPORT';
     if (keys.includes('rows')) return 'SKILLS_AUDIT';

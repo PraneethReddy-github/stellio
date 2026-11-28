@@ -1,6 +1,6 @@
 import { and, count, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { Db } from '../database';
-import { analyses, applications, companies, jobSources, jobs } from '../schema';
+import { analyses, applications, companies, jobSources, jobs, sideFits } from '../schema';
 
 export type Company = typeof companies.$inferSelect;
 export type Job = typeof jobs.$inferSelect;
@@ -71,6 +71,7 @@ const summaryColumns = {
   firstSeenAt: jobs.firstSeenAt,
   fitScore: analyses.fitScore,
   verdict: analyses.verdict,
+  sideJob: jobs.sideJob,
 };
 
 /** Joins company and the latest full (non-triage) analysis. */
@@ -134,6 +135,21 @@ export function listJobSources(db: Db, jobId: string): JobSource[] {
 
 export function insertAnalysis(db: Db, a: NewAnalysis): Analysis {
   return db.orm.insert(analyses).values(a).returning().get();
+}
+
+export type SideFit = typeof sideFits.$inferSelect;
+export const insertSideFit = (db: Db, v: typeof sideFits.$inferInsert): SideFit =>
+  db.orm.insert(sideFits).values(v).returning().get();
+
+/** Latest side-job check of a job. */
+export function latestSideFit(db: Db, jobId: string): SideFit | undefined {
+  return db.orm
+    .select()
+    .from(sideFits)
+    .where(eq(sideFits.jobId, jobId))
+    .orderBy(desc(sideFits.createdAt), desc(sideFits.id))
+    .limit(1)
+    .get();
 }
 
 /** Latest full analysis (triage rows excluded). */

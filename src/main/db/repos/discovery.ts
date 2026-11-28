@@ -219,7 +219,7 @@ export interface Triaged {
 export type RescoreScope = 'unscored' | 'all' | 'stale';
 
 /**
- * Open inbox jobs Re-score may triage, newest first. A job with a full analysis is never one: the Inbox shows its
+ * Open inbox jobs Re-score may triage, newest first. A job with a full analysis or a side-job check is never one: the Inbox shows its
  * fit, so a new triage score would not be seen. `stale`: the latest triage used another profile version.
  * `sideJob` limits to side jobs (true) or career jobs (false).
  */
@@ -242,6 +242,7 @@ export function rescoreCandidates(
       `select j.id from jobs j
        where j.state = 'new' and j.closed_at is null
          and not exists (select 1 from analyses f where f.job_id = j.id and f.triage = 0)
+         and not exists (select 1 from side_fits sf where sf.job_id = j.id)
          and (@side is null or j.side_job = @side) and ${scoped}
        order by j.first_seen_at desc, j.id limit @limit`,
     )
@@ -314,6 +315,9 @@ export interface InboxRow {
   triage: number | null;
   triageReason: string | null;
   sideJob: number;
+  /** Latest side-job check: it is the fit of a side job. */
+  sideFit: number | null;
+  sideFitReason: string | null;
 }
 
 /** Open (`new`, not closed) jobs with their latest full analysis and latest triage. */
@@ -324,8 +328,10 @@ export function inboxRows(db: Db): InboxRow[] {
               j.salary_min as salaryMin, j.salary_max as salaryMax, j.salary_currency as salaryCurrency,
               j.salary_period as salaryPeriod, j.url, j.posted_at as postedAt, j.first_seen_at as firstSeenAt,
               f.fit_score as fit, f.summary as fitReason, t.fit_score as triage, t.summary as triageReason,
-              j.side_job as sideJob
+              j.side_job as sideJob, s.score as sideFit, s.summary as sideFitReason
        from jobs j join companies c on c.id = j.company_id
+       left join side_fits s on s.id = (select x.id from side_fits x where x.job_id = j.id
+                                        order by x.created_at desc, x.id desc limit 1)
        left join analyses f on f.id = (select a.id from analyses a where a.job_id = j.id and a.triage = 0
                                        order by a.created_at desc, a.id desc limit 1)
        left join analyses t on t.id = (select a.id from analyses a where a.job_id = j.id and a.triage = 1

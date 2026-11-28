@@ -35,8 +35,8 @@ export function createHandlers(
 
   /** After new posting text: an Inbox job without a fit analysis gets a fresh triage score. Best effort. */
   const rescoreInbox = async (id: string, signal: AbortSignal): Promise<boolean> => {
-    const { job, analysis } = await ctx.jobs.get(id);
-    if (job.state !== 'new' || analysis) return false;
+    const { job, analysis, sideFit } = await ctx.jobs.get(id);
+    if (job.state !== 'new' || analysis || sideFit) return false;
     try {
       return (await ctx.discovery.rescore({ scope: 'job', jobId: id }, signal)).scored === 1;
     } catch {
@@ -154,6 +154,9 @@ export function createHandlers(
     'jobs:get': ({ id }) => ctx.jobs.get(id),
     'jobs:analyze': async ({ id, requestId }) => ({
       analysis: await ctx.tasks.run(requestId, (signal) => ctx.jobs.analyze(id, signal)),
+    }),
+    'jobs:sideFit': async ({ id, requestId }) => ({
+      sideFit: await ctx.tasks.run(requestId, (signal) => ctx.jobs.sideFit(id, signal)),
     }),
     'jobs:delete': ({ id }) => ({ deleted: ctx.jobs.delete(id) }),
     'jobs:replaceText': ({ id, text, requestId }) =>

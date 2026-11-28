@@ -195,7 +195,7 @@ export function createScanService(deps: ScanDeps) {
     if (scanIsRunning(db, clock())) throw new UserError('A scan is running. Re-score when it has finished.');
     rescoring = true;
     try {
-      const profiles = await ensureProfiles();
+      await ensureProfiles(); // the first run seeds a search profile, as a scan would
       const hash = (await deps.profile.get()).hash;
       const ids =
         req.scope === 'job'
@@ -204,7 +204,7 @@ export function createScanService(deps: ScanDeps) {
             : []
           : rescoreCandidates(db, req.scope, hash, req.sideJob);
       if (req.scope === 'job' && ids.length === 0) throw new UserError('That job no longer exists.');
-      const r = await triageByIds(deps, ids, profiles, signal, onProgress);
+      const r = await triageByIds(deps, ids, signal, onProgress);
       return {
         total: ids.length,
         scored: r.scores.size,
@@ -526,11 +526,11 @@ export function createScanService(deps: ScanDeps) {
     }
 
     // ---- triage: new jobs plus open jobs an earlier scan could not score ------------------------------
-    async function triage(profiles: SearchProfile[]): Promise<void> {
+    async function triage(): Promise<void> {
       if (blocked()) return;
       const since = new Date(started.getTime() - cfg.maxAgeDays * 86_400_000);
       const ids = [...new Set([...newIds, ...untriagedInboxIds(db, since, 60)])];
-      const r = await triageByIds(deps, ids, profiles, signal);
+      const r = await triageByIds(deps, ids, signal);
       for (const [id, score] of r.scores) if (!scores.has(id)) scores.set(id, score);
       for (const m of r.errors) pipelineError(m);
       if (r.blocked) ai.blocked = true;
@@ -584,7 +584,7 @@ export function createScanService(deps: ScanDeps) {
       );
       if (state.enabled('websearch') && !aborted()) await runWebSearch(profiles);
       await parseNew();
-      await triage(profiles);
+      await triage();
       await analyzeStrong();
       try {
         recomputeSkillDemand(db, clock());

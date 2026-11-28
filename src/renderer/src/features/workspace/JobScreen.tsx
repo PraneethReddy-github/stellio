@@ -24,8 +24,17 @@ import { STATUS_LABEL } from '../applications/helpers';
 import { ReferralsTab } from '../referrals/ReferralsTab';
 import { ApplyTab } from './ApplyTab';
 import { useElapsedSeconds } from '../../lib/hooks';
-import { cancelTask, useAnalyze, useDeleteJob, useJob, useSetJobState, type JobGet } from '../../lib/jobs';
+import {
+  cancelTask,
+  useAnalyze,
+  useDeleteJob,
+  useJob,
+  useSetJobState,
+  useSideFit,
+  type JobGet,
+} from '../../lib/jobs';
 import { FitTab } from './FitTab';
+import { SideFitTab } from './SideFitTab';
 import { JobTab } from './JobTab';
 import { ResumeTab } from './resume/ResumeTab';
 import { useIntakeCommands } from './WorkspaceScreen';
@@ -65,10 +74,15 @@ export default function JobScreen(): React.JSX.Element {
 }
 
 function JobView({ data }: { data: JobGet }): React.JSX.Element {
-  const { job, analysis } = data;
+  const { job, analysis, sideFit } = data;
+  // A side job's Fit tab is the side-job check: pay, hours, place, language, needs.
+  const side = job.sideJob;
   const navigate = useNavigate();
   const { toast } = useToast();
-  const analyze = useAnalyze(job.id);
+  const fullFit = useAnalyze(job.id);
+  const sideCheck = useSideFit(job.id);
+  const analyze = side ? sideCheck : fullFit;
+  const checked = side ? sideFit !== null : analysis !== null;
   const del = useDeleteJob();
   const setState = useSetJobState();
   const [tab, setTab] = useState('job');
@@ -84,12 +98,12 @@ function JobView({ data }: { data: JobGet }): React.JSX.Element {
     requestId.current = id;
     setAnalyzeError(null);
     setTab('fit');
-    analyze.mutate(id, {
-      onError: (e) => {
-        if (e.message === CANCELLED_MESSAGE) toast({ title: 'Cancelled' });
-        else setAnalyzeError(e.message);
-      },
-    });
+    const onError = (e: Error): void => {
+      if (e.message === CANCELLED_MESSAGE) toast({ title: 'Cancelled' });
+      else setAnalyzeError(e.message);
+    };
+    if (side) sideCheck.mutate(id, { onError });
+    else fullFit.mutate(id, { onError });
   };
   const cancel = (): void => {
     if (requestId.current) void cancelTask(requestId.current);
@@ -100,8 +114,15 @@ function JobView({ data }: { data: JobGet }): React.JSX.Element {
     act.current = startAnalyze;
   });
   const commands = useMemo<Command[]>(
-    () => [{ id: 'workspace.analyze', label: 'Analyze fit', group: 'Workspace', run: () => act.current() }],
-    [],
+    () => [
+      {
+        id: 'workspace.analyze',
+        label: side ? 'Check side job' : 'Analyze fit',
+        group: 'Workspace',
+        run: () => act.current(),
+      },
+    ],
+    [side],
   );
   useRegisterCommands('workspace.job', commands);
 
@@ -144,13 +165,13 @@ function JobView({ data }: { data: JobGet }): React.JSX.Element {
       subtitle={[job.company, location].filter(Boolean).join(' · ')}
       actions={
         <>
-          {analysis ? (
+          {checked ? (
             <Button busy={running} onClick={startAnalyze}>
-              {running ? 'Analyzing…' : 'Re-analyze'}
+              {running ? (side ? 'Checking…' : 'Analyzing…') : side ? 'Re-check' : 'Re-analyze'}
             </Button>
           ) : (
             <Button variant="primary" busy={running} onClick={startAnalyze}>
-              {running ? 'Analyzing…' : 'Analyze fit'}
+              {running ? (side ? 'Checking…' : 'Analyzing…') : side ? 'Check side job' : 'Analyze fit'}
             </Button>
           )}
           <DropdownMenu
@@ -194,14 +215,25 @@ function JobView({ data }: { data: JobGet }): React.JSX.Element {
           <JobTab job={job} />
         </TabsContent>
         <TabsContent value="fit">
-          <FitTab
-            analysis={analysis}
-            running={running}
-            secs={secs}
-            error={analyzeError}
-            onCancel={cancel}
-            onAnalyze={startAnalyze}
-          />
+          {side ? (
+            <SideFitTab
+              sideFit={sideFit}
+              running={running}
+              secs={secs}
+              error={analyzeError}
+              onCancel={cancel}
+              onCheck={startAnalyze}
+            />
+          ) : (
+            <FitTab
+              analysis={analysis}
+              running={running}
+              secs={secs}
+              error={analyzeError}
+              onCancel={cancel}
+              onAnalyze={startAnalyze}
+            />
+          )}
         </TabsContent>
         {/* forceMount skips Radix's own hiding, hence `hidden`. Kept mounted so a running draft survives a tab switch and the palette commands work from any tab. */}
         <TabsContent value="resume" forceMount hidden={tab !== 'resume'}>

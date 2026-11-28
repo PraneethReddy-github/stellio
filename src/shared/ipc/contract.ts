@@ -2,7 +2,13 @@ import { z } from 'zod';
 import { RESUME_STAGES, ResumeDocumentSchema, ResumeVersionSummarySchema } from '../documents/schemas';
 import { CoverDocumentSchema, CoverVersionSummarySchema } from '../documents/cover';
 import { AiRunLogSchema, AiRunSchema, RunIdSchema } from '../ai/runs';
-import { AnalysisRecordSchema, JOB_STATES, JobDetailSchema, JobSummarySchema } from '../jobs/schemas';
+import {
+  AnalysisRecordSchema,
+  JOB_STATES,
+  JobDetailSchema,
+  JobSummarySchema,
+  SideFitRecordSchema,
+} from '../jobs/schemas';
 import { AiSettingsSchema } from '../settings/ai';
 import { NotificationSettingsSchema } from '../settings/notifications';
 import { UpdateSettingsSchema, UpdateStatusSchema, type UpdateProgress } from '../settings/updates';
@@ -296,7 +302,17 @@ export const ipcContract = {
   /** The job and its latest full analysis. */
   'jobs:get': {
     input: z.object({ id: JobId }),
-    output: z.object({ job: JobDetailSchema, analysis: AnalysisRecordSchema.nullable() }),
+    output: z.object({
+      job: JobDetailSchema,
+      analysis: AnalysisRecordSchema.nullable(),
+      /** Latest side-job check (side jobs only). */
+      sideFit: SideFitRecordSchema.nullable(),
+    }),
+  },
+  /** The side-job check: pay, hours, place, language and needs, each with the posting's words. */
+  'jobs:sideFit': {
+    input: z.object({ id: JobId, requestId: RequestId }),
+    output: z.object({ sideFit: SideFitRecordSchema }),
   },
   'jobs:analyze': {
     input: z.object({ id: JobId, requestId: RequestId }),

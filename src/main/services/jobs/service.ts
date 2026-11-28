@@ -3,6 +3,8 @@ import {
   JdSchema,
   type AnalysisRecord,
   type JobDetail,
+  SideFitResultSchema,
+  type SideFitRecord,
   type JobSummary,
 } from '@shared/jobs/schemas';
 import { profileEntryIds } from '@shared/profile';
@@ -12,7 +14,9 @@ import { loadPrompt } from '../../ai/prompts';
 import type { ClaudeRunner } from '../../ai/runner';
 import { analyzeJob, validateAnalysis } from '../../ai/tasks/jobAnalyze';
 import { parseJd } from '../../ai/tasks/jdParse';
-import { updateJobFields } from '../../db/repos/discovery';
+import { checkSideJob, validateSideFit } from '../../ai/tasks/sideFit';
+import { listSearchProfiles, updateJobFields } from '../../db/repos/discovery';
+import { sideJobBrief } from '../discovery/triage';
 import type { Db } from '../../db/database';
 import { setAiRunRelated } from '../../db/repos/aiRuns';
 import {
@@ -21,12 +25,15 @@ import {
   getJob,
   getJobSummary,
   insertAnalysis,
+  insertSideFit,
   latestAnalysis,
+  latestSideFit,
   listJobSources,
   listJobs,
   setJobState,
   type Analysis,
   type Job,
+  type SideFit,
 } from '../../db/repos/jobs';
 import { ensureApplication } from '../../db/repos/applications';
 import { recomputeSkillDemand } from '../../db/repos/skills';
@@ -77,6 +84,21 @@ export function createJobsService({ db, runner, settings, profile, fetcher }: Jo
       profileStale: profileHash !== undefined && profileHash !== a.profileHash,
       postingStale: descriptionUpdatedAt !== null && descriptionUpdatedAt > a.createdAt,
     };
+  }
+
+  function toSideRecord(f: SideFit, profileHash: string | undefined, descriptionUpdatedAt: string | null) {
+    const result = SideFitResultSchema.safeParse(f.resultJson);
+    if (!result.success) return null;
+    const r: SideFitRecord = {
+      id: f.id,
+      jobId: f.jobId,
+      createdAt: f.createdAt,
+      model: f.model,
+      result: result.data,
+      profileStale: profileHash !== undefined && profileHash !== f.profileHash,
+      postingStale: descriptionUpdatedAt !== null && descriptionUpdatedAt > f.createdAt,
+    };
+    return r;
   }
 
   function requireJob(id: string): Job {
@@ -132,11 +154,15 @@ export function createJobsService({ db, runner, settings, profile, fetcher }: Jo
       return listJobs(db, input);
     },
 
-    async get(id: string): Promise<{ job: JobDetail; analysis: AnalysisRecord | null }> {
+    async get(
+      id: string,
+    ): Promise<{ job: JobDetail; analysis: AnalysisRecord | null; sideFit: SideFitRecord | null }> {
       const summary = getJobSummary(db, id);
       const job = getJob(db, id);
       if (!summary || !job) throw new UserError('That job no longer exists.');
       const latest = latestAnalysis(db, id);
+      const side = latestSideFit(db, id);
+      const hash = await currentProfileHash();
       return {
         job: {
           ...summary,
@@ -148,8 +174,46 @@ export function createJobsService({ db, runner, settings, profile, fetcher }: Jo
             fetchedAt: s.fetchedAt,
           })),
         },
-        analysis: latest ? toRecord(latest, await currentProfileHash(), job.descriptionUpdatedAt) : null,
+        analysis: latest ? toRecord(latest, hash, job.descriptionUpdatedAt) : null,
+        sideFit: side ? toSideRecord(side, hash, job.descriptionUpdatedAt) : null,
       };
+    },
+
+    /**
+     * The side-job check (the Fit tab of a side job): pay, hours, place, language and needs against the side-job
+     * limits, each with the posting's own words. Quotes the posting does not hold are dropped in code.
+     */
+    async sideFit(id: string, signal?: AbortSignal): Promise<SideFitRecord> {
+      const job = requireJob(id);
+      if (!job.sideJob) throw new UserError('This is not a side job. Use Analyze fit.');
+      const snap = await profile.get();
+      requireRealProfile(snap.model);
+      const brief = sideJobBrief(listSearchProfiles(db));
+      const config = settings.forTask('job.sideFit');
+      const res = await checkSideJob(runner, {
+        sideJob: brief,
+        profile: snap.model,
+        jd: JdSchema.safeParse(job.structuredJson).data ?? null,
+        descriptionMd: job.descriptionMd,
+        config,
+        signal,
+      });
+      if (!res.ok) throw new UserError(aiFailureMessage(res.status, res.error));
+      setAiRunRelated(db, res.runId, 'job', id);
+      const result = validateSideFit(res.data, job.descriptionMd);
+      const row = insertSideFit(db, {
+        jobId: id,
+        profileHash: snap.hash,
+        model: res.model ?? config.model,
+        promptVersion: `v${String(loadPrompt('job.sideFit').version)}`,
+        score: result.side_score,
+        verdict: result.verdict,
+        summary: result.summary,
+        resultJson: result,
+      });
+      const record = toSideRecord(row, snap.hash, null);
+      if (!record) throw new Error('stored side-job check failed validation');
+      return record;
     },
 
     /** Full fit analysis against the current profile. Evidence ids are checked against the profile in code. */

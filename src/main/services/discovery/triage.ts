@@ -6,7 +6,7 @@ import type { ClaudeRunner } from '../../ai/runner';
 import { TRIAGE_BATCH, triageJobs, type TriageJob } from '../../ai/tasks/discoveryTasks';
 import type { Db } from '../../db/database';
 import { setAiRunRelated } from '../../db/repos/aiRuns';
-import { insertTriage } from '../../db/repos/discovery';
+import { insertTriage, listSearchProfiles } from '../../db/repos/discovery';
 import { getJob, getJobSummary } from '../../db/repos/jobs';
 import type { ProfileService } from '../profile/service';
 import type { AiSettingsService } from '../settings/ai';
@@ -37,9 +37,26 @@ const salaryLabel = (j: {
     ? null
     : `${[j.salaryMin, j.salaryMax].filter((x) => x !== null).join('-')} ${j.salaryCurrency ?? ''}${j.salaryPeriod ? `/${j.salaryPeriod}` : ''}`.trim();
 
+export type SideBriefProfile = Pick<
+  SearchProfile,
+  | 'kind'
+  | 'enabled'
+  | 'maxHoursPerWeek'
+  | 'minHourlyPay'
+  | 'locations'
+  | 'countries'
+  | 'languages'
+  | 'remoteOk'
+  | 'currency'
+>;
+
 /** What the side-job profiles ask for, for the side-job triage; the strictest limit wins when there are several. */
-export function sideJobBrief(profiles: SearchProfile[]): string {
-  const side = profiles.filter((p) => p.kind === 'side');
+export function sideJobBrief(profiles: SideBriefProfile[]): string {
+  // A switched-off side profile still describes what its side jobs were found for: its limits apply
+  // when no side profile is switched on (re-scoring old side jobs must not lose them).
+  const all = profiles.filter((p) => p.kind === 'side');
+  const on = all.filter((p) => p.enabled);
+  const side = on.length > 0 ? on : all;
   const nums = (v: (number | null)[]): number[] => v.filter((x): x is number => x !== null);
   const hours = nums(side.map((p) => p.maxHoursPerWeek));
   const pay = nums(side.map((p) => p.minHourlyPay));
@@ -63,7 +80,6 @@ export function sideJobBrief(profiles: SearchProfile[]): string {
 export async function triageByIds(
   deps: TriageDeps,
   ids: readonly string[],
-  profiles: SearchProfile[],
   signal?: AbortSignal,
   onBatch?: (done: number, total: number) => void,
 ): Promise<TriageResult> {
@@ -81,7 +97,7 @@ export async function triageByIds(
     return out;
   }
   const profileText = profileForPrompt(snap.model);
-  const side = sideJobBrief(profiles);
+  const side = sideJobBrief(listSearchProfiles(db));
   const rows = [...new Set(ids)].flatMap((id) => {
     const j = getJob(db, id);
     const s = getJobSummary(db, id);

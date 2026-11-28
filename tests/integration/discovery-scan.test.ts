@@ -475,6 +475,59 @@ describe('side-job search profiles', () => {
     }
   });
 
+  it('re-scoring side jobs keeps the side limits while the side profile is switched off; the side check needs a side job', async () => {
+    const t = setup({ env: scoreEnv, seed: true });
+    const side = t.discovery.saveProfile(undefined, {
+      ...PROFILE,
+      name: 'Side money',
+      kind: 'side',
+      maxHoursPerWeek: 20,
+      minHourlyPay: 13.9,
+    });
+    await t.discovery.runScan({ trigger: 'manual' });
+    t.discovery.saveProfile(side.id, { ...side, enabled: false });
+    t.discovery.saveProfile(undefined, { ...PROFILE, name: 'Career' });
+    const before = t.task('triage').length;
+    const r = await t.discovery.rescore({ scope: 'all', sideJob: true });
+    expect(r.scored).toBeGreaterThan(0);
+    const calls = t.task('triage').slice(before);
+    expect(calls.length).toBeGreaterThan(0);
+    for (const c of calls) expect(c.stdin).toContain('max hours per week: 20');
+
+    const [one] = t.discovery.inbox({ filters: { sideJob: true }, sort: 'rank', limit: 1 });
+    const career = createJob(t.db, 'Acme', {
+      title: 'Data Engineer',
+      descriptionMd: 'x',
+      dedupeKey: 'career-only',
+    });
+    await expect(t.jobs.sideFit(career.id)).rejects.toThrow('not a side job');
+    t.env.FAKE_CLAUDE_OUTPUT_JOB_SIDE_FIT = JSON.stringify({
+      side_score: 30,
+      verdict: 'take',
+      summary: 'Too far away.',
+      checks: [
+        { aspect: 'place', status: 'bad', finding: 'Munich, not Berlin.', quote: 'not in the posting' },
+      ],
+    });
+    const check = await t.jobs.sideFit(one?.jobId ?? '');
+    expect(check.result).toMatchObject({ side_score: 30, verdict: 'skip' });
+    expect(check.result.checks[0]?.quote).toBeNull();
+    const sideCall = t.calls().at(-1);
+    expect(sideCall?.stdin).toContain('<side_job>');
+    expect(sideCall?.stdin).toContain('min hourly pay: 13.9 EUR');
+    // the check is the job's score now, and Re-score leaves the job alone
+    expect(
+      t.discovery
+        .inbox({ filters: { sideJob: true }, sort: 'rank', limit: 100 })
+        .find((i) => i.jobId === one?.jobId),
+    ).toMatchObject({
+      score: 30,
+      scoreKind: 'fit',
+      reason: 'Too far away.',
+    });
+    expect((await t.discovery.rescoreCounts(true)).all).toBe(r.total - 1);
+  });
+
   it('a job a career profile also wants stays a career job, triaged without the side-job block', async () => {
     const t = setup({ env: scoreEnv });
     t.discovery.saveProfile(undefined, {

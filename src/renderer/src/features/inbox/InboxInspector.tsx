@@ -77,7 +77,15 @@ export function InboxInspector({
 
       <section className={s.block} aria-label="Score">
         <SectionHeader
-          title={item.scoreKind === 'fit' ? 'Fit analysis' : item.sideJob ? 'Side job' : 'Triage'}
+          title={
+            item.scoreKind === 'fit'
+              ? item.sideJob
+                ? 'Side-job check'
+                : 'Fit analysis'
+              : item.sideJob
+                ? 'Side job'
+                : 'Triage'
+          }
           level={3}
           actions={
             // A fit analysis wins over triage in the Inbox, so re-triaging it would change nothing you see.
@@ -100,7 +108,7 @@ export function InboxInspector({
           <>
             <StatusDot tone={scoreTone(item.score)}>
               <span className={s.mono}>{item.score}</span>
-              {item.scoreKind === 'fit' ? ' fit score' : item.sideJob ? ' side-job score' : ' triage score'}
+              {item.sideJob ? ' side-job score' : item.scoreKind === 'fit' ? ' fit score' : ' triage score'}
             </StatusDot>
             {item.reason && <p className={s.prose}>{item.reason}</p>}
           </>

@@ -178,6 +178,25 @@ export const analyses = sqliteTable(
   (t) => [index('analyses_job_triage_idx').on(t.jobId, t.triage, t.createdAt, t.id)],
 );
 
+/** Side-job checks (the Fit tab of a side job). `result_json` is a `SideFitResult`. */
+export const sideFits = sqliteTable(
+  'side_fits',
+  {
+    ...base,
+    jobId: text('job_id')
+      .notNull()
+      .references(() => jobs.id, { onDelete: 'cascade' }),
+    profileHash: text('profile_hash').notNull(),
+    model: text().notNull(),
+    promptVersion: text('prompt_version').notNull(),
+    score: integer().notNull(),
+    verdict: text({ enum: ['take', 'maybe', 'skip'] }).notNull(),
+    summary: text().notNull(),
+    resultJson: json<unknown>('result_json').notNull(),
+  },
+  (t) => [index('side_fits_job_idx').on(t.jobId, t.createdAt, t.id)],
+);
+
 export const applications = sqliteTable('applications', {
   ...base,
   jobId: text('job_id')

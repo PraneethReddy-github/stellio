@@ -232,7 +232,8 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
       const needle = text ? fold(text) : null;
       // Filter and rank the cheap way over every open job; build the full items only for the page returned.
       const scored = rows.flatMap((r) => {
-        const score = r.fit ?? r.triage;
+        const fit = r.fit ?? r.sideFit;
+        const score = fit ?? r.triage;
         const srcs = sources.get(r.id) ?? [];
         if (
           (minScore !== undefined && (score ?? -1) < minScore) ||
@@ -281,8 +282,8 @@ export function createDiscoveryService(deps: DiscoveryDeps) {
           postedAt: r.postedAt,
           firstSeenAt: r.firstSeenAt,
           score,
-          scoreKind: r.fit !== null ? 'fit' : r.triage !== null ? 'triage' : null,
-          reason: r.fit !== null ? r.fitReason : r.triageReason,
+          scoreKind: r.fit !== null || r.sideFit !== null ? 'fit' : r.triage !== null ? 'triage' : null,
+          reason: r.fit !== null ? r.fitReason : r.sideFit !== null ? r.sideFitReason : r.triageReason,
           rank: total,
           sources: srcs,
           sideJob: r.sideJob === 1,

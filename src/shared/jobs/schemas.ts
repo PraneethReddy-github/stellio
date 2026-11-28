@@ -120,6 +120,8 @@ export const JobSummarySchema = z.object({
   /** Latest full analysis, if any. */
   fitScore: z.number().nullable(),
   verdict: z.enum(VERDICTS).nullable(),
+  /** Found only by side-job search profiles: its Fit tab is the side-job check. */
+  sideJob: z.boolean(),
 });
 export type JobSummary = z.infer<typeof JobSummarySchema>;
 
@@ -137,6 +139,36 @@ export const AnalysisRecordSchema = z.object({
   postingStale: z.boolean(),
 });
 export type AnalysisRecord = z.infer<typeof AnalysisRecordSchema>;
+
+// ---- side-job check (the Fit tab of a side job) ----
+
+export const SIDE_ASPECTS = ['pay', 'hours', 'place', 'language', 'needs', 'schedule', 'extras'] as const;
+export const SIDE_VERDICTS = ['take', 'maybe', 'skip'] as const;
+/** Output of `job.sideFit`. `quote` is copied from the posting; code drops a quote the posting does not hold. */
+export const SideFitResultSchema = z.object({
+  side_score: z.number().int().min(0).max(100),
+  verdict: z.enum(SIDE_VERDICTS),
+  summary: z.string(),
+  checks: z.array(
+    z.object({
+      aspect: z.enum(SIDE_ASPECTS),
+      status: z.enum(['ok', 'warn', 'bad', 'info']),
+      finding: z.string(),
+      quote: z.string().nullable(),
+    }),
+  ),
+});
+export type SideFitResult = z.infer<typeof SideFitResultSchema>;
+export const SideFitRecordSchema = z.object({
+  id: z.string(),
+  jobId: z.string(),
+  createdAt: z.string(),
+  model: z.string(),
+  result: SideFitResultSchema,
+  profileStale: z.boolean(),
+  postingStale: z.boolean(),
+});
+export type SideFitRecord = z.infer<typeof SideFitRecordSchema>;
 
 export const JobDetailSchema = JobSummarySchema.extend({
   descriptionMd: z.string(),

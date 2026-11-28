@@ -60,6 +60,17 @@ export function useAnalyze(id: string) {
   });
 }
 
+/** The side-job check (the Fit tab of a side job). */
+export function useSideFit(id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (requestId: string) => call('jobs:sideFit', { id, requestId }),
+    // the Inbox shows the check's score too
+    onSuccess: () => Promise.all([refresh(qc), qc.invalidateQueries({ queryKey: ['discovery'] })]),
+    onSettled: () => qc.invalidateQueries({ queryKey: ['ai', 'runs'] }),
+  });
+}
+
 export function useDeleteJob() {
   const qc = useQueryClient();
   return useMutation({

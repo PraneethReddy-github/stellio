@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 1.2.3 — 2026-11-28
+
+- Side-job check: a side job's Fit tab checks pay, hours, place, language and what the job asks for against your side-job limits, each with the posting's own words, and gives Take it / Maybe / Skip. Its score shows in the Inbox.
+- Re-scoring side jobs while their search profile is switched off keeps that profile's hours and pay limits.
+
 ## 1.2.2 — 2026-11-28
 
 - Full posting text: when a job board sent only part of a posting (it ends in "…"), Fetch full text reads the posting page again, or Paste full text takes the text you copy from it. Stellio reads it again and re-scores the job; a fit analysis made before says the posting changed. The Inbox panel can show the whole saved text, not only the summary.

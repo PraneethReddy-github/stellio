@@ -19,6 +19,7 @@ describe('migrate', () => {
       '0003_analyses_job_idx.sql',
       '0004_side_jobs.sql',
       '0005_description_updated_at.sql',
+      '0006_side_fits.sql',
     ]);
   });
 

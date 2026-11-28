@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "properties": {
+    "side_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "verdict": { "type": "string", "enum": ["take", "maybe", "skip"] },
+    "summary": { "type": "string" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "aspect": {
+            "type": "string",
+            "enum": ["pay", "hours", "place", "language", "needs", "schedule", "extras"]
+          },
+          "status": { "type": "string", "enum": ["ok", "warn", "bad", "info"] },
+          "finding": { "type": "string" },
+          "quote": { "type": ["string", "null"] }
+        },
+        "required": ["aspect", "status", "finding", "quote"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["side_score", "verdict", "summary", "checks"],
+  "additionalProperties": false
+}
